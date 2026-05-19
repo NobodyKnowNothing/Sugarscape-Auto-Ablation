@@ -1,0 +1,13 @@
+{
+  "source": "mesa.examples.advanced.sugarscape_g1mt (Mesa 3.5.1)",
+  "n_runs": 20,
+  "mean_metrics": {
+    "gini_coefficient": 0.35992345530582465,
+    "final_population": 63.15,
+    "mean_trade_price": 1.0496411796428795,
+    "trade_volume": 5901.85,
+    "survival_rate": 0.31575000000000003,
+    "wealth_cv": 0.6391387032966733,
+    "spatial_entropy": 3.0118419513962005
+  }
+}
