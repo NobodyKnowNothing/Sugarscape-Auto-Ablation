@@ -1,0 +1,2280 @@
+{
+  "A": {
+    "sweep": "A",
+    "conditions": {
+      "trade": {
+        "label": "Trade",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2928239867950297,
+            "final_population": 72.0,
+            "mean_trade_price": 0.7793118919023423,
+            "trade_volume": 6555.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.5117179742340713,
+            "spatial_entropy": 3.078345547283959
+          },
+          {
+            "gini_coefficient": 0.36653150951272023,
+            "final_population": 64.0,
+            "mean_trade_price": 1.0358446289745105,
+            "trade_volume": 6059.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6439089223401794,
+            "spatial_entropy": 2.775957868318166
+          },
+          {
+            "gini_coefficient": 0.3602177565606998,
+            "final_population": 64.0,
+            "mean_trade_price": 1.1521980522325217,
+            "trade_volume": 5612.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6259221756509191,
+            "spatial_entropy": 3.171364790658981
+          },
+          {
+            "gini_coefficient": 0.3377950894536077,
+            "final_population": 70.0,
+            "mean_trade_price": 0.9275716751890206,
+            "trade_volume": 6259.0,
+            "survival_rate": 0.35,
+            "wealth_cv": 0.5888536754999425,
+            "spatial_entropy": 3.0431896321351135
+          },
+          {
+            "gini_coefficient": 0.3808162817822741,
+            "final_population": 67.0,
+            "mean_trade_price": 0.8778200555013373,
+            "trade_volume": 6320.0,
+            "survival_rate": 0.335,
+            "wealth_cv": 0.7000354760810474,
+            "spatial_entropy": 3.060996793458602
+          }
+        ],
+        "gini_coefficient_mean": 0.34763692482086633,
+        "gini_coefficient_std": 0.03434192876330839,
+        "gini_coefficient_sem": 0.015358177438642567,
+        "gini_coefficient_values": [
+          0.2928239867950297,
+          0.36653150951272023,
+          0.3602177565606998,
+          0.3377950894536077,
+          0.3808162817822741
+        ],
+        "final_population_mean": 67.4,
+        "final_population_std": 3.5777087639996634,
+        "final_population_sem": 1.5999999999999999,
+        "final_population_values": [
+          72.0,
+          64.0,
+          64.0,
+          70.0,
+          67.0
+        ],
+        "mean_trade_price_mean": 0.9545492607599465,
+        "mean_trade_price_std": 0.14404624098766122,
+        "mean_trade_price_sem": 0.06441943735034539,
+        "mean_trade_price_values": [
+          0.7793118919023423,
+          1.0358446289745105,
+          1.1521980522325217,
+          0.9275716751890206,
+          0.8778200555013373
+        ],
+        "trade_volume_mean": 6161.0,
+        "trade_volume_std": 354.2336799345878,
+        "trade_volume_sem": 158.4181176507283,
+        "trade_volume_values": [
+          6555.0,
+          6059.0,
+          5612.0,
+          6259.0,
+          6320.0
+        ],
+        "survival_rate_mean": 0.337,
+        "survival_rate_std": 0.017888543819998305,
+        "survival_rate_sem": 0.007999999999999993,
+        "survival_rate_values": [
+          0.36,
+          0.32,
+          0.32,
+          0.35,
+          0.335
+        ],
+        "wealth_cv_mean": 0.6140876447612319,
+        "wealth_cv_std": 0.06987971285523105,
+        "wealth_cv_sem": 0.03125115763849251,
+        "wealth_cv_values": [
+          0.5117179742340713,
+          0.6439089223401794,
+          0.6259221756509191,
+          0.5888536754999425,
+          0.7000354760810474
+        ],
+        "spatial_entropy_mean": 3.0259709263709644,
+        "spatial_entropy_std": 0.14825004306806064,
+        "spatial_entropy_sem": 0.06629943479349101,
+        "spatial_entropy_values": [
+          3.078345547283959,
+          2.775957868318166,
+          3.171364790658981,
+          3.0431896321351135,
+          3.060996793458602
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.34763692482086633,
+          "final_population": 67.4,
+          "mean_trade_price": 0.9545492607599465,
+          "trade_volume": 6161.0,
+          "survival_rate": 0.337,
+          "wealth_cv": 0.6140876447612319,
+          "spatial_entropy": 3.0259709263709644
+        }
+      },
+      "no_trade": {
+        "label": "No Trade",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": false,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2940158522309262,
+            "final_population": 68.0,
+            "mean_trade_price": -1.0,
+            "trade_volume": 0.0,
+            "survival_rate": 0.34,
+            "wealth_cv": 0.5121895185773305,
+            "spatial_entropy": 3.298675242272631
+          },
+          {
+            "gini_coefficient": 0.3202439044597069,
+            "final_population": 55.0,
+            "mean_trade_price": -1.0,
+            "trade_volume": 0.0,
+            "survival_rate": 0.275,
+            "wealth_cv": 0.5563749618283724,
+            "spatial_entropy": 3.0179795826717974
+          },
+          {
+            "gini_coefficient": 0.2984240980287766,
+            "final_population": 53.0,
+            "mean_trade_price": -1.0,
+            "trade_volume": 0.0,
+            "survival_rate": 0.265,
+            "wealth_cv": 0.5196425229505911,
+            "spatial_entropy": 2.956247215708025
+          },
+          {
+            "gini_coefficient": 0.30310505845563185,
+            "final_population": 62.0,
+            "mean_trade_price": -1.0,
+            "trade_volume": 0.0,
+            "survival_rate": 0.31,
+            "wealth_cv": 0.5283881185134112,
+            "spatial_entropy": 3.0567527578502576
+          },
+          {
+            "gini_coefficient": 0.38005335477901436,
+            "final_population": 54.0,
+            "mean_trade_price": -1.0,
+            "trade_volume": 0.0,
+            "survival_rate": 0.27,
+            "wealth_cv": 0.6896101768999505,
+            "spatial_entropy": 3.2069620384793502
+          }
+        ],
+        "gini_coefficient_mean": 0.3191684535908112,
+        "gini_coefficient_std": 0.03545822222486267,
+        "gini_coefficient_sem": 0.01585739905121735,
+        "gini_coefficient_values": [
+          0.2940158522309262,
+          0.3202439044597069,
+          0.2984240980287766,
+          0.30310505845563185,
+          0.38005335477901436
+        ],
+        "final_population_mean": 58.4,
+        "final_population_std": 6.4265076052238514,
+        "final_population_sem": 2.874021572639983,
+        "final_population_values": [
+          68.0,
+          55.0,
+          53.0,
+          62.0,
+          54.0
+        ],
+        "mean_trade_price_mean": -1.0,
+        "mean_trade_price_std": 0.0,
+        "mean_trade_price_sem": 0.0,
+        "mean_trade_price_values": [
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ],
+        "trade_volume_mean": 0.0,
+        "trade_volume_std": 0.0,
+        "trade_volume_sem": 0.0,
+        "trade_volume_values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "survival_rate_mean": 0.292,
+        "survival_rate_std": 0.032132538026119255,
+        "survival_rate_sem": 0.014370107863199913,
+        "survival_rate_values": [
+          0.34,
+          0.275,
+          0.265,
+          0.31,
+          0.27
+        ],
+        "wealth_cv_mean": 0.5612410597539311,
+        "wealth_cv_std": 0.07368533919647995,
+        "wealth_cv_sem": 0.032953085477691775,
+        "wealth_cv_values": [
+          0.5121895185773305,
+          0.5563749618283724,
+          0.5196425229505911,
+          0.5283881185134112,
+          0.6896101768999505
+        ],
+        "spatial_entropy_mean": 3.1073233673964125,
+        "spatial_entropy_std": 0.14133922564311238,
+        "spatial_entropy_sem": 0.06320882328503614,
+        "spatial_entropy_values": [
+          3.298675242272631,
+          3.0179795826717974,
+          2.956247215708025,
+          3.0567527578502576,
+          3.2069620384793502
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.3191684535908112,
+          "final_population": 58.4,
+          "mean_trade_price": -1.0,
+          "trade_volume": 0.0,
+          "survival_rate": 0.292,
+          "wealth_cv": 0.5612410597539311,
+          "spatial_entropy": 3.1073233673964125
+        }
+      }
+    },
+    "comparisons": {
+      "gini_coefficient": {
+        "metric": "gini_coefficient",
+        "group_a": {
+          "label": "Trade",
+          "mean": 0.34763692482086633,
+          "std": 0.03434192876330839,
+          "n": 5
+        },
+        "group_b": {
+          "label": "No Trade",
+          "mean": 0.3191684535908112,
+          "std": 0.03545822222486267,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 1.289591767310767,
+          "p_value": 0.2332586107780255
+        },
+        "mann_whitney_u": {
+          "u_statistic": 17.0,
+          "p_value": 0.42063492063492064
+        },
+        "cohens_d": 0.8156094473007796,
+        "significant_005": false,
+        "significant_001": false
+      },
+      "final_population": {
+        "metric": "final_population",
+        "group_a": {
+          "label": "Trade",
+          "mean": 67.4,
+          "std": 3.5777087639996634,
+          "n": 5
+        },
+        "group_b": {
+          "label": "No Trade",
+          "mean": 58.4,
+          "std": 6.4265076052238514,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 2.7360805513971695,
+          "p_value": 0.03247545333173537
+        },
+        "mann_whitney_u": {
+          "u_statistic": 22.0,
+          "p_value": 0.059327060946523506
+        },
+        "cohens_d": 1.7304492808208898,
+        "significant_005": true,
+        "significant_001": false
+      },
+      "survival_rate": {
+        "metric": "survival_rate",
+        "group_a": {
+          "label": "Trade",
+          "mean": 0.337,
+          "std": 0.017888543819998305,
+          "n": 5
+        },
+        "group_b": {
+          "label": "No Trade",
+          "mean": 0.292,
+          "std": 0.032132538026119255,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 2.73608055139717,
+          "p_value": 0.032475453331735356
+        },
+        "mann_whitney_u": {
+          "u_statistic": 22.0,
+          "p_value": 0.059327060946523506
+        },
+        "cohens_d": 1.7304492808208904,
+        "significant_005": true,
+        "significant_001": false
+      },
+      "trade_volume": {
+        "metric": "trade_volume",
+        "group_a": {
+          "label": "Trade",
+          "mean": 6161.0,
+          "std": 354.2336799345878,
+          "n": 5
+        },
+        "group_b": {
+          "label": "No Trade",
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 38.8907537304757,
+          "p_value": 2.6112831956418837e-06
+        },
+        "mann_whitney_u": {
+          "u_statistic": 25.0,
+          "p_value": 0.007494957516935239
+        },
+        "cohens_d": 24.59667234179867,
+        "significant_005": true,
+        "significant_001": true
+      },
+      "wealth_cv": {
+        "metric": "wealth_cv",
+        "group_a": {
+          "label": "Trade",
+          "mean": 0.6140876447612319,
+          "std": 0.06987971285523105,
+          "n": 5
+        },
+        "group_b": {
+          "label": "No Trade",
+          "mean": 0.5612410597539311,
+          "std": 0.07368533919647995,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 1.1636320240204727,
+          "p_value": 0.2781928642195609
+        },
+        "mann_whitney_u": {
+          "u_statistic": 17.0,
+          "p_value": 0.42063492063492064
+        },
+        "cohens_d": 0.7359455108432912,
+        "significant_005": false,
+        "significant_001": false
+      }
+    },
+    "validations": {
+      "higher_capacity_with_trade": true,
+      "lower_gini_without_trade": true,
+      "zero_trade_without_trade": true
+    },
+    "all_valid": true
+  },
+  "B": {
+    "sweep": "B",
+    "conditions": [
+      {
+        "label": "Vision [1,5]",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2928239867950297,
+            "final_population": 72.0,
+            "mean_trade_price": 0.7793118919023423,
+            "trade_volume": 6555.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.5117179742340713,
+            "spatial_entropy": 3.078345547283959
+          },
+          {
+            "gini_coefficient": 0.36653150951272023,
+            "final_population": 64.0,
+            "mean_trade_price": 1.0358446289745105,
+            "trade_volume": 6059.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6439089223401794,
+            "spatial_entropy": 2.775957868318166
+          },
+          {
+            "gini_coefficient": 0.3602177565606998,
+            "final_population": 64.0,
+            "mean_trade_price": 1.1521980522325217,
+            "trade_volume": 5612.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6259221756509191,
+            "spatial_entropy": 3.171364790658981
+          },
+          {
+            "gini_coefficient": 0.3377950894536077,
+            "final_population": 70.0,
+            "mean_trade_price": 0.9275716751890206,
+            "trade_volume": 6259.0,
+            "survival_rate": 0.35,
+            "wealth_cv": 0.5888536754999425,
+            "spatial_entropy": 3.0431896321351135
+          },
+          {
+            "gini_coefficient": 0.3808162817822741,
+            "final_population": 67.0,
+            "mean_trade_price": 0.8778200555013373,
+            "trade_volume": 6320.0,
+            "survival_rate": 0.335,
+            "wealth_cv": 0.7000354760810474,
+            "spatial_entropy": 3.060996793458602
+          }
+        ],
+        "gini_coefficient_mean": 0.34763692482086633,
+        "gini_coefficient_std": 0.03434192876330839,
+        "gini_coefficient_sem": 0.015358177438642567,
+        "gini_coefficient_values": [
+          0.2928239867950297,
+          0.36653150951272023,
+          0.3602177565606998,
+          0.3377950894536077,
+          0.3808162817822741
+        ],
+        "final_population_mean": 67.4,
+        "final_population_std": 3.5777087639996634,
+        "final_population_sem": 1.5999999999999999,
+        "final_population_values": [
+          72.0,
+          64.0,
+          64.0,
+          70.0,
+          67.0
+        ],
+        "mean_trade_price_mean": 0.9545492607599465,
+        "mean_trade_price_std": 0.14404624098766122,
+        "mean_trade_price_sem": 0.06441943735034539,
+        "mean_trade_price_values": [
+          0.7793118919023423,
+          1.0358446289745105,
+          1.1521980522325217,
+          0.9275716751890206,
+          0.8778200555013373
+        ],
+        "trade_volume_mean": 6161.0,
+        "trade_volume_std": 354.2336799345878,
+        "trade_volume_sem": 158.4181176507283,
+        "trade_volume_values": [
+          6555.0,
+          6059.0,
+          5612.0,
+          6259.0,
+          6320.0
+        ],
+        "survival_rate_mean": 0.337,
+        "survival_rate_std": 0.017888543819998305,
+        "survival_rate_sem": 0.007999999999999993,
+        "survival_rate_values": [
+          0.36,
+          0.32,
+          0.32,
+          0.35,
+          0.335
+        ],
+        "wealth_cv_mean": 0.6140876447612319,
+        "wealth_cv_std": 0.06987971285523105,
+        "wealth_cv_sem": 0.03125115763849251,
+        "wealth_cv_values": [
+          0.5117179742340713,
+          0.6439089223401794,
+          0.6259221756509191,
+          0.5888536754999425,
+          0.7000354760810474
+        ],
+        "spatial_entropy_mean": 3.0259709263709644,
+        "spatial_entropy_std": 0.14825004306806064,
+        "spatial_entropy_sem": 0.06629943479349101,
+        "spatial_entropy_values": [
+          3.078345547283959,
+          2.775957868318166,
+          3.171364790658981,
+          3.0431896321351135,
+          3.060996793458602
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.34763692482086633,
+          "final_population": 67.4,
+          "mean_trade_price": 0.9545492607599465,
+          "trade_volume": 6161.0,
+          "survival_rate": 0.337,
+          "wealth_cv": 0.6140876447612319,
+          "spatial_entropy": 3.0259709263709644
+        }
+      },
+      {
+        "label": "Vision [1,10]",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 10,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.3364754581067301,
+            "final_population": 83.0,
+            "mean_trade_price": 0.820928980711618,
+            "trade_volume": 5007.0,
+            "survival_rate": 0.415,
+            "wealth_cv": 0.5914505257349103,
+            "spatial_entropy": 3.138869134424619
+          },
+          {
+            "gini_coefficient": 0.38993491098754257,
+            "final_population": 76.0,
+            "mean_trade_price": 0.9747425465729,
+            "trade_volume": 5001.0,
+            "survival_rate": 0.38,
+            "wealth_cv": 0.6914233962678785,
+            "spatial_entropy": 2.7175874183003934
+          },
+          {
+            "gini_coefficient": 0.3617911402526787,
+            "final_population": 74.0,
+            "mean_trade_price": 1.0594832873795283,
+            "trade_volume": 4662.0,
+            "survival_rate": 0.37,
+            "wealth_cv": 0.6357474972626672,
+            "spatial_entropy": 2.8562993995171717
+          },
+          {
+            "gini_coefficient": 0.3308684169808322,
+            "final_population": 71.0,
+            "mean_trade_price": 0.8669378623873185,
+            "trade_volume": 4754.0,
+            "survival_rate": 0.355,
+            "wealth_cv": 0.5815699567928378,
+            "spatial_entropy": 2.915623966496117
+          },
+          {
+            "gini_coefficient": 0.37173246186131925,
+            "final_population": 74.0,
+            "mean_trade_price": 0.9639653842177169,
+            "trade_volume": 4175.0,
+            "survival_rate": 0.37,
+            "wealth_cv": 0.6880577690431697,
+            "spatial_entropy": 2.8792374730369934
+          }
+        ],
+        "gini_coefficient_mean": 0.35816047763782055,
+        "gini_coefficient_std": 0.024607375563285194,
+        "gini_coefficient_sem": 0.011004752901474573,
+        "gini_coefficient_values": [
+          0.3364754581067301,
+          0.38993491098754257,
+          0.3617911402526787,
+          0.3308684169808322,
+          0.37173246186131925
+        ],
+        "final_population_mean": 75.6,
+        "final_population_std": 4.505552130427524,
+        "final_population_sem": 2.014944167960988,
+        "final_population_values": [
+          83.0,
+          76.0,
+          74.0,
+          71.0,
+          74.0
+        ],
+        "mean_trade_price_mean": 0.9372116122538163,
+        "mean_trade_price_std": 0.0942533132068645,
+        "mean_trade_price_sem": 0.042151363087025544,
+        "mean_trade_price_values": [
+          0.820928980711618,
+          0.9747425465729,
+          1.0594832873795283,
+          0.8669378623873185,
+          0.9639653842177169
+        ],
+        "trade_volume_mean": 4719.8,
+        "trade_volume_std": 340.1745140365457,
+        "trade_volume_sem": 152.13066751973452,
+        "trade_volume_values": [
+          5007.0,
+          5001.0,
+          4662.0,
+          4754.0,
+          4175.0
+        ],
+        "survival_rate_mean": 0.378,
+        "survival_rate_std": 0.02252776065213762,
+        "survival_rate_sem": 0.010074720839804941,
+        "survival_rate_values": [
+          0.415,
+          0.38,
+          0.37,
+          0.355,
+          0.37
+        ],
+        "wealth_cv_mean": 0.6376498290202928,
+        "wealth_cv_std": 0.05175785812584181,
+        "wealth_cv_sem": 0.02314681782783443,
+        "wealth_cv_values": [
+          0.5914505257349103,
+          0.6914233962678785,
+          0.6357474972626672,
+          0.5815699567928378,
+          0.6880577690431697
+        ],
+        "spatial_entropy_mean": 2.9015234783550587,
+        "spatial_entropy_std": 0.1524025440643232,
+        "spatial_entropy_sem": 0.06815648969434675,
+        "spatial_entropy_values": [
+          3.138869134424619,
+          2.7175874183003934,
+          2.8562993995171717,
+          2.915623966496117,
+          2.8792374730369934
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.35816047763782055,
+          "final_population": 75.6,
+          "mean_trade_price": 0.9372116122538163,
+          "trade_volume": 4719.8,
+          "survival_rate": 0.378,
+          "wealth_cv": 0.6376498290202928,
+          "spatial_entropy": 2.9015234783550587
+        }
+      },
+      {
+        "label": "Vision [1,15]",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 15,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.3454821973571292,
+            "final_population": 85.0,
+            "mean_trade_price": 0.7972022125416282,
+            "trade_volume": 4318.0,
+            "survival_rate": 0.425,
+            "wealth_cv": 0.6079673203139285,
+            "spatial_entropy": 2.9443336970608307
+          },
+          {
+            "gini_coefficient": 0.3714306770389703,
+            "final_population": 79.0,
+            "mean_trade_price": 0.9850670328199541,
+            "trade_volume": 4438.0,
+            "survival_rate": 0.395,
+            "wealth_cv": 0.6643728257166526,
+            "spatial_entropy": 3.013393374870783
+          },
+          {
+            "gini_coefficient": 0.3691345076948586,
+            "final_population": 77.0,
+            "mean_trade_price": 1.0500276707614316,
+            "trade_volume": 3877.0,
+            "survival_rate": 0.385,
+            "wealth_cv": 0.6531611671995211,
+            "spatial_entropy": 2.792456051371442
+          },
+          {
+            "gini_coefficient": 0.3337464490346189,
+            "final_population": 75.0,
+            "mean_trade_price": 0.8495810697602649,
+            "trade_volume": 4339.0,
+            "survival_rate": 0.375,
+            "wealth_cv": 0.5862708044905108,
+            "spatial_entropy": 2.987832747910787
+          },
+          {
+            "gini_coefficient": 0.35441806528450315,
+            "final_population": 75.0,
+            "mean_trade_price": 0.966145705370909,
+            "trade_volume": 4186.0,
+            "survival_rate": 0.375,
+            "wealth_cv": 0.660776940364713,
+            "spatial_entropy": 2.7388394787268022
+          }
+        ],
+        "gini_coefficient_mean": 0.354842379282016,
+        "gini_coefficient_std": 0.01590807875012775,
+        "gini_coefficient_sem": 0.007114309095341108,
+        "gini_coefficient_values": [
+          0.3454821973571292,
+          0.3714306770389703,
+          0.3691345076948586,
+          0.3337464490346189,
+          0.35441806528450315
+        ],
+        "final_population_mean": 78.2,
+        "final_population_std": 4.147288270665544,
+        "final_population_sem": 1.8547236990991405,
+        "final_population_values": [
+          85.0,
+          79.0,
+          77.0,
+          75.0,
+          75.0
+        ],
+        "mean_trade_price_mean": 0.9296047382508374,
+        "mean_trade_price_std": 0.10349783500665558,
+        "mean_trade_price_sem": 0.046285638919787854,
+        "mean_trade_price_values": [
+          0.7972022125416282,
+          0.9850670328199541,
+          1.0500276707614316,
+          0.8495810697602649,
+          0.966145705370909
+        ],
+        "trade_volume_mean": 4231.6,
+        "trade_volume_std": 217.61272940708224,
+        "trade_volume_sem": 97.31937114470067,
+        "trade_volume_values": [
+          4318.0,
+          4438.0,
+          3877.0,
+          4339.0,
+          4186.0
+        ],
+        "survival_rate_mean": 0.391,
+        "survival_rate_std": 0.020736441353327716,
+        "survival_rate_sem": 0.0092736184954957,
+        "survival_rate_values": [
+          0.425,
+          0.395,
+          0.385,
+          0.375,
+          0.375
+        ],
+        "wealth_cv_mean": 0.6345098116170653,
+        "wealth_cv_std": 0.03521768157457884,
+        "wealth_cv_sem": 0.015749826002140022,
+        "wealth_cv_values": [
+          0.6079673203139285,
+          0.6643728257166526,
+          0.6531611671995211,
+          0.5862708044905108,
+          0.660776940364713
+        ],
+        "spatial_entropy_mean": 2.895371069988129,
+        "spatial_entropy_std": 0.12244325757634036,
+        "spatial_entropy_sem": 0.05475828946544264,
+        "spatial_entropy_values": [
+          2.9443336970608307,
+          3.013393374870783,
+          2.792456051371442,
+          2.987832747910787,
+          2.7388394787268022
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.354842379282016,
+          "final_population": 78.2,
+          "mean_trade_price": 0.9296047382508374,
+          "trade_volume": 4231.6,
+          "survival_rate": 0.391,
+          "wealth_cv": 0.6345098116170653,
+          "spatial_entropy": 2.895371069988129
+        }
+      }
+    ],
+    "comparisons": {
+      "Vision [1,5]_vs_Vision [1,10]": {
+        "gini_coefficient": {
+          "metric": "gini_coefficient",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.34763692482086633,
+            "std": 0.03434192876330839,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,10]",
+            "mean": 0.35816047763782055,
+            "std": 0.024607375563285194,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.556982483140327,
+            "p_value": 0.5943079652907937
+          },
+          "mann_whitney_u": {
+            "u_statistic": 11.0,
+            "p_value": 0.8412698412698413
+          },
+          "cohens_d": -0.3522666527079534,
+          "significant_005": false,
+          "significant_001": false
+        },
+        "final_population": {
+          "metric": "final_population",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 67.4,
+            "std": 3.5777087639996634,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,10]",
+            "mean": 75.6,
+            "std": 4.505552130427524,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -3.1870205047795297,
+            "p_value": 0.013731431460596123
+          },
+          "mann_whitney_u": {
+            "u_statistic": 1.0,
+            "p_value": 0.020784343168786933
+          },
+          "cohens_d": -2.0156487489525716,
+          "significant_005": true,
+          "significant_001": false
+        },
+        "survival_rate": {
+          "metric": "survival_rate",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.337,
+            "std": 0.017888543819998305,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,10]",
+            "mean": 0.378,
+            "std": 0.02252776065213762,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -3.1870205047795332,
+            "p_value": 0.01373143146059605
+          },
+          "mann_whitney_u": {
+            "u_statistic": 1.0,
+            "p_value": 0.020784343168786933
+          },
+          "cohens_d": -2.0156487489525743,
+          "significant_005": true,
+          "significant_001": false
+        },
+        "wealth_cv": {
+          "metric": "wealth_cv",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.6140876447612319,
+            "std": 0.06987971285523105,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,10]",
+            "mean": 0.6376498290202928,
+            "std": 0.05175785812584181,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.6058718483077087,
+            "p_value": 0.5627795124305067
+          },
+          "mann_whitney_u": {
+            "u_statistic": 11.0,
+            "p_value": 0.8412698412698413
+          },
+          "cohens_d": -0.38318700216567847,
+          "significant_005": false,
+          "significant_001": false
+        }
+      },
+      "Vision [1,5]_vs_Vision [1,15]": {
+        "gini_coefficient": {
+          "metric": "gini_coefficient",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.34763692482086633,
+            "std": 0.03434192876330839,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,15]",
+            "mean": 0.354842379282016,
+            "std": 0.01590807875012775,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.42570515749321175,
+            "p_value": 0.6860826158170452
+          },
+          "mann_whitney_u": {
+            "u_statistic": 12.0,
+            "p_value": 1.0
+          },
+          "cohens_d": -0.269239581871849,
+          "significant_005": false,
+          "significant_001": false
+        },
+        "final_population": {
+          "metric": "final_population",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 67.4,
+            "std": 3.5777087639996634,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,15]",
+            "mean": 78.2,
+            "std": 4.147288270665544,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -4.40908153700972,
+            "p_value": 0.0023788935880792715
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.011667312343319386
+          },
+          "cohens_d": -2.7885480092693395,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "survival_rate": {
+          "metric": "survival_rate",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.337,
+            "std": 0.017888543819998305,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,15]",
+            "mean": 0.391,
+            "std": 0.020736441353327716,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -4.409081537009722,
+            "p_value": 0.0023788935880792697
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.011667312343319386
+          },
+          "cohens_d": -2.788548009269341,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "wealth_cv": {
+          "metric": "wealth_cv",
+          "group_a": {
+            "label": "Vision [1,5]",
+            "mean": 0.6140876447612319,
+            "std": 0.06987971285523105,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Vision [1,15]",
+            "mean": 0.6345098116170653,
+            "std": 0.03521768157457884,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.5835638788144689,
+            "p_value": 0.5810884904895981
+          },
+          "mann_whitney_u": {
+            "u_statistic": 10.0,
+            "p_value": 0.6904761904761905
+          },
+          "cohens_d": -0.36907820345124054,
+          "significant_005": false,
+          "significant_001": false
+        }
+      }
+    },
+    "validations": {
+      "population_increases": true,
+      "gini_increases": false,
+      "population_trend_rho": 1.0,
+      "population_trend_p": 0.0,
+      "gini_trend_rho": 0.5,
+      "gini_trend_p": 0.6666666666666667
+    },
+    "all_valid": false
+  },
+  "C": {
+    "sweep": "C",
+    "conditions": [
+      {
+        "label": "Pop=100 (low)",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 100,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2861734991422344,
+            "final_population": 41.0,
+            "mean_trade_price": 0.834132163146807,
+            "trade_volume": 3204.0,
+            "survival_rate": 0.41,
+            "wealth_cv": 0.5032766863945776,
+            "spatial_entropy": 2.7414939322721965
+          },
+          {
+            "gini_coefficient": 0.3874521466619156,
+            "final_population": 36.0,
+            "mean_trade_price": 1.1603437642322758,
+            "trade_volume": 2912.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.6913870827569774,
+            "spatial_entropy": 2.856671185891103
+          },
+          {
+            "gini_coefficient": 0.32747542312759703,
+            "final_population": 30.0,
+            "mean_trade_price": 1.0688408554671394,
+            "trade_volume": 2592.0,
+            "survival_rate": 0.3,
+            "wealth_cv": 0.5708300758335831,
+            "spatial_entropy": 2.9689250793612647
+          },
+          {
+            "gini_coefficient": 0.3786986122021472,
+            "final_population": 36.0,
+            "mean_trade_price": 1.06264384615089,
+            "trade_volume": 2829.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.6643369335429054,
+            "spatial_entropy": 2.7670501829973704
+          },
+          {
+            "gini_coefficient": 0.2851296631343155,
+            "final_population": 38.0,
+            "mean_trade_price": 1.0024188361716595,
+            "trade_volume": 2982.0,
+            "survival_rate": 0.38,
+            "wealth_cv": 0.5248018409525477,
+            "spatial_entropy": 2.820589856666546
+          }
+        ],
+        "gini_coefficient_mean": 0.3329858688536419,
+        "gini_coefficient_std": 0.048908613041779354,
+        "gini_coefficient_sem": 0.021872596689330278,
+        "gini_coefficient_values": [
+          0.2861734991422344,
+          0.3874521466619156,
+          0.32747542312759703,
+          0.3786986122021472,
+          0.2851296631343155
+        ],
+        "final_population_mean": 36.2,
+        "final_population_std": 4.024922359499621,
+        "final_population_sem": 1.7999999999999998,
+        "final_population_values": [
+          41.0,
+          36.0,
+          30.0,
+          36.0,
+          38.0
+        ],
+        "mean_trade_price_mean": 1.0256758930337544,
+        "mean_trade_price_std": 0.12103219636276372,
+        "mean_trade_price_sem": 0.05412724370664849,
+        "mean_trade_price_values": [
+          0.834132163146807,
+          1.1603437642322758,
+          1.0688408554671394,
+          1.06264384615089,
+          1.0024188361716595
+        ],
+        "trade_volume_mean": 2903.8,
+        "trade_volume_std": 223.11252766261242,
+        "trade_volume_sem": 99.77895569708072,
+        "trade_volume_values": [
+          3204.0,
+          2912.0,
+          2592.0,
+          2829.0,
+          2982.0
+        ],
+        "survival_rate_mean": 0.362,
+        "survival_rate_std": 0.04024922359499621,
+        "survival_rate_sem": 0.018,
+        "survival_rate_values": [
+          0.41,
+          0.36,
+          0.3,
+          0.36,
+          0.38
+        ],
+        "wealth_cv_mean": 0.5909265238961182,
+        "wealth_cv_std": 0.08357668195183035,
+        "wealth_cv_sem": 0.03737662843563449,
+        "wealth_cv_values": [
+          0.5032766863945776,
+          0.6913870827569774,
+          0.5708300758335831,
+          0.6643369335429054,
+          0.5248018409525477
+        ],
+        "spatial_entropy_mean": 2.830946047437696,
+        "spatial_entropy_std": 0.08929110970088071,
+        "spatial_entropy_sem": 0.039932198215512034,
+        "spatial_entropy_values": [
+          2.7414939322721965,
+          2.856671185891103,
+          2.9689250793612647,
+          2.7670501829973704,
+          2.820589856666546
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.3329858688536419,
+          "final_population": 36.2,
+          "mean_trade_price": 1.0256758930337544,
+          "trade_volume": 2903.8,
+          "survival_rate": 0.362,
+          "wealth_cv": 0.5909265238961182,
+          "spatial_entropy": 2.830946047437696
+        }
+      },
+      {
+        "label": "Pop=200 (medium)",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2928239867950297,
+            "final_population": 72.0,
+            "mean_trade_price": 0.7793118919023423,
+            "trade_volume": 6555.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.5117179742340713,
+            "spatial_entropy": 3.078345547283959
+          },
+          {
+            "gini_coefficient": 0.36653150951272023,
+            "final_population": 64.0,
+            "mean_trade_price": 1.0358446289745105,
+            "trade_volume": 6059.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6439089223401794,
+            "spatial_entropy": 2.775957868318166
+          },
+          {
+            "gini_coefficient": 0.3602177565606998,
+            "final_population": 64.0,
+            "mean_trade_price": 1.1521980522325217,
+            "trade_volume": 5612.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6259221756509191,
+            "spatial_entropy": 3.171364790658981
+          },
+          {
+            "gini_coefficient": 0.3377950894536077,
+            "final_population": 70.0,
+            "mean_trade_price": 0.9275716751890206,
+            "trade_volume": 6259.0,
+            "survival_rate": 0.35,
+            "wealth_cv": 0.5888536754999425,
+            "spatial_entropy": 3.0431896321351135
+          },
+          {
+            "gini_coefficient": 0.3808162817822741,
+            "final_population": 67.0,
+            "mean_trade_price": 0.8778200555013373,
+            "trade_volume": 6320.0,
+            "survival_rate": 0.335,
+            "wealth_cv": 0.7000354760810474,
+            "spatial_entropy": 3.060996793458602
+          }
+        ],
+        "gini_coefficient_mean": 0.34763692482086633,
+        "gini_coefficient_std": 0.03434192876330839,
+        "gini_coefficient_sem": 0.015358177438642567,
+        "gini_coefficient_values": [
+          0.2928239867950297,
+          0.36653150951272023,
+          0.3602177565606998,
+          0.3377950894536077,
+          0.3808162817822741
+        ],
+        "final_population_mean": 67.4,
+        "final_population_std": 3.5777087639996634,
+        "final_population_sem": 1.5999999999999999,
+        "final_population_values": [
+          72.0,
+          64.0,
+          64.0,
+          70.0,
+          67.0
+        ],
+        "mean_trade_price_mean": 0.9545492607599465,
+        "mean_trade_price_std": 0.14404624098766122,
+        "mean_trade_price_sem": 0.06441943735034539,
+        "mean_trade_price_values": [
+          0.7793118919023423,
+          1.0358446289745105,
+          1.1521980522325217,
+          0.9275716751890206,
+          0.8778200555013373
+        ],
+        "trade_volume_mean": 6161.0,
+        "trade_volume_std": 354.2336799345878,
+        "trade_volume_sem": 158.4181176507283,
+        "trade_volume_values": [
+          6555.0,
+          6059.0,
+          5612.0,
+          6259.0,
+          6320.0
+        ],
+        "survival_rate_mean": 0.337,
+        "survival_rate_std": 0.017888543819998305,
+        "survival_rate_sem": 0.007999999999999993,
+        "survival_rate_values": [
+          0.36,
+          0.32,
+          0.32,
+          0.35,
+          0.335
+        ],
+        "wealth_cv_mean": 0.6140876447612319,
+        "wealth_cv_std": 0.06987971285523105,
+        "wealth_cv_sem": 0.03125115763849251,
+        "wealth_cv_values": [
+          0.5117179742340713,
+          0.6439089223401794,
+          0.6259221756509191,
+          0.5888536754999425,
+          0.7000354760810474
+        ],
+        "spatial_entropy_mean": 3.0259709263709644,
+        "spatial_entropy_std": 0.14825004306806064,
+        "spatial_entropy_sem": 0.06629943479349101,
+        "spatial_entropy_values": [
+          3.078345547283959,
+          2.775957868318166,
+          3.171364790658981,
+          3.0431896321351135,
+          3.060996793458602
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.34763692482086633,
+          "final_population": 67.4,
+          "mean_trade_price": 0.9545492607599465,
+          "trade_volume": 6161.0,
+          "survival_rate": 0.337,
+          "wealth_cv": 0.6140876447612319,
+          "spatial_entropy": 3.0259709263709644
+        }
+      },
+      {
+        "label": "Pop=300 (high)",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 300,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.3265748257336593,
+            "final_population": 108.0,
+            "mean_trade_price": 0.9150528217931524,
+            "trade_volume": 9519.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.5707318574228215,
+            "spatial_entropy": 3.468331172574249
+          },
+          {
+            "gini_coefficient": 0.4056180919179051,
+            "final_population": 98.0,
+            "mean_trade_price": 1.1273289689777133,
+            "trade_volume": 9565.0,
+            "survival_rate": 0.32666666666666666,
+            "wealth_cv": 0.7275499427840499,
+            "spatial_entropy": 3.489301934384559
+          },
+          {
+            "gini_coefficient": 0.34565422052897005,
+            "final_population": 91.0,
+            "mean_trade_price": 1.0327804782504348,
+            "trade_volume": 8191.0,
+            "survival_rate": 0.30333333333333334,
+            "wealth_cv": 0.6029683775540083,
+            "spatial_entropy": 3.2954242354748406
+          },
+          {
+            "gini_coefficient": 0.37193434641412765,
+            "final_population": 96.0,
+            "mean_trade_price": 0.9083246870761259,
+            "trade_volume": 9124.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6503133049596526,
+            "spatial_entropy": 3.4644286898372414
+          },
+          {
+            "gini_coefficient": 0.34674518614335476,
+            "final_population": 87.0,
+            "mean_trade_price": 0.9137802291962377,
+            "trade_volume": 8786.0,
+            "survival_rate": 0.29,
+            "wealth_cv": 0.6385919629186234,
+            "spatial_entropy": 3.140416463587691
+          }
+        ],
+        "gini_coefficient_mean": 0.3593053341476034,
+        "gini_coefficient_std": 0.03049491713823549,
+        "gini_coefficient_sem": 0.01363774153786358,
+        "gini_coefficient_values": [
+          0.3265748257336593,
+          0.4056180919179051,
+          0.34565422052897005,
+          0.37193434641412765,
+          0.34674518614335476
+        ],
+        "final_population_mean": 96.0,
+        "final_population_std": 7.968688725254614,
+        "final_population_sem": 3.5637059362410923,
+        "final_population_values": [
+          108.0,
+          98.0,
+          91.0,
+          96.0,
+          87.0
+        ],
+        "mean_trade_price_mean": 0.9794534370587329,
+        "mean_trade_price_std": 0.09776330448359305,
+        "mean_trade_price_sem": 0.0437210789060648,
+        "mean_trade_price_values": [
+          0.9150528217931524,
+          1.1273289689777133,
+          1.0327804782504348,
+          0.9083246870761259,
+          0.9137802291962377
+        ],
+        "trade_volume_mean": 9037.0,
+        "trade_volume_std": 569.5160226016473,
+        "trade_volume_sem": 254.69530816251796,
+        "trade_volume_values": [
+          9519.0,
+          9565.0,
+          8191.0,
+          9124.0,
+          8786.0
+        ],
+        "survival_rate_mean": 0.32,
+        "survival_rate_std": 0.02656229575084871,
+        "survival_rate_sem": 0.011879019787470305,
+        "survival_rate_values": [
+          0.36,
+          0.32666666666666666,
+          0.30333333333333334,
+          0.32,
+          0.29
+        ],
+        "wealth_cv_mean": 0.6380310891278312,
+        "wealth_cv_std": 0.05899867137501026,
+        "wealth_cv_sem": 0.026385007955338786,
+        "wealth_cv_values": [
+          0.5707318574228215,
+          0.7275499427840499,
+          0.6029683775540083,
+          0.6503133049596526,
+          0.6385919629186234
+        ],
+        "spatial_entropy_mean": 3.371580499171716,
+        "spatial_entropy_std": 0.15089433676420508,
+        "spatial_entropy_sem": 0.06748199888490164,
+        "spatial_entropy_values": [
+          3.468331172574249,
+          3.489301934384559,
+          3.2954242354748406,
+          3.4644286898372414,
+          3.140416463587691
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.3593053341476034,
+          "final_population": 96.0,
+          "mean_trade_price": 0.9794534370587329,
+          "trade_volume": 9037.0,
+          "survival_rate": 0.32,
+          "wealth_cv": 0.6380310891278312,
+          "spatial_entropy": 3.371580499171716
+        }
+      }
+    ],
+    "comparisons": {
+      "Pop=100 (low)_vs_Pop=200 (medium)": {
+        "final_population": {
+          "metric": "final_population",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 36.2,
+            "std": 4.024922359499621,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=200 (medium)",
+            "mean": 67.4,
+            "std": 3.5777087639996634,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -12.955094857183438,
+            "p_value": 1.3488480169855559e-06
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.011667312343319386
+          },
+          "cohens_d": -8.193521410446689,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "trade_volume": {
+          "metric": "trade_volume",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 2903.8,
+            "std": 223.11252766261242,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=200 (medium)",
+            "mean": 6161.0,
+            "std": 354.2336799345878,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -17.397512504270527,
+            "p_value": 7.470402641412896e-07
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.007936507936507936
+          },
+          "cohens_d": -11.003153026950944,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "survival_rate": {
+          "metric": "survival_rate",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 0.362,
+            "std": 0.04024922359499621,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=200 (medium)",
+            "mean": 0.337,
+            "std": 0.017888543819998305,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": 1.2691827064170225,
+            "p_value": 0.25525107727672613
+          },
+          "mann_whitney_u": {
+            "u_statistic": 19.0,
+            "p_value": 0.20309178757716784
+          },
+          "cohens_d": 0.8027016238349185,
+          "significant_005": false,
+          "significant_001": false
+        },
+        "gini_coefficient": {
+          "metric": "gini_coefficient",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 0.3329858688536419,
+            "std": 0.048908613041779354,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=200 (medium)",
+            "mean": 0.34763692482086633,
+            "std": 0.03434192876330839,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.548192937230814,
+            "p_value": 0.6001968733874501
+          },
+          "mann_whitney_u": {
+            "u_statistic": 10.0,
+            "p_value": 0.6904761904761905
+          },
+          "cohens_d": -0.3467076557734179,
+          "significant_005": false,
+          "significant_001": false
+        }
+      },
+      "Pop=100 (low)_vs_Pop=300 (high)": {
+        "final_population": {
+          "metric": "final_population",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 36.2,
+            "std": 4.024922359499621,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 96.0,
+            "std": 7.968688725254614,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -14.978110335070166,
+            "p_value": 6.27987190332613e-06
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.011925233593017602
+          },
+          "cohens_d": -9.472988740825901,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "trade_volume": {
+          "metric": "trade_volume",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 2903.8,
+            "std": 223.11252766261242,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 9037.0,
+            "std": 569.5160226016473,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -22.42137266506769,
+            "p_value": 2.24758094720092e-06
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.007936507936507936
+          },
+          "cohens_d": -14.180521177810702,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "survival_rate": {
+          "metric": "survival_rate",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 0.362,
+            "std": 0.04024922359499621,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 0.32,
+            "std": 0.02656229575084871,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": 1.947470703365836,
+            "p_value": 0.09293773670204995
+          },
+          "mann_whitney_u": {
+            "u_statistic": 20.0,
+            "p_value": 0.13879173842360976
+          },
+          "cohens_d": 1.2316886198172368,
+          "significant_005": false,
+          "significant_001": false
+        },
+        "gini_coefficient": {
+          "metric": "gini_coefficient",
+          "group_a": {
+            "label": "Pop=100 (low)",
+            "mean": 0.3329858688536419,
+            "std": 0.048908613041779354,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 0.3593053341476034,
+            "std": 0.03049491713823549,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -1.0210869994091292,
+            "p_value": 0.34265011252413086
+          },
+          "mann_whitney_u": {
+            "u_statistic": 9.0,
+            "p_value": 0.5476190476190477
+          },
+          "cohens_d": -0.6457921214639706,
+          "significant_005": false,
+          "significant_001": false
+        }
+      },
+      "Pop=200 (medium)_vs_Pop=300 (high)": {
+        "final_population": {
+          "metric": "final_population",
+          "group_a": {
+            "label": "Pop=200 (medium)",
+            "mean": 67.4,
+            "std": 3.5777087639996634,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 96.0,
+            "std": 7.968688725254614,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -7.32130949620267,
+            "p_value": 0.00047233785823066836
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.011925233593017602
+          },
+          "cohens_d": -4.630402692604063,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "trade_volume": {
+          "metric": "trade_volume",
+          "group_a": {
+            "label": "Pop=200 (medium)",
+            "mean": 6161.0,
+            "std": 354.2336799345878,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 9037.0,
+            "std": 569.5160226016473,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -9.588477994707253,
+            "p_value": 3.758310581823744e-05
+          },
+          "mann_whitney_u": {
+            "u_statistic": 0.0,
+            "p_value": 0.007936507936507936
+          },
+          "cohens_d": -6.064285951535769,
+          "significant_005": true,
+          "significant_001": true
+        },
+        "survival_rate": {
+          "metric": "survival_rate",
+          "group_a": {
+            "label": "Pop=200 (medium)",
+            "mean": 0.337,
+            "std": 0.017888543819998305,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 0.32,
+            "std": 0.02656229575084871,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": 1.1870098634951072,
+            "p_value": 0.27389037748754136
+          },
+          "mann_whitney_u": {
+            "u_statistic": 17.5,
+            "p_value": 0.33978297435581883
+          },
+          "cohens_d": 0.750730954746019,
+          "significant_005": false,
+          "significant_001": false
+        },
+        "gini_coefficient": {
+          "metric": "gini_coefficient",
+          "group_a": {
+            "label": "Pop=200 (medium)",
+            "mean": 0.34763692482086633,
+            "std": 0.03434192876330839,
+            "n": 5
+          },
+          "group_b": {
+            "label": "Pop=300 (high)",
+            "mean": 0.3593053341476034,
+            "std": 0.03049491713823549,
+            "n": 5
+          },
+          "welch_t": {
+            "t_statistic": -0.5681024387483896,
+            "p_value": 0.5857656627368534
+          },
+          "mann_whitney_u": {
+            "u_statistic": 11.0,
+            "p_value": 0.8412698412698413
+          },
+          "cohens_d": -0.3592995301482415,
+          "significant_005": false,
+          "significant_001": false
+        }
+      }
+    },
+    "validations": {
+      "survival_decreases_with_density": true,
+      "carrying_capacity_convergence": true,
+      "trade_scales_with_density": true
+    },
+    "all_valid": true
+  },
+  "D": {
+    "sweep": "D",
+    "conditions": [
+      {
+        "label": "Metabolism [1,5] (baseline)",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 1,
+          "metabolism_max": 5,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.2928239867950297,
+            "final_population": 72.0,
+            "mean_trade_price": 0.7793118919023423,
+            "trade_volume": 6555.0,
+            "survival_rate": 0.36,
+            "wealth_cv": 0.5117179742340713,
+            "spatial_entropy": 3.078345547283959
+          },
+          {
+            "gini_coefficient": 0.36653150951272023,
+            "final_population": 64.0,
+            "mean_trade_price": 1.0358446289745105,
+            "trade_volume": 6059.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6439089223401794,
+            "spatial_entropy": 2.775957868318166
+          },
+          {
+            "gini_coefficient": 0.3602177565606998,
+            "final_population": 64.0,
+            "mean_trade_price": 1.1521980522325217,
+            "trade_volume": 5612.0,
+            "survival_rate": 0.32,
+            "wealth_cv": 0.6259221756509191,
+            "spatial_entropy": 3.171364790658981
+          },
+          {
+            "gini_coefficient": 0.3377950894536077,
+            "final_population": 70.0,
+            "mean_trade_price": 0.9275716751890206,
+            "trade_volume": 6259.0,
+            "survival_rate": 0.35,
+            "wealth_cv": 0.5888536754999425,
+            "spatial_entropy": 3.0431896321351135
+          },
+          {
+            "gini_coefficient": 0.3808162817822741,
+            "final_population": 67.0,
+            "mean_trade_price": 0.8778200555013373,
+            "trade_volume": 6320.0,
+            "survival_rate": 0.335,
+            "wealth_cv": 0.7000354760810474,
+            "spatial_entropy": 3.060996793458602
+          }
+        ],
+        "gini_coefficient_mean": 0.34763692482086633,
+        "gini_coefficient_std": 0.03434192876330839,
+        "gini_coefficient_sem": 0.015358177438642567,
+        "gini_coefficient_values": [
+          0.2928239867950297,
+          0.36653150951272023,
+          0.3602177565606998,
+          0.3377950894536077,
+          0.3808162817822741
+        ],
+        "final_population_mean": 67.4,
+        "final_population_std": 3.5777087639996634,
+        "final_population_sem": 1.5999999999999999,
+        "final_population_values": [
+          72.0,
+          64.0,
+          64.0,
+          70.0,
+          67.0
+        ],
+        "mean_trade_price_mean": 0.9545492607599465,
+        "mean_trade_price_std": 0.14404624098766122,
+        "mean_trade_price_sem": 0.06441943735034539,
+        "mean_trade_price_values": [
+          0.7793118919023423,
+          1.0358446289745105,
+          1.1521980522325217,
+          0.9275716751890206,
+          0.8778200555013373
+        ],
+        "trade_volume_mean": 6161.0,
+        "trade_volume_std": 354.2336799345878,
+        "trade_volume_sem": 158.4181176507283,
+        "trade_volume_values": [
+          6555.0,
+          6059.0,
+          5612.0,
+          6259.0,
+          6320.0
+        ],
+        "survival_rate_mean": 0.337,
+        "survival_rate_std": 0.017888543819998305,
+        "survival_rate_sem": 0.007999999999999993,
+        "survival_rate_values": [
+          0.36,
+          0.32,
+          0.32,
+          0.35,
+          0.335
+        ],
+        "wealth_cv_mean": 0.6140876447612319,
+        "wealth_cv_std": 0.06987971285523105,
+        "wealth_cv_sem": 0.03125115763849251,
+        "wealth_cv_values": [
+          0.5117179742340713,
+          0.6439089223401794,
+          0.6259221756509191,
+          0.5888536754999425,
+          0.7000354760810474
+        ],
+        "spatial_entropy_mean": 3.0259709263709644,
+        "spatial_entropy_std": 0.14825004306806064,
+        "spatial_entropy_sem": 0.06629943479349101,
+        "spatial_entropy_values": [
+          3.078345547283959,
+          2.775957868318166,
+          3.171364790658981,
+          3.0431896321351135,
+          3.060996793458602
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.34763692482086633,
+          "final_population": 67.4,
+          "mean_trade_price": 0.9545492607599465,
+          "trade_volume": 6161.0,
+          "survival_rate": 0.337,
+          "wealth_cv": 0.6140876447612319,
+          "spatial_entropy": 3.0259709263709644
+        }
+      },
+      {
+        "label": "Metabolism [3,7] (scarce)",
+        "params": {
+          "width": 50,
+          "height": 50,
+          "initial_population": 200,
+          "endowment_min": 25,
+          "endowment_max": 50,
+          "metabolism_min": 3,
+          "metabolism_max": 7,
+          "vision_min": 1,
+          "vision_max": 5,
+          "enable_trade": true,
+          "steps": 200
+        },
+        "n_runs": 5,
+        "runs": [
+          {
+            "gini_coefficient": 0.4027777777777778,
+            "final_population": 2.0,
+            "mean_trade_price": 0.8875723767242215,
+            "trade_volume": 1656.0,
+            "survival_rate": 0.01,
+            "wealth_cv": 0.8055555555555556,
+            "spatial_entropy": -0.0
+          },
+          {
+            "gini_coefficient": 0.09057971014492754,
+            "final_population": 4.0,
+            "mean_trade_price": 1.0453024762476255,
+            "trade_volume": 1705.0,
+            "survival_rate": 0.02,
+            "wealth_cv": 0.17856107630448045,
+            "spatial_entropy": -0.0
+          },
+          {
+            "gini_coefficient": 0.32075471698113206,
+            "final_population": 3.0,
+            "mean_trade_price": 1.1028357779115354,
+            "trade_volume": 1839.0,
+            "survival_rate": 0.015,
+            "wealth_cv": 0.5976993985455531,
+            "spatial_entropy": 0.9182958340544896
+          },
+          {
+            "gini_coefficient": 0.0,
+            "final_population": 1.0,
+            "mean_trade_price": 0.9773281244999478,
+            "trade_volume": 1699.0,
+            "survival_rate": 0.005,
+            "wealth_cv": 0.0,
+            "spatial_entropy": -0.0
+          },
+          {
+            "gini_coefficient": 0.05555555555555555,
+            "final_population": 2.0,
+            "mean_trade_price": 1.0387281260425039,
+            "trade_volume": 1542.0,
+            "survival_rate": 0.01,
+            "wealth_cv": 0.1111111111111111,
+            "spatial_entropy": -0.0
+          }
+        ],
+        "gini_coefficient_mean": 0.1739335520918786,
+        "gini_coefficient_std": 0.1768758234353874,
+        "gini_coefficient_sem": 0.07910127295555532,
+        "gini_coefficient_values": [
+          0.4027777777777778,
+          0.09057971014492754,
+          0.32075471698113206,
+          0.0,
+          0.05555555555555555
+        ],
+        "final_population_mean": 2.4,
+        "final_population_std": 1.140175425099138,
+        "final_population_sem": 0.5099019513592785,
+        "final_population_values": [
+          2.0,
+          4.0,
+          3.0,
+          1.0,
+          2.0
+        ],
+        "mean_trade_price_mean": 1.0103533762851669,
+        "mean_trade_price_std": 0.0817701072079833,
+        "mean_trade_price_sem": 0.03656870364889924,
+        "mean_trade_price_values": [
+          0.8875723767242215,
+          1.0453024762476255,
+          1.1028357779115354,
+          0.9773281244999478,
+          1.0387281260425039
+        ],
+        "trade_volume_mean": 1688.2,
+        "trade_volume_std": 106.71316694766396,
+        "trade_volume_sem": 47.72357907785207,
+        "trade_volume_values": [
+          1656.0,
+          1705.0,
+          1839.0,
+          1699.0,
+          1542.0
+        ],
+        "survival_rate_mean": 0.012,
+        "survival_rate_std": 0.005700877125495689,
+        "survival_rate_sem": 0.002549509756796392,
+        "survival_rate_values": [
+          0.01,
+          0.02,
+          0.015,
+          0.005,
+          0.01
+        ],
+        "wealth_cv_mean": 0.33858542830334004,
+        "wealth_cv_std": 0.3453960045349087,
+        "wealth_cv_sem": 0.1544657890593763,
+        "wealth_cv_values": [
+          0.8055555555555556,
+          0.17856107630448045,
+          0.5976993985455531,
+          0.0,
+          0.1111111111111111
+        ],
+        "spatial_entropy_mean": 0.18365916681089792,
+        "spatial_entropy_std": 0.410674381680141,
+        "spatial_entropy_sem": 0.1836591668108979,
+        "spatial_entropy_values": [
+          -0.0,
+          -0.0,
+          0.9182958340544896,
+          -0.0,
+          -0.0
+        ],
+        "mean_metrics": {
+          "gini_coefficient": 0.1739335520918786,
+          "final_population": 2.4,
+          "mean_trade_price": 1.0103533762851669,
+          "trade_volume": 1688.2,
+          "survival_rate": 0.012,
+          "wealth_cv": 0.33858542830334004,
+          "spatial_entropy": 0.18365916681089792
+        }
+      }
+    ],
+    "comparisons": {
+      "gini_coefficient": {
+        "metric": "gini_coefficient",
+        "group_a": {
+          "label": "Metabolism [1,5] (baseline)",
+          "mean": 0.34763692482086633,
+          "std": 0.03434192876330839,
+          "n": 5
+        },
+        "group_b": {
+          "label": "Metabolism [3,7] (scarce)",
+          "mean": 0.1739335520918786,
+          "std": 0.1768758234353874,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 2.155705330949029,
+          "p_value": 0.09255578419809896
+        },
+        "mann_whitney_u": {
+          "u_statistic": 19.0,
+          "p_value": 0.2222222222222222
+        },
+        "cohens_d": 1.3633877619931993,
+        "significant_005": false,
+        "significant_001": false
+      },
+      "final_population": {
+        "metric": "final_population",
+        "group_a": {
+          "label": "Metabolism [1,5] (baseline)",
+          "mean": 67.4,
+          "std": 3.5777087639996634,
+          "n": 5
+        },
+        "group_b": {
+          "label": "Metabolism [3,7] (scarce)",
+          "mean": 2.4,
+          "std": 1.140175425099138,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 38.70693672140189,
+          "p_value": 3.5083127868886686e-07
+        },
+        "mann_whitney_u": {
+          "u_statistic": 25.0,
+          "p_value": 0.011667312343319386
+        },
+        "cohens_d": 24.480416257528056,
+        "significant_005": true,
+        "significant_001": true
+      },
+      "survival_rate": {
+        "metric": "survival_rate",
+        "group_a": {
+          "label": "Metabolism [1,5] (baseline)",
+          "mean": 0.337,
+          "std": 0.017888543819998305,
+          "n": 5
+        },
+        "group_b": {
+          "label": "Metabolism [3,7] (scarce)",
+          "mean": 0.012,
+          "std": 0.005700877125495689,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 38.70693672140192,
+          "p_value": 3.508312786888656e-07
+        },
+        "mann_whitney_u": {
+          "u_statistic": 25.0,
+          "p_value": 0.011667312343319386
+        },
+        "cohens_d": 24.480416257528073,
+        "significant_005": true,
+        "significant_001": true
+      },
+      "trade_volume": {
+        "metric": "trade_volume",
+        "group_a": {
+          "label": "Metabolism [1,5] (baseline)",
+          "mean": 6161.0,
+          "std": 354.2336799345878,
+          "n": 5
+        },
+        "group_b": {
+          "label": "Metabolism [3,7] (scarce)",
+          "mean": 1688.2,
+          "std": 106.71316694766396,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 27.034081392871066,
+          "p_value": 2.3351489391224014e-06
+        },
+        "mann_whitney_u": {
+          "u_statistic": 25.0,
+          "p_value": 0.007936507936507936
+        },
+        "cohens_d": 17.09785433036997,
+        "significant_005": true,
+        "significant_001": true
+      },
+      "wealth_cv": {
+        "metric": "wealth_cv",
+        "group_a": {
+          "label": "Metabolism [1,5] (baseline)",
+          "mean": 0.6140876447612319,
+          "std": 0.06987971285523105,
+          "n": 5
+        },
+        "group_b": {
+          "label": "Metabolism [3,7] (scarce)",
+          "mean": 0.33858542830334004,
+          "std": 0.3453960045349087,
+          "n": 5
+        },
+        "welch_t": {
+          "t_statistic": 1.7481613686394033,
+          "p_value": 0.14991189385696913
+        },
+        "mann_whitney_u": {
+          "u_statistic": 18.0,
+          "p_value": 0.30952380952380953
+        },
+        "cohens_d": 1.1056343284835528,
+        "significant_005": false,
+        "significant_001": false
+      }
+    },
+    "validations": {
+      "survival_drops": true,
+      "gini_decreases": true,
+      "population_drops": true
+    },
+    "all_valid": true
+  },
+  "timestamp": "2026-05-20T12:17:49.129396",
+  "total_time_seconds": 195.67375779151917,
+  "all_valid": false
+}

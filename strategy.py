@@ -2,7 +2,6 @@ import math, numpy as np
 from pathlib import Path
 
 class Trader:
-    __slots__='w','m','v','p','al'
     def __init__(self,s,sp,m,v,p): self.w,self.m,self.v,self.p,self.al=[s,sp],m,v,p,True
 
 class SugarscapeModel:
@@ -25,11 +24,12 @@ class SugarscapeModel:
             for a in living:
                 for nx,ny in [(a.p[0]+dx,a.p[1]+dy) for dx in range(-a.v,a.v+1) for dy in range(-a.v,a.v+1) if abs(dx)+abs(dy)<=a.v]:
                     if 0<=(nx:=nx)<self.width and 0<=(ny:=ny)<self.height and (o:=self.occupancy.get((nx,ny))) and o.al and o!=a:
-                        while all(v > 0 for v in a.w + o.w):
-                            m_ta,m_to=sum(a.m),sum(o.m); mrs_a,mrs_o=(a.w[1]/a.m[1])/(a.w[0]/a.m[0]),(o.w[1]/o.m[1])/(o.w[0]/o.m[0])
+                        while all(v>0 for v in a.w + o.w):
+                            mrs_a,mrs_o=(a.w[1]/a.m[1])/(a.w[0]/a.m[0]),(o.w[1]/o.m[1])/(o.w[0]/o.m[0])
                             if math.isclose(mrs_a,mrs_o) or mrs_a<=0 or mrs_o<=0: break
                             p=math.sqrt(mrs_a*mrs_o); s,b=(a,o) if mrs_a>mrs_o else (o,a); m_ts,m_tb=sum(s.m),sum(b.m); sa,spa=(1,int(p)) if p>=1 else (int(1/p),1)
-                            if s.w[0]+sa>0 and b.w[0]-sa>0 and s.w[1]-spa>0 and b.w[1]+spa>0 and (s.w[0]+sa)**(s.m[0]/m_ts)*(s.w[1]-spa)**(s.m[1]/m_ts)>s.w[0]**(s.m[0]/m_ts)*s.w[1]**(s.m[1]/m_ts) and (b.w[0]-sa)**(b.m[0]/m_tb)*(b.w[1]+spa)**(b.m[1]/m_tb)>b.w[0]**(b.m[0]/m_tb)*b.w[1]**(b.m[1]/m_tb):
+                            u_s,u_b = s.w[0]**(s.m[0]/m_ts)*s.w[1]**(s.m[1]/m_ts), b.w[0]**(b.m[0]/m_tb)*b.w[1]**(b.m[1]/m_tb)
+                            if (s.w[0]+sa)**(s.m[0]/m_ts)*(s.w[1]-spa)**(s.m[1]/m_ts)>u_s and (b.w[0]-sa)**(b.m[0]/m_tb)*(b.w[1]+spa)**(b.m[1]/m_tb)>u_b:
                                 s.w[0]+=sa; b.w[0]-=sa; s.w[1]-=spa; b.w[1]+=spa; self.all_trade_prices.append(p); self.total_trade_volume+=1
                             else: break
 

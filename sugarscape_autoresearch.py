@@ -42,7 +42,7 @@ load_dotenv()
 # Config
 # ---------------------------------------------------------------------------
 MODEL = "gemma-4-26b-a4b-it"
-VARIANTS_PER_GENERATION = 3          # mutations per round (fewer = more careful)
+VARIANTS_PER_GENERATION = 1          # mutations per round (fewer = more careful)
 STRATEGY_FILE = Path(__file__).parent / "strategy.py"
 AGENT_REPO = Path(__file__).parent / "agent_repo"
 AGENT_STRATEGY = AGENT_REPO / "strategy.py"
@@ -59,7 +59,10 @@ API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "
 
 def log(msg: str):
     ts = datetime.now().strftime("%H:%M:%S")
-    print(f"[{ts}] {msg}", flush=True)
+    try:
+        print(f"[{ts}] {msg}", flush=True)
+    except UnicodeEncodeError:
+        print(f"[{ts}] {msg.encode('ascii', 'replace').decode()}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -101,16 +104,18 @@ def init_results():
     if not RESULTS_FILE.exists():
         RESULTS_FILE.write_text(
             "generation\tvariant\tcommit\tstatus\tlines\tclasses\tmethods\t"
+            "ast_nodes\tcyclomatic\tcombined_score\t"
             "gini\tpopulation\ttrade_price\ttrade_volume\tsurvival\twealth_cv\tentropy\t"
             "passes\tdescription\n"
         )
 
 
-def append_result(gen, var, commit, status, lines, classes, methods,
-                  metrics, passes, desc):
+def append_result(gen, var, commit, status, complexity, metrics, passes, desc):
     with open(RESULTS_FILE, "a") as f:
         f.write(
-            f"{gen}\t{var}\t{commit}\t{status}\t{lines}\t{classes}\t{methods}\t"
+            f"{gen}\t{var}\t{commit}\t{status}\t"
+            f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
+            f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
             f"{metrics.get('gini_coefficient', 0):.4f}\t"
             f"{metrics.get('final_population', 0):.0f}\t"
             f"{metrics.get('mean_trade_price', 0):.4f}\t"
@@ -134,20 +139,20 @@ def read_results_history(max_lines: int = 50) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Code complexity metrics
+# Code complexity metrics (AST + Cyclomatic combined score)
 # ---------------------------------------------------------------------------
+from complexity import combined_complexity_score, format_complexity_report
+
+
 def count_complexity(code: str) -> dict:
-    """Count lines, classes, and methods in a Python source string."""
-    lines = [l for l in code.split("\n") if l.strip() and not l.strip().startswith("#")]
-    classes = len(re.findall(r'^class\s+', code, re.MULTILINE))
-    methods = len(re.findall(r'^\s+def\s+', code, re.MULTILINE))
-    functions = len(re.findall(r'^def\s+', code, re.MULTILINE))
-    return {
-        "lines": len(lines),
-        "classes": classes,
-        "methods": methods + functions,
-        "total_lines": len(code.split("\n")),
-    }
+    """Compute combined AST node + cyclomatic complexity score.
+    
+    Returns dict with traditional metrics (lines, classes, methods) plus:
+      - ast_nodes: total AST node count
+      - cyclomatic_total: total cyclomatic complexity
+      - combined_score: weighted sum (0.4*AST + 0.6*cyclomatic)
+    """
+    return combined_complexity_score(code)
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +182,7 @@ def evaluate_strategy(strategy_code: str) -> dict:
         from metrics import compute_all_metrics
         
         all_metrics = []
+        import warnings
         for i in range(N_EVAL_RUNS):
             seed = 42 + i
             model = strategy_mod.create_model(seed=seed, steps=SIM_STEPS,
@@ -186,7 +192,9 @@ def evaluate_strategy(strategy_code: str) -> dict:
                                                vision_min=1, vision_max=5,
                                                enable_trade=True,
                                                width=50, height=50)
-            data = strategy_mod.run_model(model, SIM_STEPS)
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RuntimeWarning)
+                data = strategy_mod.run_model(model, SIM_STEPS)
             metrics = compute_all_metrics(data)
             all_metrics.append(metrics)
         
@@ -261,10 +269,13 @@ def generate_ablation_variants(
     {current_strategy}
     ```
 
-    ## Current Complexity:
+    ## Current Complexity (Combined AST + Cyclomatic Score):
     - Lines of code: {complexity['lines']}
     - Classes: {complexity['classes']}
     - Methods/Functions: {complexity['methods']}
+    - AST Nodes: {complexity['ast_nodes']}
+    - Cyclomatic Complexity: {complexity['cyclomatic_total']}
+    - **Combined Score: {complexity['combined_score']:.1f}** (LOWER IS BETTER)
 
     ## Baseline Metrics (target to preserve):
     ```json
@@ -283,8 +294,11 @@ def generate_ablation_variants(
     Learn from the results history — if a simplification caused a metric to fail,
     avoid similar changes. If a simplification passed, try pushing further.
 
-    PRIORITY: Reduce lines of code and number of classes/methods while
-    keeping ALL metrics within error bounds.
+    PRIORITY: Reduce the COMBINED COMPLEXITY SCORE (AST nodes + cyclomatic
+    complexity) while keeping ALL metrics within error bounds. The combined
+    score weights AST structural size (40%) and cyclomatic branching (60%).
+    Focus on reducing decision points, nested conditionals, and structural
+    depth — not just line count.
 
     For EACH variant, output:
     1. A brief one-line description of what was simplified
@@ -507,9 +521,7 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
     current_complexity = count_complexity(current_strategy)
     current_hash = git_current_hash()
     
-    log(f"Current complexity: {current_complexity['lines']} lines, "
-        f"{current_complexity['classes']} classes, "
-        f"{current_complexity['methods']} methods")
+    log(format_complexity_report(current_complexity))
     
     # Generate variants
     results_history = read_results_history()
@@ -520,8 +532,8 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
     )
     
     if not variants:
-        log("No valid variants generated. Retrying next round.")
-        return
+        log("No valid variants generated. Retrying this generation.")
+        return False
     
     log(f"Generated {len(variants)} variants")
     
@@ -534,9 +546,10 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         log(f"\n--- Variant {var_num}: {desc[:80]} ---")
         
         var_complexity = count_complexity(code)
-        lines_saved = current_complexity["lines"] - var_complexity["lines"]
-        log(f"  Complexity: {var_complexity['lines']} lines ({lines_saved:+d}), "
-            f"{var_complexity['classes']} classes, {var_complexity['methods']} methods")
+        score_delta = current_complexity["combined_score"] - var_complexity["combined_score"]
+        log(f"  Combined Score: {var_complexity['combined_score']:.1f} ({score_delta:+.1f}), "
+            f"AST={var_complexity['ast_nodes']}, CC={var_complexity['cyclomatic_total']}, "
+            f"{var_complexity['lines']} lines")
         
         # Run evaluation
         t0 = time.time()
@@ -546,8 +559,7 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         if "error" in result:
             log(f"  ❌ CRASH: {result['error']}")
             append_result(generation, var_num, current_hash, "crash",
-                         var_complexity["lines"], var_complexity["classes"],
-                         var_complexity["methods"], {}, False, desc)
+                         var_complexity, {}, False, desc)
             continue
         
         log(f"  Evaluation took {dt:.1f}s")
@@ -557,33 +569,32 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         status = "pass" if passes else "fail"
         
         append_result(generation, var_num, current_hash, status,
-                     var_complexity["lines"], var_complexity["classes"],
-                     var_complexity["methods"], result["mean_metrics"],
+                     var_complexity, result["mean_metrics"],
                      passes, desc)
         
         if passes:
             log(f"  ✅ PASSES all metric bounds!")
-            # Track best passing variant (most simplification)
-            if lines_saved > best_simplification or (lines_saved == best_simplification and 
-                var_complexity["methods"] < current_complexity["methods"]):
+            # Track best passing variant (largest combined score reduction)
+            if score_delta > best_simplification:
                 best_variant = (code, desc, var_complexity, result)
-                best_simplification = lines_saved
+                best_simplification = score_delta
         else:
             log(f"  ❌ FAILS metric bounds")
     
     # Commit best variant if it's simpler
     if best_variant:
         code, desc, complexity, result = best_variant
-        lines_saved = current_complexity["lines"] - complexity["lines"]
+        score_saved = current_complexity["combined_score"] - complexity["combined_score"]
         
-        if lines_saved > 0 or complexity["methods"] < current_complexity["methods"]:
+        if score_saved > 0:
             log(f"\n🎉 RATCHET FORWARD: {desc}")
-            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']} ({lines_saved:+d})")
+            log(f"   Score: {current_complexity['combined_score']:.1f} → {complexity['combined_score']:.1f} ({score_saved:+.1f})")
+            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']}")
             
             # Write to strategy.py and agent_repo
             STRATEGY_FILE.write_text(code)
             AGENT_STRATEGY.write_text(code)
-            git_commit(f"Gen {generation}: {desc[:60]} | -{lines_saved} lines")
+            git_commit(f"Gen {generation}: {desc[:50]} | score -{score_saved:.1f}")
             
             chash = git_current_hash()
             log(f"   Committed as {chash}")
@@ -593,11 +604,14 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
                 update_paper_draft(generation, chash, complexity, result, desc)
             except Exception as pe:
                 log(f"   ⚠️ Could not update paper draft: {pe}")
+            return True
         else:
             log(f"\n⏸️  Variant passes but not simpler — skipping commit")
+            return False
     else:
         log(f"\n❌ No passing variants this generation — reverting")
         git_revert_to(current_hash)
+        return False
 
 
 def main():
@@ -626,39 +640,58 @@ def main():
     # Calibrate baseline
     baseline = calibrate_baseline()
     
+    # Run parameter sweep validation before starting ablation
+    from parameter_sweeps import run_all_sweeps
+    log("\n═══ Running Parameter Sweep Validation ═══")
+    try:
+        sweep_results = run_all_sweeps(n_runs=5)  # quick validation (5 runs)
+        if not all(r["all_valid"] for r in sweep_results.values()):
+            log("⚠️  Some parameter sweeps failed — model may not fully match paper.")
+            log("    Proceeding with ablation, but results should be interpreted cautiously.")
+    except Exception as e:
+        log(f"⚠️  Parameter sweep validation failed: {e}")
+        log("    Proceeding with ablation anyway.")
+    
     client = create_client()
     
     generation = 1
     while True:
         try:
-            run_ablation_round(generation, client, baseline)
-            generation += 1
+            success = run_ablation_round(generation, client, baseline)
+            if success:
+                generation += 1
+            else:
+                log(f"Generation {generation} did not produce a valid simplification. Retrying...")
             
             # Brief pause between generations
             time.sleep(2)
             
         except KeyboardInterrupt:
-            log("\nInterrupted by user. Exiting.")
-            
-            # Print final summary
-            current = STRATEGY_FILE.read_text()
-            final_complexity = count_complexity(current)
-            initial_complexity = baseline.get("complexity", {})
-            
-            log(f"\n═══ Final Summary ═══")
-            log(f"  Generations run: {generation - 1}")
-            log(f"  Initial complexity: {initial_complexity.get('lines', '?')} lines")
-            log(f"  Final complexity:   {final_complexity['lines']} lines")
-            if initial_complexity.get('lines'):
-                reduction = initial_complexity['lines'] - final_complexity['lines']
-                pct = 100 * reduction / initial_complexity['lines']
-                log(f"  Reduction:          {reduction} lines ({pct:.1f}%)")
+            log("\nInterrupted by user. Exiting early.")
             break
-            
         except Exception as e:
             log(f"Generation {generation} failed: {e}")
+            import traceback
             traceback.print_exc()
             time.sleep(10)
+            
+    # Print final summary
+    current = STRATEGY_FILE.read_text()
+    final_complexity = count_complexity(current)
+    initial_complexity = baseline.get("complexity", {})
+    
+    log(f"\n═══ Final Summary ═══")
+    log(f"  Generations run: {generation - 1}")
+    log(f"  Initial combined score: {initial_complexity.get('combined_score', '?')}")
+    log(f"  Final combined score:   {final_complexity['combined_score']:.1f}")
+    log(f"  Final lines:            {final_complexity['lines']}")
+    if initial_complexity.get('combined_score'):
+        score_red = initial_complexity['combined_score'] - final_complexity['combined_score']
+        pct = 100 * score_red / initial_complexity['combined_score']
+        log(f"  Score reduction:    {score_red:.1f} ({pct:.1f}%)")
+        line_red = initial_complexity.get('lines', 0) - final_complexity['lines']
+        log(f"  Line reduction:     {line_red}")
+
 
 
 if __name__ == "__main__":
