@@ -1,0 +1,6 @@
+mesa
+google-genai
+numpy
+scipy
+dotenv
+networkx

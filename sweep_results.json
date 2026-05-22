@@ -143,7 +143,8 @@
           "survival_rate": 0.337,
           "wealth_cv": 0.6140876447612319,
           "spatial_entropy": 3.0259709263709644
-        }
+        },
+        "matches_mesa": true
       },
       "no_trade": {
         "label": "No Trade",
@@ -286,7 +287,8 @@
           "survival_rate": 0.292,
           "wealth_cv": 0.5612410597539311,
           "spatial_entropy": 3.1073233673964125
-        }
+        },
+        "matches_mesa": false
       }
     },
     "comparisons": {
@@ -306,7 +308,7 @@
         },
         "welch_t": {
           "t_statistic": 1.289591767310767,
-          "p_value": 0.2332586107780255
+          "p_value": 0.2332586107780254
         },
         "mann_whitney_u": {
           "u_statistic": 17.0,
@@ -332,7 +334,7 @@
         },
         "welch_t": {
           "t_statistic": 2.7360805513971695,
-          "p_value": 0.03247545333173537
+          "p_value": 0.03247545333173541
         },
         "mann_whitney_u": {
           "u_statistic": 22.0,
@@ -358,7 +360,7 @@
         },
         "welch_t": {
           "t_statistic": 2.73608055139717,
-          "p_value": 0.032475453331735356
+          "p_value": 0.0324754533317354
         },
         "mann_whitney_u": {
           "u_statistic": 22.0,
@@ -384,7 +386,7 @@
         },
         "welch_t": {
           "t_statistic": 38.8907537304757,
-          "p_value": 2.6112831956418837e-06
+          "p_value": 2.611283195641882e-06
         },
         "mann_whitney_u": {
           "u_statistic": 25.0,
@@ -410,7 +412,7 @@
         },
         "welch_t": {
           "t_statistic": 1.1636320240204727,
-          "p_value": 0.2781928642195609
+          "p_value": 0.27819286421956096
         },
         "mann_whitney_u": {
           "u_statistic": 17.0,
@@ -424,9 +426,10 @@
     "validations": {
       "higher_capacity_with_trade": true,
       "lower_gini_without_trade": true,
-      "zero_trade_without_trade": true
+      "zero_trade_without_trade": true,
+      "matches_mesa": false
     },
-    "all_valid": true
+    "all_valid": false
   },
   "B": {
     "sweep": "B",
@@ -572,7 +575,8 @@
           "survival_rate": 0.337,
           "wealth_cv": 0.6140876447612319,
           "spatial_entropy": 3.0259709263709644
-        }
+        },
+        "matches_mesa": true
       },
       {
         "label": "Vision [1,10]",
@@ -715,7 +719,8 @@
           "survival_rate": 0.378,
           "wealth_cv": 0.6376498290202928,
           "spatial_entropy": 2.9015234783550587
-        }
+        },
+        "matches_mesa": false
       },
       {
         "label": "Vision [1,15]",
@@ -858,7 +863,8 @@
           "survival_rate": 0.391,
           "wealth_cv": 0.6345098116170653,
           "spatial_entropy": 2.895371069988129
-        }
+        },
+        "matches_mesa": false
       }
     ],
     "comparisons": {
@@ -879,7 +885,7 @@
           },
           "welch_t": {
             "t_statistic": -0.556982483140327,
-            "p_value": 0.5943079652907937
+            "p_value": 0.5943079652907934
           },
           "mann_whitney_u": {
             "u_statistic": 11.0,
@@ -905,7 +911,7 @@
           },
           "welch_t": {
             "t_statistic": -3.1870205047795297,
-            "p_value": 0.013731431460596123
+            "p_value": 0.013731431460596117
           },
           "mann_whitney_u": {
             "u_statistic": 1.0,
@@ -931,7 +937,7 @@
           },
           "welch_t": {
             "t_statistic": -3.1870205047795332,
-            "p_value": 0.01373143146059605
+            "p_value": 0.013731431460596062
           },
           "mann_whitney_u": {
             "u_statistic": 1.0,
@@ -985,7 +991,7 @@
           },
           "welch_t": {
             "t_statistic": -0.42570515749321175,
-            "p_value": 0.6860826158170452
+            "p_value": 0.6860826158170451
           },
           "mann_whitney_u": {
             "u_statistic": 12.0,
@@ -1011,7 +1017,7 @@
           },
           "welch_t": {
             "t_statistic": -4.40908153700972,
-            "p_value": 0.0023788935880792715
+            "p_value": 0.002378893588079272
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1037,7 +1043,7 @@
           },
           "welch_t": {
             "t_statistic": -4.409081537009722,
-            "p_value": 0.0023788935880792697
+            "p_value": 0.0023788935880792684
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1081,7 +1087,8 @@
       "population_trend_rho": 1.0,
       "population_trend_p": 0.0,
       "gini_trend_rho": 0.5,
-      "gini_trend_p": 0.6666666666666667
+      "gini_trend_p": 0.6666666666666666,
+      "matches_mesa": false
     },
     "all_valid": false
   },
@@ -1229,7 +1236,8 @@
           "survival_rate": 0.362,
           "wealth_cv": 0.5909265238961182,
           "spatial_entropy": 2.830946047437696
-        }
+        },
+        "matches_mesa": false
       },
       {
         "label": "Pop=200 (medium)",
@@ -1372,7 +1380,8 @@
           "survival_rate": 0.337,
           "wealth_cv": 0.6140876447612319,
           "spatial_entropy": 3.0259709263709644
-        }
+        },
+        "matches_mesa": true
       },
       {
         "label": "Pop=300 (high)",
@@ -1430,7 +1439,7 @@
           {
             "gini_coefficient": 0.34674518614335476,
             "final_population": 87.0,
-            "mean_trade_price": 0.9137802291962377,
+            "mean_trade_price": 0.9137802291962378,
             "trade_volume": 8786.0,
             "survival_rate": 0.29,
             "wealth_cv": 0.6385919629186234,
@@ -1458,14 +1467,14 @@
           87.0
         ],
         "mean_trade_price_mean": 0.9794534370587329,
-        "mean_trade_price_std": 0.09776330448359305,
-        "mean_trade_price_sem": 0.0437210789060648,
+        "mean_trade_price_std": 0.09776330448359304,
+        "mean_trade_price_sem": 0.043721078906064796,
         "mean_trade_price_values": [
           0.9150528217931524,
           1.1273289689777133,
           1.0327804782504348,
           0.9083246870761259,
-          0.9137802291962377
+          0.9137802291962378
         ],
         "trade_volume_mean": 9037.0,
         "trade_volume_std": 569.5160226016473,
@@ -1515,7 +1524,8 @@
           "survival_rate": 0.32,
           "wealth_cv": 0.6380310891278312,
           "spatial_entropy": 3.371580499171716
-        }
+        },
+        "matches_mesa": false
       }
     ],
     "comparisons": {
@@ -1536,7 +1546,7 @@
           },
           "welch_t": {
             "t_statistic": -12.955094857183438,
-            "p_value": 1.3488480169855559e-06
+            "p_value": 1.3488480169855572e-06
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1562,7 +1572,7 @@
           },
           "welch_t": {
             "t_statistic": -17.397512504270527,
-            "p_value": 7.470402641412896e-07
+            "p_value": 7.470402641412895e-07
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1588,7 +1598,7 @@
           },
           "welch_t": {
             "t_statistic": 1.2691827064170225,
-            "p_value": 0.25525107727672613
+            "p_value": 0.2552510772767262
           },
           "mann_whitney_u": {
             "u_statistic": 19.0,
@@ -1642,7 +1652,7 @@
           },
           "welch_t": {
             "t_statistic": -14.978110335070166,
-            "p_value": 6.27987190332613e-06
+            "p_value": 6.2798719033261204e-06
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1668,7 +1678,7 @@
           },
           "welch_t": {
             "t_statistic": -22.42137266506769,
-            "p_value": 2.24758094720092e-06
+            "p_value": 2.2475809472009284e-06
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1694,7 +1704,7 @@
           },
           "welch_t": {
             "t_statistic": 1.947470703365836,
-            "p_value": 0.09293773670204995
+            "p_value": 0.09293773670205001
           },
           "mann_whitney_u": {
             "u_statistic": 20.0,
@@ -1748,7 +1758,7 @@
           },
           "welch_t": {
             "t_statistic": -7.32130949620267,
-            "p_value": 0.00047233785823066836
+            "p_value": 0.0004723378582306683
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1774,7 +1784,7 @@
           },
           "welch_t": {
             "t_statistic": -9.588477994707253,
-            "p_value": 3.758310581823744e-05
+            "p_value": 3.758310581823741e-05
           },
           "mann_whitney_u": {
             "u_statistic": 0.0,
@@ -1800,7 +1810,7 @@
           },
           "welch_t": {
             "t_statistic": 1.1870098634951072,
-            "p_value": 0.27389037748754136
+            "p_value": 0.27389037748754175
           },
           "mann_whitney_u": {
             "u_statistic": 17.5,
@@ -1826,7 +1836,7 @@
           },
           "welch_t": {
             "t_statistic": -0.5681024387483896,
-            "p_value": 0.5857656627368534
+            "p_value": 0.5857656627368535
           },
           "mann_whitney_u": {
             "u_statistic": 11.0,
@@ -1841,9 +1851,10 @@
     "validations": {
       "survival_decreases_with_density": true,
       "carrying_capacity_convergence": true,
-      "trade_scales_with_density": true
+      "trade_scales_with_density": true,
+      "matches_mesa": false
     },
-    "all_valid": true
+    "all_valid": false
   },
   "D": {
     "sweep": "D",
@@ -1989,7 +2000,8 @@
           "survival_rate": 0.337,
           "wealth_cv": 0.6140876447612319,
           "spatial_entropy": 3.0259709263709644
-        }
+        },
+        "matches_mesa": true
       },
       {
         "label": "Metabolism [3,7] (scarce)",
@@ -2132,7 +2144,8 @@
           "survival_rate": 0.012,
           "wealth_cv": 0.33858542830334004,
           "spatial_entropy": 0.18365916681089792
-        }
+        },
+        "matches_mesa": false
       }
     ],
     "comparisons": {
@@ -2152,7 +2165,7 @@
         },
         "welch_t": {
           "t_statistic": 2.155705330949029,
-          "p_value": 0.09255578419809896
+          "p_value": 0.09255578419809904
         },
         "mann_whitney_u": {
           "u_statistic": 19.0,
@@ -2178,7 +2191,7 @@
         },
         "welch_t": {
           "t_statistic": 38.70693672140189,
-          "p_value": 3.5083127868886686e-07
+          "p_value": 3.5083127868886665e-07
         },
         "mann_whitney_u": {
           "u_statistic": 25.0,
@@ -2204,7 +2217,7 @@
         },
         "welch_t": {
           "t_statistic": 38.70693672140192,
-          "p_value": 3.508312786888656e-07
+          "p_value": 3.5083127868886585e-07
         },
         "mann_whitney_u": {
           "u_statistic": 25.0,
@@ -2230,7 +2243,7 @@
         },
         "welch_t": {
           "t_statistic": 27.034081392871066,
-          "p_value": 2.3351489391224014e-06
+          "p_value": 2.3351489391224006e-06
         },
         "mann_whitney_u": {
           "u_statistic": 25.0,
@@ -2256,7 +2269,7 @@
         },
         "welch_t": {
           "t_statistic": 1.7481613686394033,
-          "p_value": 0.14991189385696913
+          "p_value": 0.14991189385696918
         },
         "mann_whitney_u": {
           "u_statistic": 18.0,
@@ -2270,11 +2283,12 @@
     "validations": {
       "survival_drops": true,
       "gini_decreases": true,
-      "population_drops": true
+      "population_drops": true,
+      "matches_mesa": false
     },
-    "all_valid": true
+    "all_valid": false
   },
-  "timestamp": "2026-05-20T12:17:49.129396",
-  "total_time_seconds": 195.67375779151917,
+  "timestamp": "2026-05-21T01:43:51.156256",
+  "total_time_seconds": 137.4949324131012,
   "all_valid": false
 }
