@@ -16,7 +16,7 @@ This project unfolded in two phases, revealing how an AI optimization process ad
 
 ### Phase 1: The "Code Golf" LOC Minimization (LOC Complexity Version)
 In a previous version of this experiment (logged in `results LOC count.tsv`), the AI's sole objective was to minimize pure **Lines of Code (LOC)**. 
-- Over 70+ generations, the AI aggressively refactored the logic to reduce line breaks.
+- Over 70+ attempts, the AI aggressively refactored the logic to reduce line breaks.
 - It shrunk the model down to roughly **37 lines of code**. 
 - **The Catch:** While it successfully optimized the LOC metric, it did so by producing extremely dense, unreadable "code golf". It heavily utilized walrus operators (`:=`), single-pass procedural loops, and aggressive tuple unpacking. It proved that complex emergence requires very little *text*, but the code's underlying structural complexity remained high. The LOC simplification was entirely driven by this specific objective, not by genuine structural simplification.
 
@@ -42,6 +42,8 @@ This graph shows the aggressive reduction in Lines of Code (LOC) during the firs
 This graph reflects the current generation of the project. It tracks the reduction in a combined structural complexity score over 13 generations of the Phase 2 run.
 
 ![Combined Complexity Score](new_system_complexity.png)
+
+Understand that these graphs have different definitions of generation. The first graph is just a count of the times the LLM was prompted. In the second each generation is counted up when a result successfully met the requirements (passed the parameter sweep and had less complexity). 
 
 ## Getting Started
 
