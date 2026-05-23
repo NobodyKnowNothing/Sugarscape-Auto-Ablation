@@ -21,7 +21,7 @@ In a previous version of this experiment (logged in `results LOC count.tsv`), th
 - **The Catch:** While it successfully optimized the LOC metric, it did so by producing extremely dense, unreadable "code golf". It heavily utilized walrus operators (`:=`), single-pass procedural loops, and aggressive tuple unpacking. It proved that complex emergence requires very little *text*, but the code's underlying structural complexity remained high. The LOC simplification was entirely driven by this specific objective, not by genuine structural simplification.
 
 ### Phase 2: Structural Simplicity (AST & Cyclomatic Complexity Version)
-Recognizing that fewer lines simply resulted in denser code, the experiment shifted its optimization target away from raw LOC toward reducing **Abstract Syntax Tree (AST) nodes** and **Cyclomatic Complexity**.
+Recognizing that fewer lines simply resulted in denser code, the experiment shifted its optimization target away from raw LOC toward reducing **Abstract Syntax Tree (AST) nodes** and **Cyclomatic Complexity**. (logged in `results.tsv`)
 - **Important Distinction:** Because this phase continued from the end state of Phase 1, it inherited the extreme "code golf" density. During this Phase 2 run, the line count remained remarkably stable (around 32-37 lines), while the AI focused on simplifying the actual *computational logic* rather than just line breaks.
 - The combined complexity score (weighted sum of 40% AST nodes and 60% Cyclomatic Complexity) was successfully reduced from **678.0** down to **526.2** (a ~22.4% reduction).
 - To achieve this, the AI discovered genuine mathematical optimizations. For example:
