@@ -1,0 +1,20 @@
+{
+  "source": "mesa.examples.advanced.sugarscape_g1mt",
+  "n_runs": 10,
+  "mean_metrics": {
+    "gini_coefficient": 0.3481867891273935,
+    "final_population": 64.4,
+    "mean_trade_price": 0.9307857193094169,
+    "trade_volume": 5880.2,
+    "survival_rate": 0.32199999999999995,
+    "wealth_cv": 0.6107538652741975,
+    "spatial_entropy": 3.0429745813063644
+  },
+  "gini_coefficient_std": 0.02379681992347293,
+  "final_population_std": 8.2,
+  "mean_trade_price_std": 0.1733743704772845,
+  "trade_volume_std": 684.1518544884607,
+  "survival_rate_std": 0.041,
+  "wealth_cv_std": 0.04285024688785755,
+  "spatial_entropy_std": 0.17005152883437466
+}

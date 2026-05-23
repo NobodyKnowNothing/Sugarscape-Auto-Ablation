@@ -4,3 +4,4 @@
 /__pycache__
 __pycache__/_tmp_strategy.cpython-312.pyc
 /venv
+/current_version/__pycache__

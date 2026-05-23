@@ -1,5 +1,5 @@
-"""
-Sugarscape Baseline Runner — Fixed Evaluation (DO NOT MODIFY)
+﻿"""
+Sugarscape Baseline Runner â€” Fixed Evaluation (DO NOT MODIFY)
 
 This is the Karpathy-pattern 'prepare.py': it runs the CANONICAL Mesa 
 Sugarscape G1MT model and collects ground-truth metrics. The agent
@@ -24,6 +24,7 @@ import json
 import math
 import os
 import sys
+if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
 import time
 import argparse
 import importlib.util
@@ -68,7 +69,7 @@ BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
 
 def run_mesa_canonical(params: dict, seed: int) -> dict:
     """
-    Run Mesa's built-in Sugarscape G1MT — THE canonical implementation.
+    Run Mesa's built-in Sugarscape G1MT â€” THE canonical implementation.
     This is the ground truth against which all ablations are compared.
     
     Returns the standardized metrics_data dict.
@@ -106,7 +107,7 @@ def run_mesa_canonical(params: dict, seed: int) -> dict:
     agent_wealths = [float(a.sugar + a.spice) for a in agents]
     
     # Final-step trade prices (agents reset prices each step, so these are current-step only)
-    # For cumulative price data we'd need to track across steps — use final step prices
+    # For cumulative price data we'd need to track across steps â€” use final step prices
     # as representative of the converged market price
     trade_prices = []
     for a in agents:
@@ -164,7 +165,7 @@ def run_strategy_variant(strategy_path: str | Path, params: dict, seed: int) -> 
 def evaluate_mesa_baseline(n_runs: int = N_RUNS, params: dict | None = None) -> dict:
     """
     Run the MESA canonical model n_runs times and compute averaged metrics.
-    Uses crash-resilient seeding — skips failed seeds and finds enough good ones.
+    Uses crash-resilient seeding â€” skips failed seeds and finds enough good ones.
     """
     from metrics import compute_all_metrics
     
@@ -286,7 +287,7 @@ if __name__ == "__main__":
                         help="Force re-run of Mesa baseline even if cached")
     args = parser.parse_args()
     
-    print("═══ Sugarscape Baseline — Mesa Canonical Ground Truth ═══")
+    print("â•â•â• Sugarscape Baseline â€” Mesa Canonical Ground Truth â•â•â•")
     print(f"Source: mesa.examples.advanced.sugarscape_g1mt")
     print(f"Parameters: {json.dumps(DEFAULT_PARAMS, indent=2)}")
     print()
@@ -319,7 +320,7 @@ if __name__ == "__main__":
     
     # Compare if requested
     if args.compare:
-        print(f"\n═══ Evaluating Variant: {args.compare} ═══")
+        print(f"\nâ•â•â• Evaluating Variant: {args.compare} â•â•â•")
         variant = evaluate_variant(args.compare, n_runs=args.runs)
         
         if "error" in variant and not variant.get("runs"):
@@ -332,8 +333,9 @@ if __name__ == "__main__":
         print()
         
         if comparison["passes"]:
-            print("✅ VARIANT PASSES — within error bounds of Mesa canonical implementation")
+            print("âœ… VARIANT PASSES â€” within error bounds of Mesa canonical implementation")
         else:
-            print("❌ VARIANT FAILS — diverges from Mesa canonical implementation")
+            print("âŒ VARIANT FAILS â€” diverges from Mesa canonical implementation")
         
         sys.exit(0 if comparison["passes"] else 1)
+
