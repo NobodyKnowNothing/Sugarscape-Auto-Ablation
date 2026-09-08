@@ -225,7 +225,10 @@ def default_scoring_function(metrics: dict[str, Any]) -> float:
 # Exposed as global variables so they can be inspected or switched in a notebook
 ACTIVE_SCORING_FUNCTION: Callable = default_scoring_function
 OPTIMIZATION_FUNCTION: Callable = default_scoring_function  # intuitive alias
+active_scoring_function: Callable = default_scoring_function
+optimization_function: Callable = default_scoring_function
 SCORER_NAME: str = "weighted_ast_cyclomatic"
+scorer_name: str = "weighted_ast_cyclomatic"  # lowercase alias
 
 
 def _invoke_scorer(scorer: Callable, code: str, metrics: dict[str, Any]) -> float:
@@ -292,9 +295,13 @@ def set_scoring_function(scorer: Callable, name: str | None = None) -> Callable:
         complexity.set_scoring_function(lambda m: m["ast_nodes"], name="pure_ast")
     """
     global ACTIVE_SCORING_FUNCTION, OPTIMIZATION_FUNCTION, SCORER_NAME
+    global active_scoring_function, optimization_function, scorer_name
     ACTIVE_SCORING_FUNCTION = scorer
     OPTIMIZATION_FUNCTION = scorer
+    active_scoring_function = scorer
+    optimization_function = scorer
     SCORER_NAME = name or getattr(scorer, "__name__", "custom_scorer")
+    scorer_name = SCORER_NAME
     return scorer
 
 
@@ -317,11 +324,15 @@ def set_weights(ast_nodes: float | None = None, cyclomatic: float | None = None)
 def reset_default_scoring() -> None:
     """Reset the optimization function and weights back to default AST + Cyclomatic."""
     global WEIGHT_AST_NODES, WEIGHT_CYCLOMATIC, ACTIVE_SCORING_FUNCTION, OPTIMIZATION_FUNCTION, SCORER_NAME
+    global active_scoring_function, optimization_function, scorer_name
     WEIGHT_AST_NODES = 0.4
     WEIGHT_CYCLOMATIC = 0.6
     ACTIVE_SCORING_FUNCTION = default_scoring_function
     OPTIMIZATION_FUNCTION = default_scoring_function
+    active_scoring_function = default_scoring_function
+    optimization_function = default_scoring_function
     SCORER_NAME = "weighted_ast_cyclomatic"
+    scorer_name = "weighted_ast_cyclomatic"
 
 
 def get_active_scoring_function() -> tuple[Callable, str]:
