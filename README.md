@@ -92,3 +92,15 @@ python autoresearch.py
 ```
 
 Results of each generation will be logged to `results.tsv`.
+
+### 5. Autonomous GitHub Synchronization
+
+`autoresearch.py` automatically maintains an isolated subrepo (`agent_repo`) that tracks ablation progress on an experiment branch (default: `ablation/<date>`).
+
+Whenever a candidate variant passes all metric bounds and reduces complexity, the agent commits the change and pushes it autonomously to your remote GitHub repository.
+
+#### Configuration Options (in `.env` or environment):
+- `GITHUB_TOKEN`: GitHub Personal Access Token or OAuth token (auto-detected from Windows Credential Manager if omitted).
+- `ABLATION_BRANCH`: Custom remote branch name (defaults to `ablation/<month><day>`, e.g., `ablation/sep08`).
+- `GITHUB_REMOTE_URL`: Custom remote repository URL (auto-detected from the parent repo's `origin` remote).
+

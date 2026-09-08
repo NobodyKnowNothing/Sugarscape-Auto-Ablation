@@ -67,14 +67,72 @@ def log(msg: str):
 
 
 # ---------------------------------------------------------------------------
-# Git helpers (operate on agent_repo)
+# Git & Remote push helpers (operate on agent_repo)
 # ---------------------------------------------------------------------------
-def git(cmd: str, cwd: str | None = None) -> str:
-    result = subprocess.run(
-        f"git {cmd}", shell=True, capture_output=True, text=True,
-        cwd=cwd or str(AGENT_REPO),
-    )
-    return result.stdout.strip()
+def get_github_token() -> str:
+    """Retrieve GitHub token from environment (.env) or Windows Credential Manager."""
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_PAT", "")
+    if token:
+        return token.strip().strip("'\"")
+    
+    # Fallback: Query Windows Credential Manager via git-credential-wincred
+    wincred_candidates = [
+        Path(os.environ.get("LOCALAPPDATA", "")) / "Programs/Git/mingw64/libexec/git-core/git-credential-wincred.exe",
+        Path(os.environ.get("ProgramFiles", "")) / "Git/mingw64/libexec/git-core/git-credential-wincred.exe",
+    ]
+    for wincred in wincred_candidates:
+        if wincred.exists():
+            try:
+                proc = subprocess.Popen(
+                    [str(wincred), "get"],
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+                out, _ = proc.communicate(input="protocol=https\nhost=github.com\n\n", timeout=3)
+                for line in out.splitlines():
+                    if line.startswith("password="):
+                        return line.split("=", 1)[1].strip()
+            except Exception:
+                pass
+    return ""
+
+
+def get_remote_repo_url(token: str | None = None) -> str:
+    """Determine the remote GitHub URL, optionally embedding authentication token."""
+    remote = os.environ.get("GITHUB_REMOTE_URL") or os.environ.get("AUTORESEARCH_REMOTE_URL", "")
+    if not remote:
+        try:
+            res = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True, text=True, cwd=str(Path(__file__).parent)
+            )
+            remote = res.stdout.strip()
+        except Exception:
+            remote = ""
+    
+    if not remote:
+        remote = "https://github.com/NobodyKnowNothing/Sugarscape-Auto-Ablation.git"
+    
+    if token and remote.startswith("https://") and "@" not in remote:
+        remote = remote.replace("https://", f"https://{token}@")
+        if not remote.endswith(".git"):
+            remote += ".git"
+    return remote
+
+
+def git(cmd: str, cwd: str | None = None, timeout: int = 30) -> str:
+    """Run a git command in agent_repo (or specified cwd)."""
+    try:
+        result = subprocess.run(
+            f"git {cmd}", shell=True, capture_output=True, text=True,
+            cwd=cwd or str(AGENT_REPO), timeout=timeout
+        )
+        return result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        log(f"⚠️  Git command 'git {cmd}' timed out after {timeout}s")
+        return ""
+    except Exception as e:
+        log(f"⚠️  Git command 'git {cmd}' failed: {e}")
+        return ""
 
 
 def git_commit(message: str):
@@ -90,12 +148,98 @@ def git_current_hash() -> str:
     return git("rev-parse --short HEAD")
 
 
+def git_current_branch() -> str:
+    branch = git("rev-parse --abbrev-ref HEAD")
+    return branch if branch and "fatal:" not in branch else f"ablation/{datetime.now().strftime('%b%d').lower()}"
+
+
 def git_create_branch(name: str):
     existing = git("branch --list " + name)
     if existing.strip():
         git(f"checkout {name}")
     else:
         git(f"checkout -b {name}")
+
+
+def git_push(branch: str | None = None, remote: str = "origin") -> bool:
+    """Autonomously push changes from agent_repo to the remote GitHub repository."""
+    target_branch = branch or git_current_branch()
+    log(f"   Pushing {target_branch} to GitHub...")
+    try:
+        result = subprocess.run(
+            f"git push -u {remote} {target_branch}",
+            shell=True, capture_output=True, text=True,
+            cwd=str(AGENT_REPO), stdin=subprocess.DEVNULL, timeout=45
+        )
+        if result.returncode == 0:
+            log(f"   🚀 Successfully pushed {target_branch} to GitHub")
+            return True
+        else:
+            err = result.stderr.strip() or result.stdout.strip()
+            # Clean any sensitive token from error output if present
+            cleaned_err = re.sub(r'https://[^@]+@', 'https://***@', err)
+            log(f"   ⚠️  Git push returned code {result.returncode}: {cleaned_err}")
+            return False
+    except subprocess.TimeoutExpired:
+        log("   ⚠️  Git push timed out after 45s (network delay)")
+        return False
+    except Exception as e:
+        log(f"   ⚠️  Git push error: {e}")
+        return False
+
+
+def init_agent_repo():
+    """Initialize agent_repo with remote origin and target ablation branch."""
+    token = get_github_token()
+    remote_url = get_remote_repo_url(token)
+    safe_remote_url = get_remote_repo_url(token=None)
+    branch = os.environ.get("ABLATION_BRANCH") or f"ablation/{datetime.now().strftime('%b%d').lower()}"
+    parent_repo = str(Path(__file__).parent)
+
+    AGENT_REPO.mkdir(exist_ok=True)
+
+    is_new = not (AGENT_REPO / ".git").exists()
+    if is_new:
+        log(f"Initializing autonomous agent subrepo in {AGENT_REPO.name}...")
+        subprocess.run(["git", "init"], cwd=str(AGENT_REPO), capture_output=True, stdin=subprocess.DEVNULL)
+        git('config credential.helper ""')
+        git(f'remote add origin "{remote_url}"')
+        
+        # Align commit history with parent repository main branch (instant local fetch)
+        log("Aligning commit history with repository main branch...")
+        fetch_res = subprocess.run(
+            ["git", "fetch", parent_repo, "main"],
+            cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
+        )
+        if fetch_res.returncode == 0:
+            subprocess.run(
+                ["git", "checkout", "-B", branch, "FETCH_HEAD"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+            )
+            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+            git("add strategy.py")
+            status = git("status --porcelain")
+            if status:
+                git_commit("Baseline Sugarscape strategy for ablation")
+        else:
+            git_create_branch(branch)
+            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+            git_commit("Initial Sugarscape strategy")
+    else:
+        # Existing repo: update remote URL and disable interactive prompts
+        git('config credential.helper ""')
+        existing_remotes = git("remote")
+        if "origin" in existing_remotes:
+            git(f'remote set-url origin "{remote_url}"')
+        else:
+            git(f'remote add origin "{remote_url}"')
+        git_create_branch(branch)
+        if not AGENT_STRATEGY.exists():
+            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+
+    log(f"Subrepo ready on branch '{branch}' -> {safe_remote_url}")
+    # Push initial branch to remote so tracking is established
+    git_push(branch)
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +677,9 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
             chash = git_current_hash()
             log(f"   Committed as {chash}")
             
+            # Autonomously push new commit to remote GitHub repository
+            git_push()
+            
             return True
         else:
             log(f"\n⏸️  Variant passes but not simpler — skipping commit")
@@ -554,16 +701,8 @@ def main():
         log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
         sys.exit(1)
     
-    # Initialize agent_repo
-    AGENT_REPO.mkdir(exist_ok=True)
-    if not AGENT_STRATEGY.exists():
-        shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-    
-    if not (AGENT_REPO / ".git").exists():
-        subprocess.run(["git", "init"], cwd=str(AGENT_REPO), capture_output=True)
-        git_commit("Initial Sugarscape strategy")
-    
-    git_create_branch(f"ablation/{datetime.now().strftime('%b%d').lower()}")
+    # Initialize agent_repo & configure remote tracking branch
+    init_agent_repo()
     init_results()
     
     # Calibrate baseline
@@ -596,13 +735,18 @@ def main():
             time.sleep(2)
             
         except KeyboardInterrupt:
-            log("\nInterrupted by user. Exiting early.")
+            log("\nInterrupted by user. Pushing final state to GitHub before exit...")
+            git_push()
+            log("Exiting early.")
             break
         except Exception as e:
             log(f"Generation {generation} failed: {e}")
             import traceback
             traceback.print_exc()
             time.sleep(10)
+            
+    # Final push of completed research
+    git_push()
             
     # Print final summary
     current = STRATEGY_FILE.read_text()
