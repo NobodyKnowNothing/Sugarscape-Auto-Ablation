@@ -16,28 +16,189 @@ These metrics capture the original paper's primary findings:
 This file is the GROUND TRUTH. Never modify it during ablation.
 """
 
+import json
 import math
-import numpy as np
+from pathlib import Path
 from typing import Any
+import numpy as np
 
 
 # ---------------------------------------------------------------------------
 # Error bounds per metric (from Epstein & Axtell, calibrated empirically)
 # If a variant's metric deviates by more than epsilon from baseline,
 # the variant FAILS and is reverted.
+#
+# These are exposed as module-level global variables so they can be easily
+# inspected, modified, or scaled in a Jupyter notebook or interactive script.
 # ---------------------------------------------------------------------------
-ERROR_BOUNDS = {
-    "gini_coefficient":     0.02,   # absolute tolerance - matches Gini 2 sig figs
-    "final_population":     0.05,   # relative tolerance - matches carrying capacity SEM
-    "mean_trade_price":     0.15,   # relative tolerance - matches price convergence SEM (~18% std)
-    "trade_volume":         0.10,   # relative tolerance - matches trade activity SEM (~11% std)
-    "survival_rate":        0.02,   # absolute tolerance - matches survival rate 2 sig figs
-    "wealth_cv":            0.05,   # relative tolerance - matches inequality variance SEM
-    "spatial_entropy":      0.10,   # relative tolerance - matches migration entropy SEM (~5.6% std)
-}
 
 # Which metrics use absolute vs relative comparison
 ABSOLUTE_METRICS = {"gini_coefficient", "survival_rate"}
+
+# Individual metric error bounds (global variables)
+BOUND_GINI_COEFFICIENT: float = 0.02   # absolute tolerance (~0.79 sigma, ~2.48 SEM)
+BOUND_FINAL_POPULATION: float = 0.05   # relative tolerance (~0.81 sigma, ~2.57 SEM)
+BOUND_MEAN_TRADE_PRICE: float = 0.15   # relative tolerance (~0.55 sigma, ~1.73 SEM)
+BOUND_TRADE_VOLUME: float = 0.10       # relative tolerance (~1.62 sigma, ~5.13 SEM)
+BOUND_SURVIVAL_RATE: float = 0.02      # absolute tolerance (~0.98 sigma, ~3.11 SEM)
+BOUND_WEALTH_CV: float = 0.05          # relative tolerance (~0.63 sigma, ~1.99 SEM)
+BOUND_SPATIAL_ENTROPY: float = 0.10    # relative tolerance (~2.04 sigma, ~6.45 SEM)
+
+# Master dictionary of error bounds (metric_name -> bound)
+ERROR_BOUNDS: dict[str, float] = {
+    "gini_coefficient":     BOUND_GINI_COEFFICIENT,
+    "final_population":     BOUND_FINAL_POPULATION,
+    "mean_trade_price":     BOUND_MEAN_TRADE_PRICE,
+    "trade_volume":         BOUND_TRADE_VOLUME,
+    "survival_rate":        BOUND_SURVIVAL_RATE,
+    "wealth_cv":            BOUND_WEALTH_CV,
+    "spatial_entropy":      BOUND_SPATIAL_ENTROPY,
+}
+
+# Calibrated sigma equivalents for the Mesa canonical baseline (N=10 runs)
+DEFAULT_SIGMA_EQUIVALENTS: dict[str, float] = {
+    "gini_coefficient":     0.79,   # bound 0.02 is ~0.79 sigma (2.48 SEM)
+    "final_population":     0.81,   # bound 5% is ~0.81 sigma (2.57 SEM)
+    "mean_trade_price":     0.55,   # bound 15% is ~0.55 sigma (1.73 SEM)
+    "trade_volume":         1.62,   # bound 10% is ~1.62 sigma (5.13 SEM)
+    "survival_rate":        0.98,   # bound 0.02 is ~0.98 sigma (3.11 SEM)
+    "wealth_cv":            0.63,   # bound 5% is ~0.63 sigma (1.99 SEM)
+    "spatial_entropy":      2.04,   # bound 10% is ~2.04 sigma (6.45 SEM)
+}
+
+BASELINE_METRICS_PATH = Path(__file__).parent / "baseline_metrics.json"
+
+
+def sync_error_bounds() -> dict[str, float]:
+    """
+    Synchronize global BOUND_* variables and the ERROR_BOUNDS dictionary.
+    Call this if you modified individual BOUND_* variables or ERROR_BOUNDS directly.
+    """
+    global BOUND_GINI_COEFFICIENT, BOUND_FINAL_POPULATION, BOUND_MEAN_TRADE_PRICE
+    global BOUND_TRADE_VOLUME, BOUND_SURVIVAL_RATE, BOUND_WEALTH_CV, BOUND_SPATIAL_ENTROPY
+    
+    # Check if individual variables were modified compared to dictionary
+    if ERROR_BOUNDS["gini_coefficient"] != BOUND_GINI_COEFFICIENT:
+        BOUND_GINI_COEFFICIENT = ERROR_BOUNDS["gini_coefficient"]
+    if ERROR_BOUNDS["final_population"] != BOUND_FINAL_POPULATION:
+        BOUND_FINAL_POPULATION = ERROR_BOUNDS["final_population"]
+    if ERROR_BOUNDS["mean_trade_price"] != BOUND_MEAN_TRADE_PRICE:
+        BOUND_MEAN_TRADE_PRICE = ERROR_BOUNDS["mean_trade_price"]
+    if ERROR_BOUNDS["trade_volume"] != BOUND_TRADE_VOLUME:
+        BOUND_TRADE_VOLUME = ERROR_BOUNDS["trade_volume"]
+    if ERROR_BOUNDS["survival_rate"] != BOUND_SURVIVAL_RATE:
+        BOUND_SURVIVAL_RATE = ERROR_BOUNDS["survival_rate"]
+    if ERROR_BOUNDS["wealth_cv"] != BOUND_WEALTH_CV:
+        BOUND_WEALTH_CV = ERROR_BOUNDS["wealth_cv"]
+    if ERROR_BOUNDS["spatial_entropy"] != BOUND_SPATIAL_ENTROPY:
+        BOUND_SPATIAL_ENTROPY = ERROR_BOUNDS["spatial_entropy"]
+        
+    return ERROR_BOUNDS
+
+
+def set_error_bounds(**kwargs) -> dict[str, float]:
+    """
+    Conveniently update one or more error bounds from a notebook.
+    Updates both the global variables and ERROR_BOUNDS.
+    
+    Example:
+        import metrics
+        metrics.set_error_bounds(gini_coefficient=0.04, survival_rate=0.03)
+    """
+    global BOUND_GINI_COEFFICIENT, BOUND_FINAL_POPULATION, BOUND_MEAN_TRADE_PRICE
+    global BOUND_TRADE_VOLUME, BOUND_SURVIVAL_RATE, BOUND_WEALTH_CV, BOUND_SPATIAL_ENTROPY
+    
+    var_map = {
+        "gini_coefficient": "BOUND_GINI_COEFFICIENT",
+        "final_population": "BOUND_FINAL_POPULATION",
+        "mean_trade_price": "BOUND_MEAN_TRADE_PRICE",
+        "trade_volume": "BOUND_TRADE_VOLUME",
+        "survival_rate": "BOUND_SURVIVAL_RATE",
+        "wealth_cv": "BOUND_WEALTH_CV",
+        "spatial_entropy": "BOUND_SPATIAL_ENTROPY",
+    }
+    
+    for k, v in kwargs.items():
+        if k in ERROR_BOUNDS:
+            ERROR_BOUNDS[k] = float(v)
+            if k in var_map:
+                globals()[var_map[k]] = float(v)
+        else:
+            raise KeyError(f"Unknown metric '{k}'. Valid metrics: {list(ERROR_BOUNDS.keys())}")
+            
+    return ERROR_BOUNDS
+
+
+def set_sigma_bounds(n_sigma: float = 2.0, baseline_file: str | Path | None = None) -> dict[str, float]:
+    """
+    Set error bounds dynamically as multiples of standard deviations (sigma).
+    Uses baseline_metrics.json to obtain each metric's standard deviation (std)
+    and mean.
+    
+    For absolute metrics (gini_coefficient, survival_rate):
+        bound = n_sigma * std
+    For relative metrics:
+        bound = (n_sigma * std) / |mean|
+        
+    Example:
+        import metrics
+        metrics.set_sigma_bounds(n_sigma=2.0)  # set 2-sigma bounds for all metrics
+    """
+    path = Path(baseline_file) if baseline_file else BASELINE_METRICS_PATH
+    if not path.exists():
+        raise FileNotFoundError(f"Baseline metrics file not found: {path}")
+        
+    with open(path, "r") as f:
+        data = json.load(f)
+        
+    means = data.get("mean_metrics", {})
+    new_bounds = {}
+    
+    for metric_name in ERROR_BOUNDS:
+        std_key = f"{metric_name}_std"
+        std_val = data.get(std_key, 0.0)
+        mean_val = means.get(metric_name, 1.0)
+        
+        if metric_name in ABSOLUTE_METRICS:
+            new_bounds[metric_name] = float(n_sigma * std_val)
+        else:
+            denom = abs(mean_val) if abs(mean_val) > 1e-10 else 1.0
+            new_bounds[metric_name] = float((n_sigma * std_val) / denom)
+            
+    return set_error_bounds(**new_bounds)
+
+
+def set_sem_bounds(n_sem: float = 2.0, baseline_file: str | Path | None = None) -> dict[str, float]:
+    """
+    Set error bounds dynamically as multiples of Standard Error of the Mean (SEM = std / sqrt(n_runs)).
+    
+    Example:
+        import metrics
+        metrics.set_sem_bounds(n_sem=3.0)  # set 3-SEM bounds for all metrics
+    """
+    path = Path(baseline_file) if baseline_file else BASELINE_METRICS_PATH
+    if not path.exists():
+        raise FileNotFoundError(f"Baseline metrics file not found: {path}")
+        
+    with open(path, "r") as f:
+        data = json.load(f)
+        
+    n_runs = data.get("n_runs", 10)
+    sqrt_n = math.sqrt(n_runs) if n_runs > 0 else 1.0
+    return set_sigma_bounds(n_sigma=n_sem / sqrt_n, baseline_file=path)
+
+
+def reset_default_bounds() -> dict[str, float]:
+    """Reset all error bounds back to their canonical defaults."""
+    return set_error_bounds(
+        gini_coefficient=0.02,
+        final_population=0.05,
+        mean_trade_price=0.15,
+        trade_volume=0.10,
+        survival_rate=0.02,
+        wealth_cv=0.05,
+        spatial_entropy=0.10,
+    )
 
 
 def gini_coefficient(values: list[float]) -> float:
@@ -197,7 +358,8 @@ def compute_similarity_matrix(baseline_metrics: dict[str, float],
 
 
 def check_within_bounds(baseline_metrics: dict[str, float],
-                        variant_metrics: dict[str, float]) -> tuple[bool, dict[str, dict]]:
+                        variant_metrics: dict[str, float],
+                        error_bounds: dict[str, float] | None = None) -> tuple[bool, dict[str, dict]]:
     """
     Check whether ALL variant metrics are within the allowed error bounds 
     of the baseline metrics.
@@ -213,10 +375,12 @@ def check_within_bounds(baseline_metrics: dict[str, float],
         "passes": bool
     }
     """
+    sync_error_bounds()
+    bounds = error_bounds if error_bounds is not None else ERROR_BOUNDS
     details = {}
     all_pass = True
     
-    for metric_name, bound in ERROR_BOUNDS.items():
+    for metric_name, bound in bounds.items():
         base_val = baseline_metrics.get(metric_name, 0.0)
         var_val = variant_metrics.get(metric_name, 0.0)
         
@@ -253,13 +417,15 @@ def format_metrics_report(metrics: dict[str, float]) -> str:
 
 def format_comparison_report(baseline: dict[str, float], variant: dict[str, float],
                               similarity: dict[str, float], 
-                              bounds_details: dict[str, dict]) -> str:
+                              bounds_details: dict[str, dict],
+                              error_bounds: dict[str, float] | None = None) -> str:
     """Format a full comparison report between baseline and variant."""
     lines = ["═══ Sugarscape Metrics Comparison ═══"]
     lines.append(f"{'Metric':24s} {'Baseline':>12s} {'Variant':>12s} {'Sim':>8s} {'Error':>8s} {'Bound':>8s} {'Pass':>6s}")
     lines.append("─" * 86)
     
-    for name in ERROR_BOUNDS:
+    active_bounds = error_bounds if error_bounds is not None else bounds_details
+    for name in active_bounds:
         b = baseline.get(name, 0.0)
         v = variant.get(name, 0.0)
         s = similarity.get(name, 0.0)
