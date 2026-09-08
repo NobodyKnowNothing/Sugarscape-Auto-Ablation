@@ -69,30 +69,43 @@ DEFAULT_SIGMA_EQUIVALENTS: dict[str, float] = {
 BASELINE_METRICS_PATH = Path(__file__).parent / "baseline_metrics.json"
 
 
+_LAST_KNOWN_BOUNDS: dict[str, float] = dict(ERROR_BOUNDS)
+
+
 def sync_error_bounds() -> dict[str, float]:
     """
     Synchronize global BOUND_* variables and the ERROR_BOUNDS dictionary.
-    Call this if you modified individual BOUND_* variables or ERROR_BOUNDS directly.
+    Bi-directionally propagates changes whether you modified individual BOUND_*
+    variables or the ERROR_BOUNDS dictionary directly.
     """
     global BOUND_GINI_COEFFICIENT, BOUND_FINAL_POPULATION, BOUND_MEAN_TRADE_PRICE
     global BOUND_TRADE_VOLUME, BOUND_SURVIVAL_RATE, BOUND_WEALTH_CV, BOUND_SPATIAL_ENTROPY
-    
-    # Check if individual variables were modified compared to dictionary
-    if ERROR_BOUNDS["gini_coefficient"] != BOUND_GINI_COEFFICIENT:
-        BOUND_GINI_COEFFICIENT = ERROR_BOUNDS["gini_coefficient"]
-    if ERROR_BOUNDS["final_population"] != BOUND_FINAL_POPULATION:
-        BOUND_FINAL_POPULATION = ERROR_BOUNDS["final_population"]
-    if ERROR_BOUNDS["mean_trade_price"] != BOUND_MEAN_TRADE_PRICE:
-        BOUND_MEAN_TRADE_PRICE = ERROR_BOUNDS["mean_trade_price"]
-    if ERROR_BOUNDS["trade_volume"] != BOUND_TRADE_VOLUME:
-        BOUND_TRADE_VOLUME = ERROR_BOUNDS["trade_volume"]
-    if ERROR_BOUNDS["survival_rate"] != BOUND_SURVIVAL_RATE:
-        BOUND_SURVIVAL_RATE = ERROR_BOUNDS["survival_rate"]
-    if ERROR_BOUNDS["wealth_cv"] != BOUND_WEALTH_CV:
-        BOUND_WEALTH_CV = ERROR_BOUNDS["wealth_cv"]
-    if ERROR_BOUNDS["spatial_entropy"] != BOUND_SPATIAL_ENTROPY:
-        BOUND_SPATIAL_ENTROPY = ERROR_BOUNDS["spatial_entropy"]
-        
+    global _LAST_KNOWN_BOUNDS
+
+    var_map = {
+        "gini_coefficient": "BOUND_GINI_COEFFICIENT",
+        "final_population": "BOUND_FINAL_POPULATION",
+        "mean_trade_price": "BOUND_MEAN_TRADE_PRICE",
+        "trade_volume": "BOUND_TRADE_VOLUME",
+        "survival_rate": "BOUND_SURVIVAL_RATE",
+        "wealth_cv": "BOUND_WEALTH_CV",
+        "spatial_entropy": "BOUND_SPATIAL_ENTROPY",
+    }
+
+    for k, var_name in var_map.items():
+        var_val = globals()[var_name]
+        dict_val = ERROR_BOUNDS.get(k, var_val)
+        last_val = _LAST_KNOWN_BOUNDS.get(k, var_val)
+
+        if var_val != last_val:
+            # Individual variable was modified; propagate to dict
+            ERROR_BOUNDS[k] = var_val
+            _LAST_KNOWN_BOUNDS[k] = var_val
+        elif dict_val != last_val:
+            # Dict was modified; propagate to individual variable
+            globals()[var_name] = dict_val
+            _LAST_KNOWN_BOUNDS[k] = dict_val
+
     return ERROR_BOUNDS
 
 

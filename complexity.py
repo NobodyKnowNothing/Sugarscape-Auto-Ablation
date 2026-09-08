@@ -11,7 +11,17 @@ and control-flow branching.
 """
 
 import ast
+import inspect
 import math
+import re
+import sys
+from typing import Any, Callable
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -189,24 +199,150 @@ def cyclomatic_complexity(code: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Combined Complexity Score
+# Pluggable Optimization & Complexity Scoring Functions
 # ---------------------------------------------------------------------------
 
-# Weights for combining metrics into a single score
-WEIGHT_AST_NODES = 0.4
-WEIGHT_CYCLOMATIC = 0.6
+# Tunable weights for combining metrics into the default score
+WEIGHT_AST_NODES: float = 0.4
+WEIGHT_CYCLOMATIC: float = 0.6
 
 
-def combined_complexity_score(code: str) -> dict:
+def default_scoring_function(metrics: dict[str, Any]) -> float:
     """
-    Compute a combined complexity score from AST node count and
-    cyclomatic complexity.
-
-    Returns dict with all sub-metrics and the final combined score.
-    The score is an absolute number (not normalized) — lower is simpler.
+    Default optimization objective:
+    Weighted sum of AST nodes (structural size) and cyclomatic complexity (branching depth).
+    Score = (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclomatic_total).
+    Lower is simpler.
     """
-    import re
+    ast_nodes = metrics.get("ast_nodes", -1)
+    cyclo = metrics.get("cyclomatic_total", -1)
+    if ast_nodes < 0 or cyclo < 0:
+        return float("inf")
+    return (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclo)
 
+
+# Active scoring function (optimization objective callable)
+# Exposed as global variables so they can be inspected or switched in a notebook
+ACTIVE_SCORING_FUNCTION: Callable = default_scoring_function
+OPTIMIZATION_FUNCTION: Callable = default_scoring_function  # intuitive alias
+SCORER_NAME: str = "weighted_ast_cyclomatic"
+
+
+def _invoke_scorer(scorer: Callable, code: str, metrics: dict[str, Any]) -> float:
+    """
+    Flexibly invoke a complexity scoring function.
+    Supports callables taking:
+      - (metrics: dict) -> float
+      - (code: str) -> float
+      - (code: str, metrics: dict) -> float
+    """
+    try:
+        sig = inspect.signature(scorer)
+        params = list(sig.parameters.values())
+        pos_params = [
+            p for p in params
+            if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        ]
+
+        if len(pos_params) >= 2:
+            return float(scorer(code, metrics))
+        elif len(pos_params) == 1:
+            p_name = pos_params[0].name.lower()
+            if p_name in ("code", "source", "text", "src", "strategy_code"):
+                return float(scorer(code))
+            else:
+                return float(scorer(metrics))
+        else:
+            # Varargs or parameterless: try metrics first, then code
+            try:
+                return float(scorer(metrics))
+            except TypeError:
+                return float(scorer(code))
+    except Exception as e:
+        # Fallback invocation attempts
+        try:
+            return float(scorer(metrics))
+        except Exception:
+            try:
+                return float(scorer(code))
+            except Exception:
+                raise e
+
+
+def set_scoring_function(scorer: Callable, name: str | None = None) -> Callable:
+    """
+    Switch the optimization function / complexity metric being minimized.
+
+    The custom scorer can accept:
+      - `metrics: dict` (access to 'ast_nodes', 'cyclomatic_total', 'lines', etc.)
+      - `code: str` (the raw Python code, e.g. for custom metrics like Card & Agresti)
+      - `code: str, metrics: dict`
+
+    Example in a Jupyter notebook:
+        import complexity
+
+        # Example 1: Use a custom metric function (e.g. Card & Agresti complexity)
+        def my_card_agresti(code: str, metrics: dict) -> float:
+            # Custom calculation based on data flow, fan-in/fan-out, etc.
+            return custom_score
+
+        complexity.set_scoring_function(my_card_agresti, name="card_agresti")
+
+        # Example 2: Simple lambda
+        complexity.set_scoring_function(lambda m: m["ast_nodes"], name="pure_ast")
+    """
+    global ACTIVE_SCORING_FUNCTION, OPTIMIZATION_FUNCTION, SCORER_NAME
+    ACTIVE_SCORING_FUNCTION = scorer
+    OPTIMIZATION_FUNCTION = scorer
+    SCORER_NAME = name or getattr(scorer, "__name__", "custom_scorer")
+    return scorer
+
+
+def set_weights(ast_nodes: float | None = None, cyclomatic: float | None = None) -> tuple[float, float]:
+    """
+    Conveniently adjust the default weights without replacing the scoring function.
+
+    Example:
+        import complexity
+        complexity.set_weights(ast_nodes=0.2, cyclomatic=0.8)
+    """
+    global WEIGHT_AST_NODES, WEIGHT_CYCLOMATIC
+    if ast_nodes is not None:
+        WEIGHT_AST_NODES = float(ast_nodes)
+    if cyclomatic is not None:
+        WEIGHT_CYCLOMATIC = float(cyclomatic)
+    return WEIGHT_AST_NODES, WEIGHT_CYCLOMATIC
+
+
+def reset_default_scoring() -> None:
+    """Reset the optimization function and weights back to default AST + Cyclomatic."""
+    global WEIGHT_AST_NODES, WEIGHT_CYCLOMATIC, ACTIVE_SCORING_FUNCTION, OPTIMIZATION_FUNCTION, SCORER_NAME
+    WEIGHT_AST_NODES = 0.4
+    WEIGHT_CYCLOMATIC = 0.6
+    ACTIVE_SCORING_FUNCTION = default_scoring_function
+    OPTIMIZATION_FUNCTION = default_scoring_function
+    SCORER_NAME = "weighted_ast_cyclomatic"
+
+
+def get_active_scoring_function() -> tuple[Callable, str]:
+    """Return the currently active scoring function and its name."""
+    return ACTIVE_SCORING_FUNCTION, SCORER_NAME
+
+
+def combined_complexity_score(code: str, scoring_fn: Callable | None = None) -> dict[str, Any]:
+    """
+    Compute complexity metrics and evaluate the active optimization objective.
+
+    Optionally pass `scoring_fn` to override the scoring function for a single evaluation.
+
+    Returns dict with:
+      - "combined_score": float (the objective value being minimized)
+      - "optimization_score": float (alias of combined_score)
+      - "scorer_name": str (name of the active objective function)
+      - traditional metrics: lines, classes, methods, total_lines
+      - AST metrics: ast_nodes, ast_breakdown
+      - Cyclomatic metrics: cyclomatic_total, cyclomatic_max_function, cyclomatic_mean_function
+    """
     # Traditional metrics (kept for backward compatibility)
     lines = [l for l in code.split("\n") if l.strip() and not l.strip().startswith("#")]
     classes = len(re.findall(r'^class\s+', code, re.MULTILINE))
@@ -220,33 +356,41 @@ def combined_complexity_score(code: str) -> dict:
     # Cyclomatic complexity
     cc = cyclomatic_complexity(code)
 
-    # Combined score: weighted sum
-    # AST nodes capture structural size; cyclomatic captures branching depth
-    if ast_nodes < 0 or cc["total"] < 0:
-        combined = float("inf")
-    else:
-        combined = (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cc["total"])
-
-    return {
-        # Traditional (backward compat)
+    base_metrics = {
         "lines": len(lines),
         "classes": classes,
         "methods": methods + functions,
         "total_lines": len(code.split("\n")),
-        # New metrics
         "ast_nodes": ast_nodes,
         "ast_breakdown": ast_breakdown,
         "cyclomatic_total": cc["total"],
         "cyclomatic_max_function": cc.get("max_function", 0),
         "cyclomatic_mean_function": cc.get("mean_function", 0.0),
         "cyclomatic_functions": cc.get("functions", {}),
-        # Combined
-        "combined_score": round(combined, 2),
     }
+
+    # Evaluate optimization score using active or provided scoring function
+    fn = scoring_fn if scoring_fn is not None else ACTIVE_SCORING_FUNCTION
+    name = (
+        getattr(scoring_fn, "__name__", "custom_override")
+        if scoring_fn is not None
+        else SCORER_NAME
+    )
+
+    try:
+        score = _invoke_scorer(fn, code, base_metrics)
+    except Exception:
+        score = float("inf")
+
+    base_metrics["combined_score"] = round(score, 2)
+    base_metrics["optimization_score"] = round(score, 2)
+    base_metrics["scorer_name"] = name
+    return base_metrics
 
 
 def format_complexity_report(complexity: dict) -> str:
     """Format complexity metrics as a human-readable report."""
+    scorer_name = complexity.get("scorer_name", "Combined Score")
     lines = ["--- Code Complexity ---"]
     lines.append(f"  Lines of code:          {complexity['lines']}")
     lines.append(f"  Classes:                {complexity['classes']}")
@@ -255,9 +399,9 @@ def format_complexity_report(complexity: dict) -> str:
     lines.append(f"  Cyclomatic (total):     {complexity['cyclomatic_total']}")
     lines.append(f"  Cyclomatic (max func):  {complexity['cyclomatic_max_function']}")
     lines.append(f"  Cyclomatic (mean func): {complexity['cyclomatic_mean_function']:.1f}")
-    lines.append(f"  ╔═══════════════════════════════════╗")
-    lines.append(f"  ║  Combined Score: {complexity['combined_score']:>8.1f}          ║")
-    lines.append(f"  ╚═══════════════════════════════════╝")
+    lines.append(f"  ╔═════════════════════════════════════════════════╗")
+    lines.append(f"  ║  Optimization Score ({scorer_name:20s}): {complexity['combined_score']:>8.1f}  ║")
+    lines.append(f"  ╚═════════════════════════════════════════════════╝")
     return "\n".join(lines)
 
 
