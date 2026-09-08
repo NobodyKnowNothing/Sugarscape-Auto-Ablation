@@ -259,3 +259,7 @@ def format_complexity_report(complexity: dict) -> str:
     lines.append(f"  ║  Combined Score: {complexity['combined_score']:>8.1f}          ║")
     lines.append(f"  ╚═══════════════════════════════════╝")
     return "\n".join(lines)
+
+
+# Alias for backward compatibility and convenience
+count_complexity = combined_complexity_score
