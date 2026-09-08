@@ -1,6 +1,6 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-Sugarscape Structural Ablation Î“Ã‡Ã¶ Autoresearch Pipeline
+Sugarscape Structural Ablation — Autoresearch Pipeline
 
 Adapts Karpathy's autoresearch ratchet loop to perform structural ablation
 on the Sugarscape agent-based model. The LLM (Gemma) proposes simplifications
@@ -8,25 +8,25 @@ to strategy.py; if the emergent metrics from Epstein & Axtell (1996) remain
 within tight error bounds, the simplification is committed. Otherwise reverted.
 
 Architecture (3-file Karpathy pattern):
-  - prepare.py  (FIXED) Î“Ã‡Ã¶ baseline runner, evaluation harness
-  - strategy.py (MUTABLE) Î“Ã‡Ã¶ the code the LLM simplifies
-  - program.md  (HUMAN)  Î“Ã‡Ã¶ research agenda for the LLM
+  - prepare.py  (FIXED) — baseline runner, evaluation harness
+  - strategy.py (MUTABLE) — the code the LLM simplifies
+  - program.md  (HUMAN)  — research agenda for the LLM
 
 Usage:
     export GOOGLE_API_KEY="your_key_here"
-    python sugarscape_autoresearch.py
+    python autoresearch.py
 
-The loop runs indefinitely Î“Ã‡Ã¶ kill with Ctrl+C.
+The loop runs indefinitely — kill with Ctrl+C.
 """
 
 import json
-import math
 import os
 import re
 import shutil
 import subprocess
 import sys
-if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 import textwrap
 import time
 import traceback
@@ -239,7 +239,7 @@ def evaluate_strategy(strategy_code: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# LLM Agent Î“Ã‡Ã¶ Gemma via google-genai
+# LLM Agent — Gemma via google-genai
 # ---------------------------------------------------------------------------
 def create_client() -> genai.Client:
     return genai.Client(api_key=API_KEY)
@@ -292,14 +292,14 @@ def generate_ablation_variants(
 
     Generate {n_variants} different structural simplifications of strategy.py.
     Each variant should try a DIFFERENT simplification strategy.
-    Learn from the results history Î“Ã‡Ã¶ if a simplification caused a metric to fail,
+    Learn from the results history — if a simplification caused a metric to fail,
     avoid similar changes. If a simplification passed, try pushing further.
 
     PRIORITY: Reduce the COMBINED COMPLEXITY SCORE (AST nodes + cyclomatic
     complexity) while keeping ALL metrics within error bounds. The combined
     score weights AST structural size (40%) and cyclomatic branching (60%).
     Focus on reducing decision points, nested conditionals, and structural
-    depth Î“Ã‡Ã¶ not just line count.
+    depth — not just line count.
 
     For EACH variant, output:
     1. A brief one-line description of what was simplified
@@ -385,134 +385,135 @@ def parse_variants(text: str, expected: int) -> list[tuple[str, str]]:
 
 
 # ---------------------------------------------------------------------------
-# Baseline calibration
+# Calibration against Mesa Canonical
 # ---------------------------------------------------------------------------
 def calibrate_baseline():
     """
-    Calibrate ground truth from Mesa's canonical Sugarscape G1MT.
+    Establish ground-truth metrics against Mesa's canonical Sugarscape G1MT.
+    Uses cached baseline if available, otherwise runs Mesa canonical.
     
-    This ensures all ablation comparisons are against the ORIGINAL
+    CRITICAL: The baseline MUST come from the CANONICAL Mesa 
     implementation (Mesa's faithful reproduction of Epstein & Axtell 1996),
     not a self-referential copy of our standalone strategy.py.
     """
-    log("Î“Ã²Ã¶Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã¹")
-    log("Î“Ã²Ã¦  Calibrating Against Mesa Canonical Sugarscape  Î“Ã²Ã¦")
-    log("Î“Ã²ÃœÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Â¥")
+    log("╔═══════════════════════════════════════════════════════════╗")
+    log("║  Calibrating Against Mesa Canonical Sugarscape            ║")
+    log("╚═══════════════════════════════════════════════════════════╝")
     
     if BASELINE_METRICS_FILE.exists():
         with open(BASELINE_METRICS_FILE) as f:
             baseline = json.load(f)
-        source = baseline.get("source", "unknown")
-        log(f"Loaded cached baseline (source: {source})")
+        log(f"Loaded cached Mesa baseline ({baseline.get('source', 'unknown')})")
+        log(f"  Runs: {baseline.get('n_runs', '?')}")
         from metrics import format_metrics_report
         log(format_metrics_report(baseline["mean_metrics"]))
         return baseline
     
-    # No cached baseline Î“Ã‡Ã¶ run Mesa canonical to establish ground truth
+    # No cached baseline — run Mesa canonical to establish ground truth
     log("No cached baseline found. Running Mesa canonical Sugarscape G1MT...")
     log("(This runs the ACTUAL canonical implementation, not our strategy.py)")
     
-    import subprocess
-    result = subprocess.run(
-        [sys.executable, "prepare.py", "--force-recalibrate", f"--runs={N_EVAL_RUNS}"],
-        cwd=str(Path(__file__).parent),
-        capture_output=True, text=True,
-    )
+    from prepare import evaluate_mesa_baseline
+    mesa_result = evaluate_mesa_baseline(n_runs=10)
     
-    if result.returncode != 0:
-        log(f"FATAL: Mesa baseline calibration failed:\n{result.stderr}")
-        sys.exit(1)
+    # Also score initial strategy complexity
+    initial_code = STRATEGY_FILE.read_text()
+    initial_complexity = count_complexity(initial_code)
     
-    log(result.stdout)
+    baseline = {
+        "source": "mesa.examples.advanced.sugarscape_g1mt (Mesa 3.5.1 canonical)",
+        "calibrated_at": datetime.now().isoformat(),
+        "n_runs": 10,
+        "mean_metrics": mesa_result["mean_metrics"],
+        "complexity": initial_complexity,
+    }
     
-    with open(BASELINE_METRICS_FILE) as f:
-        baseline = json.load(f)
+    for name in mesa_result["mean_metrics"]:
+        baseline[f"{name}_std"] = mesa_result.get(f"{name}_std", 0.0)
     
-    # Also store initial strategy.py complexity for tracking
-    strategy_code = STRATEGY_FILE.read_text()
-    baseline["complexity"] = count_complexity(strategy_code)
     with open(BASELINE_METRICS_FILE, "w") as f:
         json.dump(baseline, f, indent=2)
     
-    from metrics import format_metrics_report
-    log("Mesa canonical baseline established:")
-    log(format_metrics_report(baseline["mean_metrics"]))
-    
+    log(f"Saved canonical baseline to {BASELINE_METRICS_FILE}")
+    log(format_complexity_report(initial_complexity))
     return baseline
 
 
-
 # ---------------------------------------------------------------------------
-# Main ablation loop
+# Ratchet Loop
 # ---------------------------------------------------------------------------
 def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
     """Execute one round of structural ablation."""
-    log(f"\nÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰ Generation {generation} Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰")
+    log(f"\n═══ Generation {generation} ═══")
     
     # Read current strategy
     current_strategy = STRATEGY_FILE.read_text()
     current_complexity = count_complexity(current_strategy)
     current_hash = git_current_hash()
     
-    log(format_complexity_report(current_complexity))
+    log(f"Current complexity: score={current_complexity['combined_score']:.1f} "
+        f"(AST={current_complexity['ast_nodes']}, cyclo={current_complexity['cyclomatic_total']}, "
+        f"lines={current_complexity['lines']})")
     
-    # Generate variants
-    results_history = read_results_history()
+    # Read results history for context
+    history = read_results_history()
+    
+    # Generate ablation variants from LLM
+    log(f"Prompting {MODEL} for structural simplifications...")
     variants = generate_ablation_variants(
-        client, current_strategy, results_history,
+        client, current_strategy, history,
         baseline["mean_metrics"], current_complexity,
         n_variants=VARIANTS_PER_GENERATION,
     )
     
     if not variants:
-        log("No valid variants generated. Retrying this generation.")
+        log("No valid variants generated this round.")
         return False
     
-    log(f"Generated {len(variants)} variants")
+    log(f"Generated {len(variants)} variant(s). Evaluating...")
     
-    # Evaluate each variant
     best_variant = None
-    best_simplification = 0  # lines reduced
+    best_simplification = 0.0  # combined score reduction
     
-    for i, (code, desc) in enumerate(variants):
-        var_num = i + 1
-        log(f"\n--- Variant {var_num}: {desc[:80]} ---")
+    for v_idx, (code, desc) in enumerate(variants):
+        var_num = v_idx + 1
+        log(f"\n--- Variant {var_num}/{len(variants)}: {desc} ---")
         
+        # Check complexity
         var_complexity = count_complexity(code)
         score_delta = current_complexity["combined_score"] - var_complexity["combined_score"]
-        log(f"  Combined Score: {var_complexity['combined_score']:.1f} ({score_delta:+.1f}), "
-            f"AST={var_complexity['ast_nodes']}, CC={var_complexity['cyclomatic_total']}, "
-            f"{var_complexity['lines']} lines")
+        log(f"  Score: {var_complexity['combined_score']:.1f} ({score_delta:+.1f}) | "
+            f"AST: {var_complexity['ast_nodes']} | Cyclo: {var_complexity['cyclomatic_total']} | "
+            f"Lines: {var_complexity['lines']}")
         
-        # Run evaluation
+        # Evaluate model metrics
         t0 = time.time()
         result = evaluate_strategy(code)
         dt = time.time() - t0
         
         if "error" in result:
-            log(f"  Î“Â¥Ã® CRASH: {result['error']}")
+            log(f"  ❌ CRASH: {result['error']}")
             append_result(generation, var_num, current_hash, "crash",
                          var_complexity, {}, False, desc)
             continue
         
-        log(f"  Evaluation took {dt:.1f}s")
-        log(result["report"])
-        
         passes = result["passes"]
-        status = "pass" if passes else "fail"
+        log(f"  Evaluation ({dt:.1f}s): passes={passes}")
         
-        append_result(generation, var_num, current_hash, status,
+        # Append to results log
+        append_result(generation, var_num, current_hash,
+                     "pass" if passes else "fail",
                      var_complexity, result["mean_metrics"],
                      passes, desc)
         
         if passes:
-            log(f"  Î“Â£Ã  PASSES all metric bounds!")
+            log(f"  ✅ PASSES all metric bounds!")
             # Track best passing variant (largest combined score reduction)
             if score_delta > best_simplification:
                 best_variant = (code, desc, var_complexity, result)
                 best_simplification = score_delta
         else:
-            log(f"  Î“Â¥Ã® FAILS metric bounds")
+            log(f"  ❌ FAILS metric bounds")
     
     # Commit best variant if it's simpler
     if best_variant:
@@ -520,9 +521,9 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         score_saved = current_complexity["combined_score"] - complexity["combined_score"]
         
         if score_saved > 0:
-            log(f"\nâ‰¡Æ’Ã„Ã« RATCHET FORWARD: {desc}")
-            log(f"   Score: {current_complexity['combined_score']:.1f} Î“Ã¥Ã† {complexity['combined_score']:.1f} ({score_saved:+.1f})")
-            log(f"   Lines: {current_complexity['lines']} Î“Ã¥Ã† {complexity['lines']}")
+            log(f"\n🎉 RATCHET FORWARD: {desc}")
+            log(f"   Score: {current_complexity['combined_score']:.1f} → {complexity['combined_score']:.1f} ({score_saved:+.1f})")
+            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']}")
             
             # Write to strategy.py and agent_repo
             STRATEGY_FILE.write_text(code)
@@ -534,20 +535,20 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
             
             return True
         else:
-            log(f"\nÎ“Ã…â••âˆ©â••Ã…  Variant passes but not simpler Î“Ã‡Ã¶ skipping commit")
+            log(f"\n⏸️  Variant passes but not simpler — skipping commit")
             return False
     else:
-        log(f"\nÎ“Â¥Ã® No passing variants this generation Î“Ã‡Ã¶ reverting")
+        log(f"\n❌ No passing variants this generation — reverting")
         git_revert_to(current_hash)
         return False
 
 
 def main():
-    log("Î“Ã²Ã¶Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã¹")
-    log("Î“Ã²Ã¦  Sugarscape Structural Ablation Pipeline        Î“Ã²Ã¦")
-    log(f"Î“Ã²Ã¦  Model: {MODEL:40s} Î“Ã²Ã¦")
-    log("Î“Ã²Ã¦  Pattern: Karpathy Autoresearch Ratchet Loop    Î“Ã²Ã¦")
-    log("Î“Ã²ÃœÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Â¥")
+    log("╔═══════════════════════════════════════════════════════════╗")
+    log("║  Sugarscape Structural Ablation Pipeline                  ║")
+    log(f"║  Model: {MODEL:40s}      ║")
+    log("║  Pattern: Karpathy Autoresearch Ratchet Loop              ║")
+    log("╚═══════════════════════════════════════════════════════════╝")
     
     if not API_KEY:
         log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
@@ -570,14 +571,14 @@ def main():
     
     # Run parameter sweep validation before starting ablation
     from parameter_sweeps import run_all_sweeps
-    log("\nÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰ Running Parameter Sweep Validation Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰")
+    log("\n═══ Running Parameter Sweep Validation ═══")
     try:
         sweep_results = run_all_sweeps(n_runs=5)  # quick validation (5 runs)
         if not all(r["all_valid"] for r in sweep_results.values()):
-            log("Î“ÃœÃ¡âˆ©â••Ã…  Some parameter sweeps failed Î“Ã‡Ã¶ model may not fully match paper.")
+            log("⚠️  Some parameter sweeps failed — model may not fully match paper.")
             log("    Proceeding with ablation, but results should be interpreted cautiously.")
     except Exception as e:
-        log(f"Î“ÃœÃ¡âˆ©â••Ã…  Parameter sweep validation failed: {e}")
+        log(f"⚠️  Parameter sweep validation failed: {e}")
         log("    Proceeding with ablation anyway.")
     
     client = create_client()
@@ -608,7 +609,7 @@ def main():
     final_complexity = count_complexity(current)
     initial_complexity = baseline.get("complexity", {})
     
-    log(f"\nÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰ Final Summary Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰")
+    log(f"\n═══ Final Summary ═══")
     log(f"  Generations run: {generation - 1}")
     log(f"  Initial combined score: {initial_complexity.get('combined_score', '?')}")
     log(f"  Final combined score:   {final_complexity['combined_score']:.1f}")
@@ -621,7 +622,5 @@ def main():
         log(f"  Line reduction:     {line_red}")
 
 
-
 if __name__ == "__main__":
     main()
-

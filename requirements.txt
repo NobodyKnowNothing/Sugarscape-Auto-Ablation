@@ -2,5 +2,5 @@ mesa
 google-genai
 numpy
 scipy
-dotenv
+python-dotenv
 networkx

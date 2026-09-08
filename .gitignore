@@ -1,7 +1,29 @@
-/scratch
-/source
-/__pycache__
-/__pycache__
-__pycache__/_tmp_strategy.cpython-312.pyc
-/venv
-/current_version/__pycache__
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+_tmp_strategy.py
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Autoresearch artifacts & logs
+agent_repo/
+scratch/
+results.tsv
+results LOC count.tsv
+sweep_results.json
+*.png
+
+# Secrets & Environment variables
+.env
+.env.local
+
+# Operating System & Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

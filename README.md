@@ -1,62 +1,94 @@
 # ABM Auto-Ablation (Sugarscape)
 
-This repository hosts an automated research program where an AI agent performs **structural ablation** on Epstein & Axtell's classic *Sugarscape* agent-based model (1996). 
+This repository hosts an automated research program where an AI agent performs **structural ablation** on Epstein & Axtell's classic *Sugarscape* agent-based model (1996).
 
 ## Objective
 
-The goal of this experiment was to systematically strip away, merge, and simplify code to discover the **absolute minimal viable model** capable of reproducing the emergent macroscopic behaviors documented in the original paper. The AI was tasked with reducing complexity while strictly maintaining specific metrics within narrow error bounds:
+The goal of this experiment is to systematically strip away, merge, and simplify code to discover the **absolute minimal viable model** capable of reproducing the emergent macroscopic behaviors documented in the original paper. The AI is tasked with reducing structural and computational complexity while strictly maintaining emergent metrics within narrow error bounds:
+
 - **Wealth Inequality** (Gini Coefficient ≈ 0.3–0.6)
-- **Population Dynamics** (converging to carrying capacity)
-- **Trade Price** (converging to the geometric mean of Marginal Rates of Substitution)
-- **Survival Rate & Spatial Entropy**
+- **Population Dynamics** (converging to environmental carrying capacity)
+- **Trade Dynamics** (bilateral trade converging to the geometric mean of Marginal Rates of Substitution)
+- **Survival Rate & Spatial Entropy** (foraging efficiency and clustering patterns)
 
-## Results
+---
 
-This project unfolded in two phases, revealing how an AI optimization process adapts to different objective functions over time. While the first phase focused on raw length, the second phase shifted the optimization target while building directly on the results of the first phase.
+## Repository Architecture
 
-### Phase 1: The "Code Golf" LOC Minimization (LOC Complexity Version)
-In a previous version of this experiment (logged in `results LOC count.tsv`), the AI's sole objective was to minimize pure **Lines of Code (LOC)**. 
-- Over 70+ attempts, the AI aggressively refactored the logic to reduce line breaks.
-- It shrunk the model down to roughly **37 lines of code**. 
-- **The Catch:** While it successfully optimized the LOC metric, it did so by producing extremely dense, unreadable "code golf". It heavily utilized walrus operators (`:=`), single-pass procedural loops, and aggressive tuple unpacking. It proved that complex emergence requires very little *text*, but the code's underlying structural complexity remained high. The LOC simplification was entirely driven by this specific objective, not by genuine structural simplification.
+This codebase adapts the **3-file Karpathy autoresearch ratchet pattern** for agent-based model ablation:
 
-### Phase 2: Structural Simplicity (AST & Cyclomatic Complexity Version)
-Recognizing that fewer lines simply resulted in denser code, the experiment shifted its optimization target away from raw LOC toward reducing **Abstract Syntax Tree (AST) nodes** and **Cyclomatic Complexity**. (logged in `results.tsv`)
-- **Important Distinction:** Because this phase continued from the end state of Phase 1, it inherited the extreme "code golf" density. During this Phase 2 run, the line count remained remarkably stable (around 32-37 lines), while the AI focused on simplifying the actual *computational logic* rather than just line breaks.
-- The combined complexity score (weighted sum of 40% AST nodes and 60% Cyclomatic Complexity) was successfully reduced from **678.0** down to **526.2** (a ~22.4% reduction).
-- To achieve this, the AI discovered genuine mathematical optimizations. For example:
-  - **Monotonic Utility Simplification:** It bypassed redundant floating-point divisions by leveraging the fact that raising utilities to a positive power of $1/M_t$ is a monotonic transformation.
-  - **MRS Consolidation:** It simplified Marginal Rate of Substitution (MRS) expressions using basic algebraic identities to eliminate nested division operations.
-- The result of this AST-focused system is a model that is computationally and structurally simpler. However, because it optimized strictly for AST and cyclomatic complexity while inheriting Phase 1's state, it still heavily utilized dense "code golf" tactics (like replacing objects with raw lists and using dense generator expressions). It proved that optimizing for *any* single complexity metric without readability constraints inevitably leads to highly dense, unreadable code.
+```
+Sugarscape-Auto-Ablation/
+├── strategy.py             # MUTABLE: Current ablated Sugarscape model implementation
+├── prepare.py              # FIXED: Baseline runner & evaluation harness (Mesa canonical)
+├── program.md              # RESEARCH AGENDA: LLM constraints, objectives, and bounds
+├── autoresearch.py         # ORCHESTRATOR: Autonomous LLM mutation & ratchet loop
+├── complexity.py           # SCORING: AST node count + Cyclomatic complexity engine
+├── metrics.py              # METRICS: Fixed emergent behavior definitions & statistical comparison
+├── parameter_sweeps.py     # VALIDATION: Epstein & Axtell canonical sweep suite (Sweeps A–D)
+├── baseline_metrics.json   # GROUND TRUTH: Canonical metrics from Mesa Sugarscape G1MT
+├── sugar-map.txt           # TERRAIN: Canonical 50x50 resource landscape
+├── requirements.txt        # DEPENDENCIES: Required Python packages
+└── .gitignore              # GIT RULES: Standard exclusions for caches, logs, and venvs
+```
 
-## Complexity Visualizations
+### Component Details
 
-The two graphs below illustrate the distinct metrics tracked across the two separate runs.
+- **[`strategy.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/strategy.py)**: The code under ablation. Implements `create_model(seed, **params)` and `run_model(model, steps)` returning standardized simulation observables.
+- **[`prepare.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/prepare.py)**: Fixed evaluation harness that calibrates against Mesa's built-in `SugarscapeG1mt` canonical ground truth and evaluates variant strategies against it.
+- **[`complexity.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/complexity.py)**: Calculates combined structural complexity score ($0.4 \times \text{AST Nodes} + 0.6 \times \text{Cyclomatic Complexity}$) to avoid "code golf" line minimization in favor of true computational simplicity.
+- **[`metrics.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/metrics.py)**: Computes Gini coefficient, carrying capacity, mean trade price, trade volume, agent survival rate, wealth coefficient of variation, and spatial Shannon entropy with tight error bounds.
+- **[`parameter_sweeps.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/parameter_sweeps.py)**: Validates that the model faithfully reproduces the four canonical parameter sweeps from *Growing Artificial Societies*:
+  - **Sweep A**: Trade vs. No-Trade
+  - **Sweep B**: Vision Range Sensitivity
+  - **Sweep C**: Carrying Capacity & Population Density
+  - **Sweep D**: Resource Scarcity & Metabolism
+- **[`autoresearch.py`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/autoresearch.py)**: Runs the ratchet loop: prompts the LLM for structural simplifications, evaluates candidate variants against the ground-truth baseline, commits passing variants that reduce complexity, or reverts failing ones.
+- **[`program.md`](file:///c:/Users/TEMP/Sugarscape-Auto-Ablation/program.md)**: Human-provided prompt context defining what the AI agent can modify, read-only constraints, and success criteria.
 
-### Phase 1: Line Count Complexity (Legacy Run)
-This graph shows the aggressive reduction in Lines of Code (LOC) during the first experiment, where the objective was purely text-based minimization.
-
-![Line Count Complexity](loc_complexity.png)
-
-### Phase 2: New System Complexity (AST + Cyclomatic Score)
-This graph reflects the current generation of the project. It tracks the reduction in a combined structural complexity score over 13 generations of the Phase 2 run.
-
-![Combined Complexity Score](new_system_complexity.png)
-
-Understand that these graphs have different definitions of generation. The first graph is just a count of the times the LLM was prompted. In the second each generation is counted up when a result successfully met the requirements (passed the parameter sweep and had less complexity). 
+---
 
 ## Getting Started
 
-If you want to explore the code, baseline metrics, or run your own tests:
+### 1. Installation
 
-1. Install the requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. The core logic the AI was modifying is located in `strategy.py`.
-3. The evaluation harness and metrics definitions are in `prepare.py` and `metrics.py`.
-4. Read `program.md` for the full set of constraints and rules the agent operated under.
+Create and activate a virtual environment, then install the dependencies:
 
-## Files Generated
-- `results LOC count.tsv` and `results.tsv` contain the raw execution logs of the ablation variants.
-- `plot_logs.py` was used to generate the graphs seen above.
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+### 2. Verify Current Strategy Against Baseline
+
+Compare the current `strategy.py` against Mesa canonical ground truth:
+
+```bash
+python prepare.py --compare strategy.py
+```
+
+### 3. Run Parameter Sweep Validations
+
+Validate that the model matches the four canonical sweeps from Epstein & Axtell (1996):
+
+```bash
+python parameter_sweeps.py --sweep all
+```
+
+Or run individual sweeps (`a`, `b`, `c`, or `d`):
+
+```bash
+python parameter_sweeps.py --sweep a
+```
+
+### 4. Run the Autoresearch Ratchet Loop
+
+To launch autonomous structural ablation:
+
+```bash
+export GOOGLE_API_KEY="your-api-key-here"  # On Windows PowerShell: $env:GOOGLE_API_KEY="your-api-key-here"
+python autoresearch.py
+```
+
+Results of each generation will be logged to `results.tsv`.

@@ -1,17 +1,17 @@
-﻿"""
-Sugarscape Metrics ΓÇö Fixed Evaluation Harness (DO NOT MODIFY)
+"""
+Sugarscape Metrics — Fixed Evaluation Harness (DO NOT MODIFY)
 
 Inspired by Epstein & Axtell's "Growing Artificial Societies" (1996).
 Computes all key emergent metrics from the Sugarscape model and returns
 them as a standardized dictionary suitable for comparison.
 
 These metrics capture the original paper's primary findings:
-  1. Wealth distribution ΓåÆ Gini coefficient
-  2. Population dynamics ΓåÆ carrying capacity convergence
-  3. Trade dynamics ΓåÆ volume, geometric mean price
-  4. Agent survival ΓåÆ fraction alive after N steps
-  5. Wealth variance ΓåÆ coefficient of variation
-  6. Spatial patterns ΓåÆ entropy of agent distribution
+  1. Wealth distribution → Gini coefficient
+  2. Population dynamics → carrying capacity convergence
+  3. Trade dynamics → volume, geometric mean price
+  4. Agent survival → fraction alive after N steps
+  5. Wealth variance → coefficient of variation
+  6. Spatial patterns → entropy of agent distribution
 
 This file is the GROUND TRUTH. Never modify it during ablation.
 """
@@ -163,7 +163,7 @@ def compute_all_metrics(model_data: dict[str, Any]) -> dict[str, float]:
 
 
 def compute_similarity_matrix(baseline_metrics: dict[str, float],
-                               variant_metrics: dict[str, float]) -> dict[str, float]:
+                              variant_metrics: dict[str, float]) -> dict[str, float]:
     """
     Compute per-metric similarity between baseline and variant.
     
@@ -255,9 +255,9 @@ def format_comparison_report(baseline: dict[str, float], variant: dict[str, floa
                               similarity: dict[str, float], 
                               bounds_details: dict[str, dict]) -> str:
     """Format a full comparison report between baseline and variant."""
-    lines = ["ΓòÉΓòÉΓòÉ Sugarscape Metrics Comparison ΓòÉΓòÉΓòÉ"]
+    lines = ["═══ Sugarscape Metrics Comparison ═══"]
     lines.append(f"{'Metric':24s} {'Baseline':>12s} {'Variant':>12s} {'Sim':>8s} {'Error':>8s} {'Bound':>8s} {'Pass':>6s}")
-    lines.append("ΓöÇ" * 86)
+    lines.append("─" * 86)
     
     for name in ERROR_BOUNDS:
         b = baseline.get(name, 0.0)
@@ -268,7 +268,7 @@ def format_comparison_report(baseline: dict[str, float], variant: dict[str, floa
         bound = d.get("bound", 0.0)
         passes = d.get("passes", False)
         
-        emoji = "Γ£à" if passes else "Γ¥î"
+        emoji = "✅" if passes else "❌"
         lines.append(f"  {name:22s} {b:12.4f} {v:12.4f} {s:8.4f} {err:8.4f} {bound:8.4f} {emoji}")
     
     return "\n".join(lines)
