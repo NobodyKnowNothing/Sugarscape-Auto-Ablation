@@ -70,11 +70,20 @@ def log(msg: str):
 # Git & Remote push helpers (operate on agent_repo)
 # ---------------------------------------------------------------------------
 def get_github_token() -> str:
-    """Retrieve GitHub token from environment (.env) or Windows Credential Manager."""
+    """Retrieve GitHub token from environment (.env), Colab Secrets, or Windows Credential Manager."""
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_PAT", "")
     if token:
         return token.strip().strip("'\"")
     
+    # Check Google Colab Secrets (google.colab.userdata)
+    try:
+        from google.colab import userdata
+        colab_token = userdata.get("GITHUB_TOKEN") or userdata.get("GH_TOKEN")
+        if colab_token:
+            return colab_token.strip().strip("'\"")
+    except Exception:
+        pass
+
     # Fallback: Query Windows Credential Manager via git-credential-wincred
     wincred_candidates = [
         Path(os.environ.get("LOCALAPPDATA", "")) / "Programs/Git/mingw64/libexec/git-core/git-credential-wincred.exe",
@@ -103,7 +112,8 @@ def get_remote_repo_url(token: str | None = None) -> str:
         try:
             res = subprocess.run(
                 ["git", "config", "--get", "remote.origin.url"],
-                capture_output=True, text=True, cwd=str(Path(__file__).parent)
+                capture_output=True, text=True, cwd=str(Path(__file__).parent),
+                stdin=subprocess.DEVNULL
             )
             remote = res.stdout.strip()
         except Exception:
@@ -112,19 +122,24 @@ def get_remote_repo_url(token: str | None = None) -> str:
     if not remote:
         remote = "https://github.com/NobodyKnowNothing/Sugarscape-Auto-Ablation.git"
     
-    if token and remote.startswith("https://") and "@" not in remote:
-        remote = remote.replace("https://", f"https://{token}@")
-        if not remote.endswith(".git"):
-            remote += ".git"
-    return remote
+    clean_remote = re.sub(r'https://[^@]+@', 'https://', remote)
+    if not clean_remote.endswith(".git"):
+        clean_remote += ".git"
+
+    if token:
+        return clean_remote.replace("https://", f"https://{token}@")
+    return clean_remote
 
 
 def git(cmd: str, cwd: str | None = None, timeout: int = 30) -> str:
-    """Run a git command in agent_repo (or specified cwd)."""
+    """Run a git command in agent_repo (or specified cwd) in non-interactive mode."""
     try:
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
         result = subprocess.run(
             f"git {cmd}", shell=True, capture_output=True, text=True,
-            cwd=cwd or str(AGENT_REPO), timeout=timeout
+            cwd=cwd or str(AGENT_REPO), stdin=subprocess.DEVNULL,
+            env=env, timeout=timeout
         )
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
@@ -163,20 +178,29 @@ def git_create_branch(name: str):
 
 def git_push(branch: str | None = None, remote: str = "origin") -> bool:
     """Autonomously push changes from agent_repo to the remote GitHub repository."""
+    token = get_github_token()
+    if not token:
+        log("   ⚠️  Git push skipped: No GITHUB_TOKEN configured.")
+        log("       To enable push in Colab, add 'GITHUB_TOKEN' to Secrets (🔑 icon)")
+        log("       or run: os.environ['GITHUB_TOKEN'] = 'your_token_here'")
+        return False
+
     target_branch = branch or git_current_branch()
     log(f"   Pushing {target_branch} to GitHub...")
     try:
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
         result = subprocess.run(
             f"git push -u {remote} {target_branch}",
             shell=True, capture_output=True, text=True,
-            cwd=str(AGENT_REPO), stdin=subprocess.DEVNULL, timeout=45
+            cwd=str(AGENT_REPO), stdin=subprocess.DEVNULL,
+            env=env, timeout=45
         )
         if result.returncode == 0:
             log(f"   🚀 Successfully pushed {target_branch} to GitHub")
             return True
         else:
             err = result.stderr.strip() or result.stdout.strip()
-            # Clean any sensitive token from error output if present
             cleaned_err = re.sub(r'https://[^@]+@', 'https://***@', err)
             log(f"   ⚠️  Git push returned code {result.returncode}: {cleaned_err}")
             return False
@@ -198,11 +222,24 @@ def init_agent_repo():
 
     AGENT_REPO.mkdir(exist_ok=True)
 
+    if not token:
+        log("⚠️  NOTICE: No GITHUB_TOKEN detected!")
+        log("   Subrepo changes will be committed locally, but pushing to GitHub is disabled.")
+        log("   In Google Colab, add 'GITHUB_TOKEN' to Secrets (🔑 icon on left sidebar)")
+        log("   or set: os.environ['GITHUB_TOKEN'] = 'gho_...' before running.")
+
     is_new = not (AGENT_REPO / ".git").exists()
     if is_new:
         log(f"Initializing autonomous agent subrepo in {AGENT_REPO.name}...")
         subprocess.run(["git", "init"], cwd=str(AGENT_REPO), capture_output=True, stdin=subprocess.DEVNULL)
+        
+        # Configure non-interactive git environment & identity (critical for Colab / headless)
         git('config credential.helper ""')
+        if not git("config user.name"):
+            git('config user.name "Autoresearch Agent"')
+        if not git("config user.email"):
+            git('config user.email "agent@autoresearch.local"')
+        
         git(f'remote add origin "{remote_url}"')
         
         # Align commit history with parent repository main branch (instant local fetch)
@@ -228,6 +265,11 @@ def init_agent_repo():
     else:
         # Existing repo: update remote URL and disable interactive prompts
         git('config credential.helper ""')
+        if not git("config user.name"):
+            git('config user.name "Autoresearch Agent"')
+        if not git("config user.email"):
+            git('config user.email "agent@autoresearch.local"')
+        
         existing_remotes = git("remote")
         if "origin" in existing_remotes:
             git(f'remote set-url origin "{remote_url}"')
@@ -238,8 +280,8 @@ def init_agent_repo():
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
 
     log(f"Subrepo ready on branch '{branch}' -> {safe_remote_url}")
-    # Push initial branch to remote so tracking is established
-    git_push(branch)
+    if token:
+        git_push(branch)
 
 
 # ---------------------------------------------------------------------------
