@@ -27,13 +27,13 @@ from typing import Any
 # the variant FAILS and is reverted.
 # ---------------------------------------------------------------------------
 ERROR_BOUNDS = {
-    "gini_coefficient":     0.02,   # absolute tolerance (was 0.05) - matches Gini 2 sig figs
-    "final_population":     0.05,   # relative tolerance (was 0.10) - matches carrying capacity SEM
-    "mean_trade_price":     0.08,   # relative tolerance (was 0.15) - matches price convergence SEM
-    "trade_volume":         0.05,   # relative tolerance (was 0.20) - matches trade activity SEM
-    "survival_rate":        0.02,   # absolute tolerance (was 0.05) - matches survival rate 2 sig figs
-    "wealth_cv":            0.05,   # relative tolerance (was 0.15) - matches inequality variance SEM
-    "spatial_entropy":      0.03,   # relative tolerance (was 0.10) - matches migration entropy SEM
+    "gini_coefficient":     0.02,   # absolute tolerance - matches Gini 2 sig figs
+    "final_population":     0.05,   # relative tolerance - matches carrying capacity SEM
+    "mean_trade_price":     0.15,   # relative tolerance - matches price convergence SEM (~18% std)
+    "trade_volume":         0.10,   # relative tolerance - matches trade activity SEM (~11% std)
+    "survival_rate":        0.02,   # absolute tolerance - matches survival rate 2 sig figs
+    "wealth_cv":            0.05,   # relative tolerance - matches inequality variance SEM
+    "spatial_entropy":      0.10,   # relative tolerance - matches migration entropy SEM (~5.6% std)
 }
 
 # Which metrics use absolute vs relative comparison

@@ -88,6 +88,7 @@ def run_mesa_canonical(params: dict, seed: int) -> dict:
         vision_min=params["vision_min"],
         vision_max=params["vision_max"],
         enable_trade=params["enable_trade"],
+        rng=seed,
     )
     
     steps = params.get("steps", DEFAULT_STEPS)
