@@ -1,888 +1,641 @@
 #!/usr/bin/env python3
 """
-edit_harness.py — Mini-SWE-Agent Style Surgical Edit Harness for Gemma
+Sugarscape Structural Ablation — Mini-SWE-Agent Edit Harness for Gemma
 
-This module wraps Gemma model calls in a minimalist agentic harness inspired by
-mini-swe-agent (https://github.com/swe-agent/mini-swe-agent).
+This module wraps Gemma calls in an autonomous edit harness inspired by and utilizing
+mini-SWE-agent (https://github.com/swe-agent/mini-swe-agent).
 
-Instead of requiring Gemma to rewrite the entire strategy file (~450+ lines)
-for every ablation attempt, this harness enables surgical edits:
-  - Single-line replacements (e.g. modifying a parameter or condition)
-  - Multi-line block replacements (e.g. simplifying an entire method)
-  - Line insertions and deletions
-  - Exact search-and-replace blocks (Aider / SWE-agent style)
-  - Interactive multi-turn agent loop with syntax error detection (ast.parse)
-  - Single-turn batch block applicator for high-throughput variant generation
+Instead of requiring Gemma to output the entire 500+ line `strategy.py` file on every
+ablation attempt, this harness enables surgical, pinpoint edits:
+  1. Single-line replacements: `replace_line <file> <line_num> <new_content>`
+  2. Block replacements:       `replace_block <file> <start> <end> <content>`
+  3. Search & replace:         `str_replace <file> <old_str> <new_str>`
+  4. Line insertions:          `insert <file> <after_line> <content>`
+  5. Line deletions:           `delete <file> <start> <end>`
 
-Can be used as:
-  1. A drop-in replacement for autoresearch.py:
-       from edit_harness import generate_ablation_variants_harness
-  2. An interactive agent loop:
-       agent = MiniSWEAgent(model, editor)
-       result = agent.run(task_prompt)
-  3. A standalone CLI script:
-       python edit_harness.py --file strategy.py --task "Simplify trade logic"
-  4. A dependency-free self-test:
-       python edit_harness.py --self-test
+Two execution modes are supported:
+  - 'agent': Full multi-turn interactive mini-swe-agent loop. Gemma explores the file,
+    inspects line numbers, makes edits via CLI tools, tests syntax/metrics, and submits.
+  - 'batch': Fast single-turn surgical edit. Gemma outputs only the pinpoint replacement
+    block or diff (reducing token output from ~600 lines to ~5-15 lines).
+
+Directly integrates with `autoresearch.py` via `generate_ablation_variants_harness()`.
 """
+
+from __future__ import annotations
 
 import ast
 import difflib
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
-import textwrap
+import tempfile
 import time
-from dataclasses import dataclass, field
+import traceback
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # ---------------------------------------------------------------------------
-# In-Memory Code Editor
+# Workspace & Configuration Defaults
 # ---------------------------------------------------------------------------
+DEFAULT_MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-26b-a4b-it")
+WORKSPACE_DIR = Path(__file__).parent.resolve()
+STRATEGY_FILE = WORKSPACE_DIR / "strategy.py"
+BASELINE_METRICS_FILE = WORKSPACE_DIR / "baseline_metrics.json"
+RESULTS_FILE = WORKSPACE_DIR / "results.tsv"
+PROGRAM_FILE = WORKSPACE_DIR / "program.md"
+
+
+# ===========================================================================
+# 1. Core Code Editor (Single-line, Block, Search/Replace, Line Insertion)
+# ===========================================================================
 
 class CodeEditor:
     """
-    In-memory code editor providing line-based and block-based surgical edits,
-    AST syntax validation, unified diff tracking, and undo capability.
+    Robust file editor supporting surgical line and block modifications.
+    Maintains an undo history stack for safe rollbacks.
     """
 
-    def __init__(self, content: str, filename: str = "strategy.py"):
-        self.filename = filename
-        self.original_content = content
-        self.lines: List[str] = content.splitlines()
-        self.undo_stack: List[List[str]] = []
-        self.redo_stack: List[List[str]] = []
+    def __init__(self, target_file: Path | str):
+        self.target_file = Path(target_file)
+        self.history: List[str] = []
+        if self.target_file.exists():
+            self._initial_content = self.target_file.read_text(encoding="utf-8")
+        else:
+            self._initial_content = ""
 
-    def get_content(self) -> str:
-        """Return the current file content with standard line endings."""
-        return "\n".join(self.lines) + ("\n" if self.lines else "")
+    def _snapshot(self):
+        """Save current content to history stack."""
+        if self.target_file.exists():
+            self.history.append(self.target_file.read_text(encoding="utf-8"))
 
-    def view(
-        self,
-        start: int = 1,
-        end: Optional[int] = None,
-        context: int = 0,
-        highlight_range: Optional[Tuple[int, int]] = None,
-    ) -> str:
+    def undo(self) -> str:
+        """Revert to previous state in history stack."""
+        if not self.history:
+            return "No previous state to revert to."
+        prev = self.history.pop()
+        self.target_file.write_text(prev, encoding="utf-8")
+        return f"Reverted {self.target_file.name} to previous state ({len(prev.splitlines())} lines)."
+
+    def reset_to_initial(self) -> str:
+        """Reset file to initial session content."""
+        self.target_file.write_text(self._initial_content, encoding="utf-8")
+        return f"Reset {self.target_file.name} to original state."
+
+    def view(self, start: int = 1, end: Optional[int] = None) -> str:
         """
-        Render lines with 1-based line numbers.
-        Example output:
-           45 |     def step(self):
-           46 |         self.age += 1
+        Display file contents with 1-based line numbers.
         """
-        total = len(self.lines)
+        if not self.target_file.exists():
+            return f"Error: File {self.target_file} does not exist."
+
+        lines = self.target_file.read_text(encoding="utf-8").splitlines()
+        total = len(lines)
         if total == 0:
-            return "(file is empty)"
+            return f"{self.target_file.name} is empty."
 
-        start_idx = max(1, start - context)
-        end_idx = min(total, (end if end is not None else total) + context)
+        start = max(1, start)
+        end = min(total, end) if end is not None else total
 
-        if start_idx > total:
-            return f"(start line {start} is beyond end of file ({total} lines))"
+        if start > total:
+            return f"Start line {start} exceeds total lines ({total})."
 
-        output_lines = []
-        width = len(str(end_idx))
-        for i in range(start_idx, end_idx + 1):
-            line_content = self.lines[i - 1]
-            marker = " "
-            if highlight_range and highlight_range[0] <= i <= highlight_range[1]:
-                marker = ">"
-            output_lines.append(f"{marker}{i:{width}d} | {line_content}")
+        output = [f"--- {self.target_file.name} (lines {start} to {end} of {total}) ---"]
+        for idx in range(start - 1, end):
+            output.append(f"{idx + 1:4d} | {lines[idx]}")
+        return "\n".join(output)
 
-        return "\n".join(output_lines)
-
-    def _save_undo(self):
-        """Push current state onto undo stack and clear redo stack."""
-        self.undo_stack.append(list(self.lines))
-        self.redo_stack.clear()
-        if len(self.undo_stack) > 50:
-            self.undo_stack.pop(0)
-
-    def undo(self) -> Tuple[bool, str]:
-        """Revert the most recent edit."""
-        if not self.undo_stack:
-            return False, "Undo stack is empty."
-        self.redo_stack.append(list(self.lines))
-        self.lines = self.undo_stack.pop()
-        valid, msg = self.validate_syntax()
-        return True, f"Reverted last edit ({len(self.lines)} lines total). {msg}"
-
-    def redo(self) -> Tuple[bool, str]:
-        """Redo the most recently reverted edit."""
-        if not self.redo_stack:
-            return False, "Redo stack is empty."
-        self.undo_stack.append(list(self.lines))
-        self.lines = self.redo_stack.pop()
-        valid, msg = self.validate_syntax()
-        return True, f"Redid edit ({len(self.lines)} lines total). {msg}"
-
-    def replace_lines(
-        self,
-        start_line: int,
-        end_line: int,
-        new_content: str,
-    ) -> Tuple[bool, str]:
+    def replace_line(self, line_num: int, new_line: str) -> str:
         """
-        Replace lines in the 1-based inclusive range [start_line, end_line]
-        with new_content.
-        
-        Surgical cases:
-          - Single line edit: start_line == end_line
-          - Multi-line block: start_line < end_line
-          - Deletion: new_content is empty string
-          - Insertion before start_line: start_line == end_line + 1
+        Replace a single line (1-indexed) in the target file.
         """
-        total = len(self.lines)
+        if not self.target_file.exists():
+            return f"Error: File {self.target_file} not found."
 
-        # Allow insertion at end of file
-        if start_line == total + 1 and end_line == total:
-            new_lines = new_content.splitlines() if new_content else []
-            self._save_undo()
-            self.lines.extend(new_lines)
-            return self._post_edit_report(start_line, start_line + len(new_lines) - 1)
+        self._snapshot()
+        lines = self.target_file.read_text(encoding="utf-8").splitlines(keepends=True)
+        total = len(lines)
 
-        # Normal bounds checking
+        if line_num < 1 or line_num > total:
+            return f"Error: line_num {line_num} out of bounds (1 to {total})."
+
+        old_line = lines[line_num - 1].rstrip("\r\n")
+        new_line_clean = new_line.rstrip("\r\n") + "\n"
+        lines[line_num - 1] = new_line_clean
+
+        self.target_file.write_text("".join(lines), encoding="utf-8")
+        return (
+            f"Successfully replaced line {line_num} in {self.target_file.name}:\n"
+            f"- {line_num:4d} | {old_line}\n"
+            f"+ {line_num:4d} | {new_line_clean.rstrip()}"
+        )
+
+    def replace_block(self, start_line: int, end_line: int, new_content: str) -> str:
+        """
+        Replace lines start_line through end_line (inclusive, 1-indexed) with new_content.
+        new_content can have any number of lines (including empty to delete).
+        """
+        if not self.target_file.exists():
+            return f"Error: File {self.target_file} not found."
+
+        self._snapshot()
+        lines = self.target_file.read_text(encoding="utf-8").splitlines(keepends=True)
+        total = len(lines)
+
         if start_line < 1:
-            return False, f"Invalid start line {start_line}: must be >= 1"
-        if end_line < start_line - 1:
-            return False, f"Invalid range {start_line}..{end_line}: end line must be >= start_line - 1"
-        if start_line > total and total > 0:
-            return False, f"Start line {start_line} exceeds file length ({total} lines)"
+            return f"Error: start_line {start_line} must be >= 1."
         if end_line > total:
-            return False, f"End line {end_line} exceeds file length ({total} lines)"
+            return f"Error: end_line {end_line} exceeds total lines ({total})."
+        if start_line > end_line:
+            return f"Error: start_line {start_line} > end_line {end_line}."
 
-        new_lines = new_content.splitlines() if new_content else []
+        if new_content and not new_content.endswith("\n"):
+            new_content += "\n"
 
-        self._save_undo()
+        replacement_lines = [new_content] if new_content else []
+        old_lines = lines[start_line - 1 : end_line]
+        lines[start_line - 1 : end_line] = replacement_lines
 
-        # Perform replacement
-        # 1-indexed to 0-indexed: start_line - 1 to end_line
-        self.lines[start_line - 1 : end_line] = new_lines
+        self.target_file.write_text("".join(lines), encoding="utf-8")
 
-        return self._post_edit_report(start_line, start_line + len(new_lines) - 1)
+        return (
+            f"Successfully replaced lines {start_line}-{end_line} ({len(old_lines)} lines removed, "
+            f"{len(new_content.splitlines())} lines added) in {self.target_file.name}."
+        )
 
-    def insert_lines(
-        self,
-        line_number: int,
-        new_content: str,
-        after: bool = True,
-    ) -> Tuple[bool, str]:
+    def insert_lines(self, after_line: int, content: str) -> str:
         """
-        Insert new_content before or after line_number (1-indexed).
+        Insert new lines after after_line (0 to insert at very beginning of file).
         """
-        total = len(self.lines)
-        if line_number < 0 or line_number > total:
-            return False, f"Line number {line_number} out of bounds (1..{total})"
+        if not self.target_file.exists():
+            return f"Error: File {self.target_file} not found."
 
-        target_idx = line_number if after else max(0, line_number - 1)
-        new_lines = new_content.splitlines() if new_content else []
+        self._snapshot()
+        lines = self.target_file.read_text(encoding="utf-8").splitlines(keepends=True)
+        total = len(lines)
 
-        self._save_undo()
-        self.lines[target_idx:target_idx] = new_lines
+        if after_line < 0 or after_line > total:
+            return f"Error: after_line {after_line} out of range (0 to {total})."
 
-        start_mod = target_idx + 1
-        end_mod = target_idx + len(new_lines)
-        return self._post_edit_report(start_mod, end_mod)
+        if content and not content.endswith("\n"):
+            content += "\n"
 
-    def delete_lines(self, start_line: int, end_line: int) -> Tuple[bool, str]:
-        """Delete lines from start_line to end_line inclusive (1-indexed)."""
-        return self.replace_lines(start_line, end_line, "")
+        lines.insert(after_line, content)
+        self.target_file.write_text("".join(lines), encoding="utf-8")
+        return f"Successfully inserted {len(content.splitlines())} lines after line {after_line}."
 
-    def str_replace(
-        self,
-        search_block: str,
-        replace_block: str,
-    ) -> Tuple[bool, str]:
+    def delete_lines(self, start_line: int, end_line: int) -> str:
         """
-        Search for an exact code block and replace it.
-        Ensures the search block is unique to prevent accidental edits elsewhere.
+        Delete lines start_line through end_line (inclusive, 1-indexed).
         """
-        current_text = self.get_content()
-        count = current_text.count(search_block)
+        return self.replace_block(start_line, end_line, "")
 
+    def str_replace(self, old_str: str, new_str: str, allow_multiple: bool = False) -> str:
+        """
+        Exact string replacement. Requires unique match unless allow_multiple=True.
+        """
+        if not self.target_file.exists():
+            return f"Error: File {self.target_file} not found."
+
+        self._snapshot()
+        content = self.target_file.read_text(encoding="utf-8")
+
+        count = content.count(old_str)
         if count == 0:
-            return False, (
-                "Search block not found. Make sure the search block matches "
-                "the exact characters, leading indentation, and newlines."
-            )
-        if count > 1:
-            return False, (
-                f"Search block found {count} times in the file. "
-                "Include more surrounding context lines to make it unique."
+            return f"Error: Target string not found in {self.target_file.name}."
+        if count > 1 and not allow_multiple:
+            return (
+                f"Error: Target string occurs {count} times in {self.target_file.name}. "
+                f"Please provide more surrounding context to ensure uniqueness, or pass allow_multiple."
             )
 
-        # Locate line range for reporting
-        char_idx = current_text.find(search_block)
-        start_line = current_text[:char_idx].count("\n") + 1
-        search_lines_count = search_block.count("\n") + 1
-        end_line = start_line + search_lines_count - 1
+        updated = content.replace(old_str, new_str) if allow_multiple else content.replace(old_str, new_str, 1)
+        self.target_file.write_text(updated, encoding="utf-8")
+        return f"Successfully replaced {count if allow_multiple else 1} occurrence(s) in {self.target_file.name}."
 
-        self._save_undo()
-        new_text = current_text.replace(search_block, replace_block, 1)
-        self.lines = new_text.splitlines()
-
-        replace_lines_count = replace_block.count("\n") + (1 if replace_block else 0)
-        new_end_line = start_line + replace_lines_count - 1
-
-        return self._post_edit_report(start_line, max(start_line, new_end_line))
-
-    def validate_syntax(self) -> Tuple[bool, str]:
-        """
-        Validate Python syntax using ast.parse.
-        Returns (is_valid, diagnostic_message).
-        """
-        code = self.get_content()
+    def check_syntax(self) -> Tuple[bool, str]:
+        """Verify Python AST syntax validity."""
+        if not self.target_file.exists():
+            return False, f"File {self.target_file} does not exist."
         try:
-            tree = ast.parse(code, filename=self.filename)
-            node_count = sum(1 for _ in ast.walk(tree))
-            return True, f"Syntax OK ({len(self.lines)} lines, {node_count} AST nodes)"
+            code = self.target_file.read_text(encoding="utf-8")
+            ast.parse(code)
+            return True, "Syntax OK: Code parses cleanly as Python AST."
         except SyntaxError as e:
-            line_str = f"line {e.lineno}" if e.lineno else "unknown line"
-            col_str = f", col {e.offset}" if e.offset else ""
-            error_line = (e.text or "").strip()
-            return False, (
-                f"SyntaxError at {line_str}{col_str}: {e.msg}\n"
-                f"  --> {error_line}"
-            )
-        except Exception as e:
-            return False, f"Code parsing error: {e}"
+            return False, f"SyntaxError at line {e.lineno}, col {e.offset}: {e.msg}\n  {e.text}"
 
-    def diff(self) -> str:
-        """Generate a unified diff between original and current content."""
-        orig_lines = [l + "\n" for l in self.original_content.splitlines()]
-        curr_lines = [l + "\n" for l in self.lines]
+    def get_diff(self) -> str:
+        """Return unified diff comparing current file to initial state."""
+        current = self.target_file.read_text(encoding="utf-8").splitlines(keepends=True)
+        initial = self._initial_content.splitlines(keepends=True)
         diff = difflib.unified_diff(
-            orig_lines,
-            curr_lines,
-            fromfile=f"a/{self.filename}",
-            tofile=f"b/{self.filename}",
+            initial, current,
+            fromfile=f"a/{self.target_file.name}",
+            tofile=f"b/{self.target_file.name}"
         )
-        return "".join(diff)
-
-    def _post_edit_report(self, start_line: int, end_line: int) -> Tuple[bool, str]:
-        """Generate observation report after an edit, including syntax check and view snippet."""
-        valid, syntax_msg = self.validate_syntax()
-        view_snippet = self.view(
-            start=max(1, start_line - 2),
-            end=min(len(self.lines), max(start_line, end_line) + 2),
-            highlight_range=(start_line, max(start_line, end_line)),
-        )
-
-        status_symbol = "✓" if valid else "❌"
-        report = (
-            f"{status_symbol} {syntax_msg}\n"
-            f"Modified lines {start_line}..{end_line}:\n"
-            f"{view_snippet}"
-        )
-        return valid, report
+        return "".join(diff) or "No changes detected."
 
 
-# ---------------------------------------------------------------------------
-# Command Action Definitions & Parser
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 2. Evaluation & Complexity Helpers
+# ===========================================================================
 
-@dataclass
-class EditAction:
-    command: str  # REPLACE, INSERT, DELETE, SEARCH_REPLACE, VIEW, UNDO, DIFF, SUBMIT
-    start_line: int = 0
-    end_line: int = 0
-    line_number: int = 0
-    content: str = ""
-    search_block: str = ""
-    replace_block: str = ""
-    description: str = ""
-    thought: str = ""
-    raw: str = ""
+def compute_complexity_info(code: str) -> dict:
+    """Calculate AST nodes, cyclomatic complexity, lines, and combined score."""
+    try:
+        from complexity import combined_complexity_score
+        return combined_complexity_score(code)
+    except Exception:
+        lines = len([line for line in code.splitlines() if line.strip() and not line.strip().startswith("#")])
+        try:
+            tree = ast.parse(code)
+            ast_nodes = sum(1 for _ in ast.walk(tree))
+            classes = sum(1 for node in ast.walk(tree) if isinstance(node, ast.ClassDef))
+            methods = sum(1 for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)))
+        except SyntaxError:
+            ast_nodes, classes, methods = -1, -1, -1
+
+        return {
+            "lines": lines,
+            "classes": classes,
+            "methods": methods,
+            "ast_nodes": ast_nodes,
+            "cyclomatic_total": 0,
+            "combined_score": float(ast_nodes if ast_nodes > 0 else lines),
+        }
 
 
-class ActionParser:
+def quick_evaluate(strategy_path: Path | str, steps: int = 50) -> dict:
     """
-    Robust parser extracting surgical editing commands and thoughts from
-    model responses. Supports both SWE-agent commands and markdown blocks.
+    Fast simulation test to verify strategy.py compiles and runs without crashing.
     """
+    path = Path(strategy_path)
+    if not path.exists():
+        return {"success": False, "error": f"File {path} does not exist"}
 
-    @staticmethod
-    def parse(response_text: str) -> EditAction:
-        text = response_text.strip()
-        thought = ""
+    code = path.read_text(encoding="utf-8")
+    try:
+        ast.parse(code)
+    except SyntaxError as e:
+        return {"success": False, "error": f"SyntaxError line {e.lineno}: {e.msg}"}
 
-        # Extract thought if present
-        thought_match = re.search(r"(?:THOUGHT|REASONING|PLAN)[:\s]+(.*?)(?=\n[A-Z_]+[:\s]|$)", text, re.DOTALL | re.IGNORECASE)
-        if thought_match:
-            thought = thought_match.group(1).strip()
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_eval_tmp", str(path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
 
-        # 1. SUBMIT command
-        submit_match = re.search(r"(?:SUBMIT|COMPLETE|DONE)(?:\s+(.*))?", text, re.IGNORECASE)
-        if submit_match and not any(k in text.upper() for k in ["REPLACE ", "INSERT ", "<<<<<<< SEARCH"]):
-            desc = (submit_match.group(1) or "").strip()
-            return EditAction(command="SUBMIT", description=desc or thought or "Ablation completed", thought=thought, raw=text)
+        if not hasattr(mod, "create_model") or not hasattr(mod, "run_model"):
+            return {"success": False, "error": "Missing create_model() or run_model()"}
 
-        # 2. SEARCH_REPLACE (Aider / SWE-agent style)
-        if "<<<<<<< SEARCH" in text and "=======" in text and ">>>>>>>" in text:
-            sr_match = re.search(r"<<<<<<<\s*SEARCH\s*\n(.*?)\n=======\s*\n(.*?)\n>>>>>>>", text, re.DOTALL)
-            if sr_match:
-                search_part = sr_match.group(1)
-                replace_part = sr_match.group(2)
-                return EditAction(
-                    command="SEARCH_REPLACE",
-                    search_block=search_part,
-                    replace_block=replace_part,
-                    thought=thought,
-                    raw=text,
-                )
-
-        # 3. REPLACE <start> <end>
-        replace_match = re.search(
-            r"REPLACE\s+(\d+)(?:\s*[:,\-\s]\s*|\s+)(\d+)\s*[:\s]*\n(?:```(?:python)?\s*\n)?(.*?)(?:```|END_REPLACE|$)",
-            text,
-            re.DOTALL | re.IGNORECASE,
+        model = mod.create_model(
+            seed=42, steps=steps, initial_population=100,
+            endowment_min=25, endowment_max=50,
+            metabolism_min=1, metabolism_max=5,
+            vision_min=1, vision_max=5,
+            enable_trade=True, width=30, height=30
         )
-        if replace_match:
-            start = int(replace_match.group(1))
-            end = int(replace_match.group(2))
-            code = replace_match.group(3).rstrip()
-            code = re.sub(r"\n?END_REPLACE\s*$", "", code, flags=re.IGNORECASE)
-            return EditAction(
-                command="REPLACE",
-                start_line=start,
-                end_line=end,
-                content=code,
-                thought=thought,
-                raw=text,
-            )
+        mod.run_model(model, steps)
 
-        # 4. Single-line REPLACE <line>
-        single_replace_match = re.search(
-            r"REPLACE\s+(\d+)\s*[:\s]*\n(?:```(?:python)?\s*\n)?(.*?)(?:```|END_REPLACE|$)",
-            text,
-            re.DOTALL | re.IGNORECASE,
-        )
-        if single_replace_match:
-            line_no = int(single_replace_match.group(1))
-            code = single_replace_match.group(2).rstrip()
-            code = re.sub(r"\n?END_REPLACE\s*$", "", code, flags=re.IGNORECASE)
-            return EditAction(
-                command="REPLACE",
-                start_line=line_no,
-                end_line=line_no,
-                content=code,
-                thought=thought,
-                raw=text,
-            )
+        gini = None
+        if hasattr(model, "datacollector") and "Gini" in model.datacollector.model_vars:
+            ginis = model.datacollector.model_vars["Gini"]
+            gini = float(ginis[-1]) if ginis else None
 
-        # 5. INSERT <line>
-        insert_match = re.search(
-            r"INSERT\s+(?:AFTER\s+)?(\d+)\s*[:\s]*\n(?:```(?:python)?\s*\n)?(.*?)(?:```|END_INSERT|$)",
-            text,
-            re.DOTALL | re.IGNORECASE,
-        )
-        if insert_match:
-            line_no = int(insert_match.group(1))
-            code = insert_match.group(2).rstrip()
-            code = re.sub(r"\n?END_INSERT\s*$", "", code, flags=re.IGNORECASE)
-            return EditAction(
-                command="INSERT",
-                line_number=line_no,
-                content=code,
-                thought=thought,
-                raw=text,
-            )
-
-        # 6. DELETE <start> <end>
-        delete_match = re.search(
-            r"DELETE\s+(\d+)(?:\s*[:,\-\s]\s*|\s+)(\d+)",
-            text,
-            re.IGNORECASE,
-        )
-        if delete_match:
-            start = int(delete_match.group(1))
-            end = int(delete_match.group(2))
-            return EditAction(
-                command="DELETE",
-                start_line=start,
-                end_line=end,
-                thought=thought,
-                raw=text,
-            )
-
-        # 7. Single-line DELETE <line>
-        single_delete_match = re.search(r"DELETE\s+(\d+)", text, re.IGNORECASE)
-        if single_delete_match:
-            line_no = int(single_delete_match.group(1))
-            return EditAction(
-                command="DELETE",
-                start_line=line_no,
-                end_line=line_no,
-                thought=thought,
-                raw=text,
-            )
-
-        # 8. VIEW <start> <end>
-        view_match = re.search(r"VIEW\s+(\d+)(?:\s*[:,\-\s]\s*|\s+)(\d+)", text, re.IGNORECASE)
-        if view_match:
-            return EditAction(
-                command="VIEW",
-                start_line=int(view_match.group(1)),
-                end_line=int(view_match.group(2)),
-                thought=thought,
-                raw=text,
-            )
-
-        # 9. UNDO
-        if re.search(r"\bUNDO\b", text, re.IGNORECASE):
-            return EditAction(command="UNDO", thought=thought, raw=text)
-
-        # 10. DIFF
-        if re.search(r"\bDIFF\b", text, re.IGNORECASE):
-            return EditAction(command="DIFF", thought=thought, raw=text)
-
-        # Fallback: check if the response is a SUBMIT with descriptive text
-        if "SUBMIT" in text.upper():
-            return EditAction(command="SUBMIT", description=thought or text[:200], thought=thought, raw=text)
-
-        return EditAction(command="UNKNOWN", raw=text, thought=thought)
-
-    @staticmethod
-    def parse_all_blocks(response_text: str) -> List[EditAction]:
-        """
-        Extract multiple sequential block edits from a single response.
-        Useful for batch / single-turn patch execution.
-        """
-        actions: List[EditAction] = []
-
-        # Find all SEARCH/REPLACE blocks
-        for m in re.finditer(r"<<<<<<<\s*SEARCH\s*\n(.*?)\n=======\s*\n(.*?)\n>>>>>>>", response_text, re.DOTALL):
-            actions.append(
-                EditAction(
-                    command="SEARCH_REPLACE",
-                    search_block=m.group(1),
-                    replace_block=m.group(2),
-                )
-            )
-
-        # Find all REPLACE <start> <end> blocks
-        for m in re.finditer(
-            r"REPLACE\s+(\d+)(?:\s*[:,\-\s]\s*|\s+)(\d+)\s*[:\s]*\n(?:```(?:python)?\s*\n)?(.*?)(?:```|END_REPLACE|$)",
-            response_text,
-            re.DOTALL | re.IGNORECASE,
-        ):
-            code = m.group(3).rstrip()
-            code = re.sub(r"\n?END_REPLACE\s*$", "", code, flags=re.IGNORECASE)
-            actions.append(
-                EditAction(
-                    command="REPLACE",
-                    start_line=int(m.group(1)),
-                    end_line=int(m.group(2)),
-                    content=code,
-                )
-            )
-
-        # Find all DELETE <start> <end> blocks
-        for m in re.finditer(r"DELETE\s+(\d+)(?:\s*[:,\-\s]\s*|\s+)(\d+)", response_text, re.IGNORECASE):
-            actions.append(
-                EditAction(
-                    command="DELETE",
-                    start_line=int(m.group(1)),
-                    end_line=int(m.group(2)),
-                )
-            )
-
-        return actions
+        return {
+            "success": True,
+            "steps_run": steps,
+            "final_gini": gini,
+            "message": f"Successfully simulated {steps} steps without errors."
+        }
+    except Exception as e:
+        return {"success": False, "error": f"{type(e).__name__}: {e}"}
 
 
-# ---------------------------------------------------------------------------
-# Gemma Model Wrapper
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 3. Model Adapter: Google GenAI (Native Gemma) conforming to Mini-SWE-Agent
+# ===========================================================================
 
-class GemmaModelClient:
+class GemmaGenAIModel:
     """
-    Clean wrapper for invoking Gemma models (via google.genai or mock fallback).
-    Handles retry logic, token parameters, and system prompts.
+    Model adapter connecting Google GenAI SDK (for gemma-4-26b-a4b-it or gemini models)
+    to the mini-swe-agent Model protocol.
     """
 
     def __init__(
         self,
-        model_name: str = "gemma-4-26b-a4b-it",
-        api_key: Optional[str] = None,
-        client: Optional[Any] = None,
-        temperature: float = 0.5,
+        model_name: str = DEFAULT_MODEL,
+        client: Any = None,
+        api_key: Optional[str] = None
     ):
         self.model_name = model_name
-        self.temperature = temperature
-        self._client = client
-        self.api_key = api_key or os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+        self.client = client
+        if self.client is None:
+            key = api_key or os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+            if key:
+                try:
+                    from google import genai
+                    self.client = genai.Client(api_key=key)
+                except ImportError:
+                    self.client = None
 
-    def _get_client(self):
-        if self._client is not None:
-            return self._client
-        try:
-            from google import genai
-            self._client = genai.Client(api_key=self.api_key)
-            return self._client
-        except ImportError:
+        self.action_regex = r"```(?:mswea_bash_command|bash)?\s*\n(.*?)\n```"
+        self.cost = 0.0
+        self.n_calls = 0
+
+    def query(self, messages: List[Dict[str, Any]], **kwargs) -> Dict[str, Any]:
+        """Query Gemma model and parse actions."""
+        if not self.client:
             raise RuntimeError(
-                "google-genai is not installed in this environment. "
-                "Install with `pip install google-genai` or pass a client instance."
+                "google-genai client not available. Ensure 'google-genai' is installed "
+                "and GOOGLE_API_KEY is set or client is provided."
             )
 
-    def generate(self, prompt: str, system_instruction: str = "", max_output_tokens: int = 4096) -> str:
-        """Call Gemma with the specified prompt and return the response text."""
-        client = self._get_client()
         from google.genai import types
 
-        config = types.GenerateContentConfig(
-            temperature=self.temperature,
-            max_output_tokens=max_output_tokens,
-            system_instruction=system_instruction or None,
+        prompt_parts = []
+        for msg in messages:
+            role = msg.get("role", "user").upper()
+            content = msg.get("content", "")
+            prompt_parts.append(f"[{role}]\n{content}\n")
+
+        full_prompt = "\n".join(prompt_parts)
+
+        self.n_calls += 1
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                temperature=kwargs.get("temperature", 0.6),
+                max_output_tokens=kwargs.get("max_output_tokens", 4096),
+            ),
         )
 
-        max_retries = 4
-        for attempt in range(max_retries):
-            try:
-                response = client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=config,
-                )
-                if response and response.text:
-                    return response.text.strip()
-                return ""
-            except Exception as e:
-                err_str = str(e)
-                if ("500" in err_str or "503" in err_str or "ServerError" in type(e).__name__) and attempt < max_retries - 1:
-                    time.sleep(3 * (attempt + 1))
-                    continue
-                raise e
-        return ""
+        text = response.text or ""
+        actions = self._parse_actions(text)
+
+        return {
+            "role": "assistant",
+            "content": text,
+            "extra": {
+                "actions": actions,
+                "cost": 0.0,
+                "timestamp": time.time(),
+            },
+        }
+
+    def _parse_actions(self, content: str) -> List[Dict[str, str]]:
+        matches = re.findall(self.action_regex, content, re.DOTALL)
+        if not matches:
+            for line in content.splitlines():
+                line_str = line.strip()
+                if line_str.startswith("python edit_harness.py") or line_str.startswith("./edit_harness.py"):
+                    return [{"command": line_str}]
+            return []
+        return [{"command": matches[0].strip()}]
+
+    def format_message(self, **kwargs) -> Dict[str, Any]:
+        return kwargs
+
+    def format_observation_messages(
+        self, message: Dict[str, Any], outputs: List[Dict[str, Any]], template_vars: Optional[Dict] = None
+    ) -> List[Dict[str, Any]]:
+        results = []
+        for out in outputs:
+            text_out = out.get("output", "")
+            ret_code = out.get("returncode", 0)
+            content = f"<returncode>{ret_code}</returncode>\n<output>\n{text_out}\n</output>"
+            results.append({
+                "role": "user",
+                "content": content,
+                "extra": {"raw_output": text_out, "returncode": ret_code}
+            })
+        return results
+
+    def get_template_vars(self, **kwargs) -> Dict[str, Any]:
+        return {"model_name": self.model_name, "n_calls": self.n_calls}
+
+    def serialize(self) -> Dict[str, Any]:
+        return {"model_name": self.model_name, "n_calls": self.n_calls}
 
 
-# ---------------------------------------------------------------------------
-# MiniSWEAgent: Core Agent Loop
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 4. Mini-SWE-Agent Environment & Runner (Mode = 'agent')
+# ===========================================================================
 
-class MiniSWEAgent:
+SYSTEM_TEMPLATE = """\
+You are an expert AI software researcher performing structural ablation on the Sugarscape model.
+Your objective is to simplify `strategy.py` to reduce AST node count and cyclomatic branching while preserving emergent behaviors.
+
+IMPORTANT: DO NOT output the entire `strategy.py` file!
+Instead, use surgical single-line or block editing commands. You interact with the environment via bash commands.
+
+### Available Editing CLI Tools:
+1. `python edit_harness.py view <file> <start_line> <end_line>`
+   View targeted lines with 1-based line numbers.
+2. `python edit_harness.py replace_line <file> <line_num> "<new_line>"`
+   Replace a single line.
+3. `python edit_harness.py replace_block <file> <start_line> <end_line> << 'EOF'
+<new_code>
+EOF`
+   Replace a range of lines with new code (or empty to delete).
+4. `python edit_harness.py str_replace <file> << 'EOF'
+<<<<<<< SEARCH
+old exact code
+=======
+new code
+>>>>>>> REPLACE
+EOF`
+   Exact search and replace.
+5. `python edit_harness.py check <file>`
+   Check Python syntax and show complexity delta (AST nodes, cyclomatic score).
+6. `python edit_harness.py eval <file>`
+   Run a fast simulation sanity check to ensure the model still runs.
+7. `python edit_harness.py diff <file>`
+   Show unified git diff of changes made so far.
+8. `python edit_harness.py submit "<description>"`
+   Finalize and submit your ablation with a 1-line description.
+
+### Rules of Engagement:
+- Each turn must include a **THOUGHT** section explaining what you're doing.
+- Each turn must include **EXACTLY ONE** bash command in a ```mswea_bash_command code block.
+- Always run `python edit_harness.py check strategy.py` after editing to ensure no syntax errors.
+- When satisfied, finish by calling: `python edit_harness.py submit "Brief description of ablation"`.
+"""
+
+INSTANCE_TEMPLATE = """\
+## Task: Perform Structural Ablation Round on strategy.py
+
+Current Baseline & Constraints:
+- Baseline Combined Complexity: {{ current_complexity.combined_score | round(1) if current_complexity else 'N/A' }}
+  (AST Nodes: {{ current_complexity.ast_nodes if current_complexity else 'N/A' }}, Cyclomatic: {{ current_complexity.cyclomatic_total if current_complexity else 'N/A' }}, Lines: {{ current_complexity.lines if current_complexity else 'N/A' }})
+- Target: Lower the combined complexity score while maintaining valid Python syntax and emergent properties.
+
+Ablation History / Lessons Learned:
+```
+{{ results_history }}
+```
+
+Target File:
+`strategy.py` is in the current working directory.
+
+Recommended Workflow:
+1. Inspect the function or class you want to simplify:
+   `python edit_harness.py view strategy.py <start> <end>`
+2. Execute a single-line or block replacement:
+   `python edit_harness.py replace_block strategy.py <start> <end> << 'EOF'`
+3. Verify syntax and complexity:
+   `python edit_harness.py check strategy.py`
+4. Run quick sanity test:
+   `python edit_harness.py eval strategy.py`
+5. Submit final simplification:
+   `python edit_harness.py submit "Replaced verbose helper with simplified logic"`
+"""
+
+
+class HarnessEnvironment:
+    """Local execution environment executing commands in a subshell."""
+
+    def __init__(self, cwd: Path | str, timeout: int = 60):
+        self.cwd = Path(cwd).resolve()
+        self.timeout = timeout
+        self.submission_text: Optional[str] = None
+        self.is_finished: bool = False
+
+    def execute(self, action: Dict[str, Any], cwd: str = "") -> Dict[str, Any]:
+        command = action.get("command", "").strip()
+        exec_cwd = cwd or str(self.cwd)
+
+        # Intercept direct submit command
+        if "submit" in command and ("edit_harness.py submit" in command or command.startswith("submit")):
+            match = re.search(r'submit\s+["\']?(.*?)["\']?$', command)
+            desc = match.group(1) if match else "Ablation applied"
+            self.submission_text = desc
+            self.is_finished = True
+            return {
+                "output": f"COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n{desc}",
+                "returncode": 0,
+                "exception_info": "",
+            }
+
+        try:
+            res = subprocess.run(
+                command,
+                shell=True,
+                cwd=exec_cwd,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+                env=os.environ.copy()
+            )
+            stdout = (res.stdout + ("\n" + res.stderr if res.stderr else "")).strip()
+
+            if "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in stdout:
+                self.is_finished = True
+                lines = stdout.split("COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT", 1)[1].strip()
+                self.submission_text = lines or "Ablation submitted"
+
+            return {"output": stdout, "returncode": res.returncode, "exception_info": ""}
+        except subprocess.TimeoutExpired:
+            return {"output": f"Command timed out after {self.timeout}s", "returncode": -1, "exception_info": "Timeout"}
+        except Exception as e:
+            return {"output": f"Execution error: {e}", "returncode": -1, "exception_info": str(e)}
+
+    def get_template_vars(self, **kwargs) -> Dict[str, Any]:
+        return {"cwd": str(self.cwd)}
+
+    def serialize(self) -> Dict[str, Any]:
+        return {"cwd": str(self.cwd), "timeout": self.timeout}
+
+
+class MiniSweAgentHarness:
     """
-    Lightweight, interactive software engineering agent inspired by mini-swe-agent.
-    
-    The agent receives the code with line numbers, reasons about simplifications,
-    issues surgical edit commands (REPLACE, DELETE, INSERT, SEARCH_REPLACE),
-    receives observations (diffs + AST syntax diagnostics), and self-corrects
-    if syntax errors occur until submitting the completed ablation.
+    Mini-SWE-Agent runner executing interactive ablation sessions.
+    Uses installed `minisweagent` classes if available, otherwise native fallback.
     """
-
-    SYSTEM_PROMPT = textwrap.dedent("""\
-    You are an expert software engineer and research agent performing structural ablation.
-    Your goal is to simplify Python code by making surgical single-line or block edits.
-    
-    DO NOT output the entire file. Instead, use the commands below to modify only
-    the specific lines you want to simplify.
-    
-    AVAILABLE COMMANDS:
-    1. Replace lines:
-       REPLACE <start_line> <end_line>
-       ```python
-       <replacement code>
-       ```
-       (To replace a single line, use REPLACE <line> <line>)
-    
-    2. Delete lines:
-       DELETE <start_line> <end_line>
-    
-    3. Insert lines after a line:
-       INSERT <line_number>
-       ```python
-       <code to insert>
-       ```
-    
-    4. Exact search & replace:
-       <<<<<<< SEARCH
-       <exact code to find>
-       =======
-       <replacement code>
-       >>>>>>>
-    
-    5. View lines:
-       VIEW <start_line> <end_line>
-    
-    6. Undo previous edit:
-       UNDO
-    
-    7. Submit when done:
-       SUBMIT <brief description of what was simplified>
-    
-    FORMAT YOUR RESPONSE:
-    THOUGHT: <Brief 1-2 sentence explanation of the specific simplification you are making>
-    <COMMAND>
-    
-    CRITICAL RULES:
-    - Maintain valid Python syntax and exact indentation.
-    - If a syntax error is reported, fix it immediately in the next turn.
-    - Each turn should execute ONE command. When your simplification is complete, call SUBMIT.
-    """)
 
     def __init__(
         self,
-        model: GemmaModelClient,
-        editor: CodeEditor,
-        max_steps: int = 6,
-        verbose: bool = True,
+        workspace_dir: Path | str,
+        model_name: str = DEFAULT_MODEL,
+        client: Any = None,
+        step_limit: int = 15,
+        temperature: float = 0.6,
     ):
-        self.model = model
-        self.editor = editor
-        self.max_steps = max_steps
-        self.verbose = verbose
-        self.history: List[Dict[str, str]] = []
+        self.workspace_dir = Path(workspace_dir).resolve()
+        self.step_limit = step_limit
+        self.model_name = model_name
+        self.temperature = temperature
+        self.client = client
 
-    def _log(self, msg: str):
-        if self.verbose:
-            ts = time.strftime("%H:%M:%S")
-            print(f"[{ts}] [EditHarness] {msg}", flush=True)
+        self.messages: List[Dict[str, Any]] = []
+        self.env = HarnessEnvironment(cwd=self.workspace_dir)
+        self.model = GemmaGenAIModel(model_name=self.model_name, client=self.client)
 
-    def run(self, task_instruction: str) -> Tuple[bool, str, str, str]:
-        """
-        Execute the agent loop.
-        Returns: (success, final_code, description, diff)
-        """
-        self._log(f"Starting agent run (max_steps={self.max_steps})")
-        
-        # Initial user turn with code view
-        numbered_code = self.editor.view(1, len(self.editor.lines))
-        initial_prompt = textwrap.dedent(f"""\
-        ## Task:
-        {task_instruction}
-        
-        ## Target File ({self.editor.filename}):
-        ```python
-        {numbered_code}
-        ```
-        
-        Inspect the code, plan your first surgical edit, and issue a command.
-        """)
+    def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute the agent interactive editing loop."""
+        from jinja2 import Template
 
-        conversation: List[Dict[str, str]] = [
-            {"role": "user", "content": initial_prompt}
+        sys_msg = Template(SYSTEM_TEMPLATE).render()
+        inst_msg = Template(INSTANCE_TEMPLATE).render(**task_context)
+
+        self.messages = [
+            {"role": "system", "content": sys_msg},
+            {"role": "user", "content": inst_msg},
         ]
 
-        description = "ablation variant"
-        syntax_valid = True
-
-        for step in range(1, self.max_steps + 1):
-            self._log(f"Turn {step}/{self.max_steps}: Prompting Gemma...")
-
-            full_prompt = self._format_conversation(conversation)
-
+        steps_taken = 0
+        for step_idx in range(self.step_limit):
+            steps_taken += 1
             try:
-                response = self.model.generate(
-                    prompt=full_prompt,
-                    system_instruction=self.SYSTEM_PROMPT,
-                )
+                model_msg = self.model.query(self.messages, temperature=self.temperature)
             except Exception as e:
-                self._log(f"Model generation error: {e}")
-                return False, self.editor.get_content(), f"Model error: {e}", self.editor.diff()
+                return {
+                    "success": False,
+                    "error": f"Model query failed: {e}",
+                    "steps": steps_taken,
+                }
 
-            if not response:
-                self._log("Received empty response from model.")
-                break
+            self.messages.append(model_msg)
+            actions = model_msg.get("extra", {}).get("actions", [])
 
-            action = ActionParser.parse(response)
-            self._log(f"Action parsed: {action.command} (thought: {action.thought[:60]}...)")
+            if not actions:
+                obs_msg = {
+                    "role": "user",
+                    "content": (
+                        "Format Error: No command block found. Please provide your next command "
+                        "in triple backticks: ```mswea_bash_command\n<command>\n```"
+                    )
+                }
+                self.messages.append(obs_msg)
+                continue
 
-            # Handle SUBMIT
-            if action.command == "SUBMIT":
-                description = action.description or action.thought or description
-                valid, msg = self.editor.validate_syntax()
-                if not valid:
-                    self._log(f"Cannot submit with syntax error: {msg}")
-                    conversation.append({"role": "assistant", "content": response})
-                    conversation.append({
-                        "role": "user",
-                        "content": f"❌ Cannot SUBMIT: The code has a syntax error:\n{msg}\nPlease fix it before submitting.",
-                    })
-                    continue
-                self._log(f"✓ SUBMIT received: {description}")
-                return True, self.editor.get_content(), description, self.editor.diff()
+            outputs = [self.env.execute(action) for action in actions]
+            obs_msgs = self.model.format_observation_messages(model_msg, outputs)
+            self.messages.extend(obs_msgs)
 
-            # Execute command on editor
-            obs_valid, observation = self._execute_action(action)
-            syntax_valid = obs_valid
+            if self.env.is_finished:
+                return {
+                    "success": True,
+                    "submission": self.env.submission_text or "Ablation submitted",
+                    "steps": steps_taken,
+                }
 
-            conversation.append({"role": "assistant", "content": response})
-            conversation.append({
-                "role": "user",
-                "content": f"OBSERVATION:\n{observation}\n\nWhat is your next action? (Issue another edit or call SUBMIT if finished)",
-            })
-
-        # Max steps reached: ensure syntax validity
-        final_valid, final_msg = self.editor.validate_syntax()
-        if not final_valid:
-            self._log(f"Agent finished with syntax error, rolling back to last valid state...")
-            while self.editor.undo_stack and not final_valid:
-                self.editor.undo()
-                final_valid, _ = self.editor.validate_syntax()
-
-        return final_valid, self.editor.get_content(), description, self.editor.diff()
-
-    def _execute_action(self, action: EditAction) -> Tuple[bool, str]:
-        """Execute a parsed action on the editor and return (is_valid, observation)."""
-        if action.command == "REPLACE":
-            return self.editor.replace_lines(action.start_line, action.end_line, action.content)
-
-        elif action.command == "INSERT":
-            return self.editor.insert_lines(action.line_number, action.content, after=True)
-
-        elif action.command == "DELETE":
-            return self.editor.delete_lines(action.start_line, action.end_line)
-
-        elif action.command == "SEARCH_REPLACE":
-            return self.editor.str_replace(action.search_block, action.replace_block)
-
-        elif action.command == "VIEW":
-            snippet = self.editor.view(action.start_line, action.end_line)
-            return True, f"Code lines {action.start_line}..{action.end_line}:\n{snippet}"
-
-        elif action.command == "UNDO":
-            return self.editor.undo()
-
-        elif action.command == "DIFF":
-            diff_text = self.editor.diff()
-            return True, f"Current diff:\n{diff_text or '(no changes from original)'}"
-
-        else:
-            return False, (
-                f"Unknown command. Available commands: "
-                "REPLACE <start> <end>, DELETE <start> <end>, INSERT <line>, "
-                "<<<<<<< SEARCH ... ======= ... >>>>>>>, VIEW <start> <end>, UNDO, SUBMIT."
-            )
-
-    def _format_conversation(self, conversation: List[Dict[str, str]]) -> str:
-        """Format message history into a single structured prompt."""
-        formatted = []
-        for msg in conversation:
-            role = msg["role"].upper()
-            content = msg["content"]
-            formatted.append(f"=== {role} ===\n{content}\n")
-        return "\n".join(formatted)
+        return {
+            "success": False,
+            "submission": "Reached step limit without submission.",
+            "steps": steps_taken,
+        }
 
 
-# ---------------------------------------------------------------------------
-# Single-Turn Batch Patch Applicator
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 5. Surgical Batch Mode (Mode = 'batch')
+# ===========================================================================
 
-class SingleTurnPatchApplicator:
-    """
-    Fast, single-round patch applicator. Gemma is prompted to output one or
-    more surgical edit blocks in a single response, which are then applied
-    and validated without requiring multiple interactive turns.
-    """
-
-    BATCH_PROMPT_TEMPLATE = textwrap.dedent("""\
-    ## Task
-    {task}
-    
-    ## Baseline Context & Goals
-    Reduce complexity score while keeping metrics valid.
-    
-    ## Current Strategy Code ({filename}):
-    ```python
-    {numbered_code}
-    ```
-    
-    INSTRUCTIONS:
-    Propose 1 to 4 surgical edits to simplify this code.
-    DO NOT output the entire file! Only output the specific lines being changed.
-    
-    Output your edits using ONE of these formats:
-    
-    FORMAT A (Line-based replace):
-    REPLACE <start_line> <end_line>:
-    ```python
-    <new code>
-    ```
-    
-    FORMAT B (Delete lines):
-    DELETE <start_line> <end_line>
-    
-    FORMAT C (Search & Replace):
-    <<<<<<< SEARCH
-    <exact old lines to find>
-    =======
-    <new replacement lines>
-    >>>>>>>
-    
-    CRITICAL:
-    - Target only specific helper methods, conditions, or loops to simplify.
-    - Leave create_model(), run_model(), and SugarScapeScenario definitions untouched.
-    
-    At the end of your response, write:
-    SUBMIT: <one-line description of the simplification>
-    """)
-
-    @classmethod
-    def apply_response(
-        cls,
-        code: str,
-        response_text: str,
-        filename: str = "strategy.py",
-    ) -> Tuple[bool, str, str, str]:
-        """
-        Apply all edit blocks found in response_text to code.
-        Returns: (success, modified_code, description, diff)
-        """
-        editor = CodeEditor(code, filename=filename)
-        actions = ActionParser.parse_all_blocks(response_text)
-
-        # Extract description
-        desc_match = re.search(r"SUBMIT[:\s]+(.*)", response_text, re.IGNORECASE)
-        description = desc_match.group(1).strip() if desc_match else "Surgical ablation"
-
-        if not actions:
-            single = ActionParser.parse(response_text)
-            if single.command not in ("UNKNOWN", "SUBMIT"):
-                actions = [single]
-
-        if not actions:
-            return False, code, "No valid edit blocks parsed", ""
-
-        # Sort line-based actions in descending order of start_line
-        line_actions = [a for a in actions if a.command in ("REPLACE", "DELETE", "INSERT")]
-        sr_actions = [a for a in actions if a.command == "SEARCH_REPLACE"]
-
-        line_actions.sort(key=lambda a: (a.start_line or a.line_number), reverse=True)
-
-        # Apply SEARCH/REPLACE blocks first
-        for action in sr_actions:
-            success, msg = editor.str_replace(action.search_block, action.replace_block)
-            if not success:
-                return False, code, f"Search/Replace failed: {msg}", ""
-
-        # Apply line actions in reverse line order
-        for action in line_actions:
-            if action.command == "REPLACE":
-                success, msg = editor.replace_lines(action.start_line, action.end_line, action.content)
-            elif action.command == "DELETE":
-                success, msg = editor.delete_lines(action.start_line, action.end_line)
-            elif action.command == "INSERT":
-                success, msg = editor.insert_lines(action.line_number, action.content)
-            else:
-                success = True
-
-            if not success:
-                return False, code, f"Edit failed at lines {action.start_line}..{action.end_line}: {msg}", ""
-
-        valid, syntax_msg = editor.validate_syntax()
-        if not valid:
-            return False, code, f"Edits resulted in {syntax_msg}", ""
-
-        return True, editor.get_content(), description, editor.diff()
-
-
-# ---------------------------------------------------------------------------
-# Autoresearch Integration Wrapper
-# ---------------------------------------------------------------------------
-
-def generate_ablation_variants_harness(
+def generate_surgical_batch_variants(
     client: Any,
     current_strategy: str,
     results_history: str,
@@ -890,293 +643,483 @@ def generate_ablation_variants_harness(
     complexity: dict,
     program_text: str = "",
     n_variants: int = 1,
-    mode: str = "batch",  # "batch" (single-round blocks) or "agent" (interactive multi-turn)
-    model_name: str = "gemma-4-26b-a4b-it",
+    model_name: str = DEFAULT_MODEL,
     temperature: float = 0.7,
-    max_agent_steps: int = 5,
 ) -> List[Tuple[str, str]]:
     """
-    Drop-in replacement for autoresearch.py's generate_ablation_variants.
-    
-    Instead of asking Gemma to reproduce all of strategy.py (~450 lines),
-    it instructs Gemma to perform surgical edits, resulting in faster responses,
-    fewer token limits hit, and lower likelihood of syntax errors.
-    
-    Returns:
-        List of (modified_code, description) tuples.
+    Fast single-turn surgical ablation generator.
+
+    Prompts Gemma to output ONLY the targeted line or block replacement rather than
+    regenerating the entire 500+ line strategy file.
     """
-    model_wrapper = GemmaModelClient(
-        model_name=model_name,
-        client=client,
-        temperature=temperature,
-    )
+    from google.genai import types
 
-    baseline_json = json.dumps(baseline_metrics, indent=2) if isinstance(baseline_metrics, dict) else str(baseline_metrics)
-    
-    task_parts = []
-    if program_text:
-        task_parts.append(program_text.strip())
-        task_parts.append("\n---\n")
+    lines = current_strategy.splitlines()
+    total_lines = len(lines)
 
-    task_parts.append(textwrap.dedent(f"""\
-    ## Current Complexity:
-    - Score: {complexity.get('combined_score', 0):.1f}
-    - AST Nodes: {complexity.get('ast_nodes', 0)}
-    - Cyclomatic Complexity: {complexity.get('cyclomatic_total', 0)}
-    - Lines: {complexity.get('lines', 0)}
+    numbered_code = "\n".join(f"{i + 1:4d} | {line}" for i, line in enumerate(lines))
 
-    ## Target Baseline Metrics to Preserve:
-    ```json
-    {baseline_json}
-    ```
+    prompt = f"""\
+{program_text}
 
-    ## Results History (learn from past ablations):
-    ```
-    {results_history[-1000:] if results_history else '(none)'}
-    ```
+---
 
-    ## CRITICAL API & CODE CONTRACT:
-    - DO NOT rewrite the entire file or whole classes!
-    - DO NOT change the signature or return format of create_model() or run_model().
-    - SugarScapeScenario MUST accept rng and kwargs (sc = SugarScapeScenario(rng=seed, **scenario_kwargs)).
-    - Focus on surgical ablations: inline helper methods, simplify trade calculations, prune dead branches.
-    """))
+## Current strategy.py ({total_lines} lines, numbered):
+```python
+{numbered_code}
+```
 
-    task = "\n".join(task_parts)
+## Current Complexity (Combined AST + Cyclomatic Score):
+- Combined Score: {complexity.get('combined_score', 0):.1f} (LOWER IS BETTER)
+- AST Nodes: {complexity.get('ast_nodes', 0)}
+- Cyclomatic: {complexity.get('cyclomatic_total', 0)}
+- Lines: {complexity.get('lines', 0)}
 
-    variants: List[Tuple[str, str]] = []
+## Target Baseline Metrics to Preserve:
+```json
+{json.dumps(baseline_metrics, indent=2)}
+```
 
-    for v_idx in range(n_variants):
-        if mode == "agent":
-            editor = CodeEditor(current_strategy, filename="strategy.py")
-            agent = MiniSWEAgent(model_wrapper, editor, max_steps=max_agent_steps, verbose=True)
-            success, code, desc, diff = agent.run(task)
-            if success and "def create_model" in code and "def run_model" in code:
-                variants.append((code, desc))
-        else:
-            # Batch mode: single prompt with numbered lines
-            editor = CodeEditor(current_strategy, filename="strategy.py")
-            numbered_code = editor.view(1, len(editor.lines))
-            prompt = SingleTurnPatchApplicator.BATCH_PROMPT_TEMPLATE.format(
-                task=task,
-                filename="strategy.py",
-                numbered_code=numbered_code,
+## Recent Results History:
+```
+{results_history}
+```
+
+---
+
+### Instructions for Surgical Ablation:
+Propose {n_variants} distinct structural simplifications of `strategy.py`.
+CRITICAL: DO NOT output the full file! Output ONLY surgical replacements.
+
+For EACH variant, choose ONE of the following formats:
+
+Format A (Replace a range of lines):
+**Variant <N>:** <one-line description of what was simplified>
+```replace_block
+START_LINE: <start line number>
+END_LINE: <end line number>
+```python
+<new code block to replace lines START_LINE through END_LINE>
+```
+
+Format B (Replace a single line):
+**Variant <N>:** <one-line description of what was simplified>
+```replace_line
+LINE_NUM: <line number>
+```python
+<new single line content>
+```
+
+Format C (Search & Replace exact text):
+**Variant <N>:** <one-line description of what was simplified>
+```str_replace
+<<<<<<< SEARCH
+<exact existing code block>
+=======
+<simplified replacement code block>
+>>>>>>> REPLACE
+```
+
+Focus on eliminating redundant calculations, inlining unnecessary helper functions,
+flattening nested branches, and simplifying agent decision rules.
+"""
+
+    try:
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=8192,
+            ),
+        )
+        text = response.text or ""
+    except Exception as e:
+        print(f"[edit_harness] Batch generation API error: {e}", file=sys.stderr)
+        return []
+
+    return parse_surgical_edits(text, current_strategy, expected=n_variants)
+
+
+def parse_surgical_edits(
+    response_text: str,
+    original_code: str,
+    expected: int = 1
+) -> List[Tuple[str, str]]:
+    """Parse surgical edit blocks from model response and apply them to original_code."""
+    variants = []
+
+    parts = re.split(r'\*\*Variant\s+(\d+)[:\s]*\*\*', response_text)
+    variant_chunks: List[Tuple[str, str]] = []
+
+    if len(parts) > 1:
+        for idx in range(1, len(parts), 2):
+            var_num = parts[idx]
+            chunk = parts[idx + 1]
+            lines = chunk.strip().splitlines()
+            desc = lines[0].strip().strip("*").strip("-").strip() if lines else f"Variant {var_num}"
+            variant_chunks.append((desc, chunk))
+    else:
+        variant_chunks.append(("Surgical simplification", response_text))
+
+    for desc, chunk in variant_chunks[:expected]:
+        with tempfile.NamedTemporaryFile("w+", suffix=".py", delete=False) as tmp:
+            tmp.write(original_code)
+            tmp_path = Path(tmp.name)
+
+        try:
+            editor = CodeEditor(tmp_path)
+            applied = False
+
+            # Pattern 1: replace_block (flexible regarding backticks)
+            block_match = re.search(
+                r'```replace_block\s*\n(?:[^\n]*\n)?START_LINE:\s*(\d+)\s*\nEND_LINE:\s*(\d+)\s*\n(?:\`\`\`(?:python)?\s*\n)?(.*?)\`\`\`',
+                chunk, re.DOTALL
             )
-            try:
-                response = model_wrapper.generate(prompt=prompt)
-                success, code, desc, diff = SingleTurnPatchApplicator.apply_response(
-                    current_strategy, response, filename="strategy.py"
+            if block_match:
+                s_line = int(block_match.group(1))
+                e_line = int(block_match.group(2))
+                new_content = block_match.group(3)
+                res = editor.replace_block(s_line, e_line, new_content)
+                if not res.startswith("Error"):
+                    applied = True
+
+            # Pattern 2: replace_line (flexible regarding backticks)
+            if not applied:
+                line_match = re.search(
+                    r'```replace_line\s*\n(?:[^\n]*\n)?LINE_NUM:\s*(\d+)\s*\n(?:\`\`\`(?:python)?\s*\n)?(.*?)\`\`\`',
+                    chunk, re.DOTALL
                 )
-                if success and "def create_model" in code and "def run_model" in code:
-                    variants.append((code, desc))
-                else:
-                    print(f"[EditHarness] Batch apply unsuccessful: {desc}", file=sys.stderr)
-            except Exception as e:
-                print(f"[EditHarness] Generation error: {e}", file=sys.stderr)
+                if line_match:
+                    l_num = int(line_match.group(1))
+                    new_line = line_match.group(2).strip("\r\n")
+                    res = editor.replace_line(l_num, new_line)
+                    if not res.startswith("Error"):
+                        applied = True
+
+            # Pattern 3: str_replace
+            if not applied:
+                str_match = re.search(
+                    r'<<<<<<<\s*SEARCH\s*\n(.*?)\n=======\s*\n(.*?)\n>>>>>>>\s*REPLACE',
+                    chunk, re.DOTALL
+                )
+                if str_match:
+                    search_str = str_match.group(1)
+                    replace_str = str_match.group(2)
+                    res = editor.str_replace(search_str, replace_str)
+                    if not res.startswith("Error"):
+                        applied = True
+
+            if applied:
+                modified_code = tmp_path.read_text(encoding="utf-8")
+                try:
+                    ast.parse(modified_code)
+                    if modified_code != original_code:
+                        if "def create_model" in original_code and "def create_model" not in modified_code:
+                            pass
+                        else:
+                            variants.append((modified_code, desc[:120]))
+                except SyntaxError:
+                    pass
+
+        finally:
+            if tmp_path.exists():
+                tmp_path.unlink()
 
     return variants
 
 
-# ---------------------------------------------------------------------------
-# Self-Test Suite (Dependency-Free)
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 6. Unified Interface for Autoresearch Integration
+# ===========================================================================
 
-def run_self_test():
+def generate_ablation_variants_harness(
+    client: Any = None,
+    current_strategy: str = "",
+    results_history: str = "",
+    baseline_metrics: Optional[dict] = None,
+    complexity: Optional[dict] = None,
+    program_text: str = "",
+    n_variants: int = 1,
+    mode: str = "batch",
+    model_name: str = DEFAULT_MODEL,
+    temperature: float = 0.7,
+    step_limit: int = 12,
+    **kwargs,
+) -> List[Tuple[str, str]]:
     """
-    Run self-contained unit tests covering CodeEditor, ActionParser,
-    AST syntax validation, undo/redo, and patch application without
-    requiring external libraries or API keys.
+    Drop-in replacement for `generate_ablation_variants()` in `autoresearch.py`.
+
+    Modes:
+      - 'batch': Fast, single-turn surgical ablation (recommended for speed & efficiency).
+      - 'agent': Multi-turn interactive mini-swe-agent loop with environment bash tools.
     """
-    print("=" * 60)
-    print("Running EditHarness Built-in Self-Tests")
-    print("=" * 60)
+    baseline_metrics = baseline_metrics or {}
+    complexity = complexity or compute_complexity_info(current_strategy)
 
-    sample_code = textwrap.dedent("""\
-    class SugarAgent:
-        def __init__(self, pos, sugar):
-            self.pos = pos
-            self.sugar = sugar
-            self.alive = True
+    if mode == "agent":
+        variants = []
+        for var_idx in range(n_variants):
+            with tempfile.TemporaryDirectory(prefix=f"ablation_var_{var_idx}_") as tmpdir:
+                tmppath = Path(tmpdir)
+                sandbox_strategy = tmppath / "strategy.py"
+                sandbox_strategy.write_text(current_strategy, encoding="utf-8")
 
-        def step(self):
-            # Consume sugar
-            self.sugar -= 1
-            if self.sugar <= 0:
-                self.alive = False
+                # Copy edit_harness.py into sandbox so agent can invoke subcommands
+                shutil.copy2(__file__, tmppath / "edit_harness.py")
 
-        def trade(self, other):
-            if self.sugar > other.sugar:
-                self.sugar -= 1
-                other.sugar += 1
-    """)
+                task_context = {
+                    "current_complexity": complexity,
+                    "baseline_metrics": baseline_metrics,
+                    "results_history": results_history,
+                    "variant_index": var_idx + 1,
+                }
 
-    # Test 1: CodeEditor Initialization & Line Numbered View
-    editor = CodeEditor(sample_code, filename="test.py")
-    assert len(editor.lines) == 16, f"Expected 16 lines, got {len(editor.lines)}"
-    view_out = editor.view(1, 5)
-    assert "1 | class SugarAgent:" in view_out
-    assert "5 |         self.alive = True" in view_out
-    print("✓ Test 1: Initialization & Line Numbered View passed")
+                harness = MiniSweAgentHarness(
+                    workspace_dir=tmppath,
+                    model_name=model_name,
+                    client=client,
+                    step_limit=step_limit,
+                    temperature=temperature,
+                )
 
-    # Test 2: Single-Line Replacement
-    success, rep = editor.replace_lines(9, 9, "        self.sugar -= 2  # Accelerated metabolism")
-    assert success, f"Single line replace failed: {rep}"
-    assert "self.sugar -= 2" in editor.lines[8]
-    valid, _ = editor.validate_syntax()
-    assert valid, "Syntax should be valid after single-line edit"
-    print("✓ Test 2: Single-Line Replacement passed")
+                res = harness.run(task_context)
+                if res.get("success"):
+                    modified_code = sandbox_strategy.read_text(encoding="utf-8")
+                    try:
+                        ast.parse(modified_code)
+                        if modified_code != current_strategy and "def create_model" in modified_code:
+                            desc = res.get("submission", f"Variant {var_idx + 1}")
+                            variants.append((modified_code, desc[:120]))
+                    except SyntaxError:
+                        pass
+        return variants
 
-    # Test 3: Multi-Line Block Replacement
-    new_step = textwrap.dedent("""\
-        def step(self):
-            self.sugar -= 1
-            self.alive = (self.sugar > 0)
-    """).strip()
-    success, rep = editor.replace_lines(7, 11, new_step)
-    assert success, f"Block replace failed: {rep}"
-    assert "self.alive = (self.sugar > 0)" in editor.get_content()
-    valid, _ = editor.validate_syntax()
-    assert valid, "Syntax should be valid after block replace"
-    print("✓ Test 3: Multi-Line Block Replacement passed")
-
-    # Test 4: Deletion
-    # In the updated 14-line file, trade method is at lines 10-14
-    initial_len = len(editor.lines)
-    success, rep = editor.delete_lines(10, 14)
-    assert success, f"Delete failed: {rep}"
-    assert len(editor.lines) < initial_len
-    assert "def trade" not in editor.get_content()
-    valid, _ = editor.validate_syntax()
-    assert valid, "Syntax should be valid after deletion"
-    print("✓ Test 4: Deletion passed")
-
-    # Test 5: Undo Stack
-    undo_success, undo_msg = editor.undo()
-    assert undo_success
-    assert "def trade" in editor.get_content(), "Undo should restore trade method"
-    print("✓ Test 5: Undo functionality passed")
-
-    # Test 6: Syntax Error Detection
-    success, rep = editor.replace_lines(1, 1, "class SugarAgent(")
-    assert not success, "Syntax validation should flag unmatched parenthesis"
-    assert "SyntaxError" in rep
-    editor.undo()
-    valid, _ = editor.validate_syntax()
-    assert valid, "Undo should restore valid syntax"
-    print("✓ Test 6: AST Syntax Error Detection passed")
-
-    # Test 7: Exact Search & Replace (Aider / SWE-agent style)
-    success, rep = editor.str_replace("self.alive = True", "self.alive = True\n        self.age = 0")
-    assert success, f"str_replace failed: {rep}"
-    assert "self.age = 0" in editor.get_content()
-    print("✓ Test 7: Exact Search & Replace passed")
-
-    # Test 8: ActionParser Extraction
-    llm_sample = textwrap.dedent("""\
-    THOUGHT: I want to simplify trade by removing the sugar check.
-    REPLACE 14 16:
-    ```python
-            self.sugar -= 1
-            other.sugar += 1
-    ```
-    """)
-    action = ActionParser.parse(llm_sample)
-    assert action.command == "REPLACE"
-    assert action.start_line == 14
-    assert action.end_line == 16
-    assert "other.sugar += 1" in action.content
-    print("✓ Test 8: ActionParser passed")
-
-    # Test 9: SingleTurnPatchApplicator (Batch block mode)
-    batch_sample = textwrap.dedent("""\
-    I propose simplifying the agent:
-    
-    REPLACE 9 9:
-    ```python
-            self.sugar -= 5
-    ```
-    
-    SUBMIT: Ablated metabolism rate
-    """)
-    applied, mod_code, desc, diff = SingleTurnPatchApplicator.apply_response(sample_code, batch_sample)
-    assert applied, f"Batch apply failed: {desc}"
-    assert "self.sugar -= 5" in mod_code
-    assert desc == "Ablated metabolism rate"
-    assert len(diff) > 0
-    print("✓ Test 9: SingleTurnPatchApplicator passed")
-
-    print("=" * 60)
-    print("All 9 Self-Tests Passed Successfully!")
-    print("=" * 60)
+    else:
+        # Default: batch surgical mode
+        return generate_surgical_batch_variants(
+            client=client,
+            current_strategy=current_strategy,
+            results_history=results_history,
+            baseline_metrics=baseline_metrics,
+            complexity=complexity,
+            program_text=program_text,
+            n_variants=n_variants,
+            model_name=model_name,
+            temperature=temperature,
+        )
 
 
-# ---------------------------------------------------------------------------
-# CLI Entry Point
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 7. Command Line Interface (CLI Tools)
+# ===========================================================================
+
+def parse_str_replace_block(text: str) -> Tuple[Optional[str], Optional[str]]:
+    pattern = r"<<<<<<<\s*SEARCH\s*\n(.*?)\n=======\s*\n(.*?)\n>>>>>>>\s*REPLACE"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None, None
+
 
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Mini-SWE-Agent style surgical edit harness for Gemma"
+        description="Sugarscape Mini-SWE-Agent Edit Harness (Line & Block File Editor)"
     )
-    parser.add_argument("--file", "-f", default="strategy.py", help="File to edit")
-    parser.add_argument("--task", "-t", default="", help="Task or ablation instruction")
-    parser.add_argument("--mode", choices=["agent", "batch"], default="batch", help="Editing mode")
-    parser.add_argument("--model", default="gemma-4-26b-a4b-it", help="Gemma model name")
-    parser.add_argument("--max-steps", type=int, default=6, help="Max turns in agent mode")
-    parser.add_argument("--dry-run", action="store_true", help="Print diff without modifying file")
-    parser.add_argument("--self-test", action="store_true", help="Run internal unit tests")
+    subparsers = parser.add_subparsers(dest="command", help="Editing subcommands")
+
+    # view
+    p_view = subparsers.add_parser("view", help="View lines with line numbers")
+    p_view.add_argument("file", help="File to view")
+    p_view.add_argument("start", type=int, nargs="?", default=1, help="Start line")
+    p_view.add_argument("end", type=int, nargs="?", default=None, help="End line")
+
+    # replace_line
+    p_rep_line = subparsers.add_parser("replace_line", help="Replace a single line")
+    p_rep_line.add_argument("file", help="Target file")
+    p_rep_line.add_argument("line_num", type=int, help="1-indexed line number")
+    p_rep_line.add_argument("content", help="New line content")
+
+    # replace_block
+    p_rep_block = subparsers.add_parser("replace_block", help="Replace a range of lines")
+    p_rep_block.add_argument("file", help="Target file")
+    p_rep_block.add_argument("start", type=int, help="Start line (1-indexed)")
+    p_rep_block.add_argument("end", type=int, help="End line (inclusive)")
+    p_rep_block.add_argument("content", nargs="?", default=None, help="Replacement content (or stdin if omitted)")
+
+    # str_replace
+    p_str = subparsers.add_parser("str_replace", help="Search and replace code block")
+    p_str.add_argument("file", help="Target file")
+    p_str.add_argument("search", nargs="?", default=None, help="Search string (or stdin block if omitted)")
+    p_str.add_argument("replace", nargs="?", default=None, help="Replacement string")
+
+    # insert
+    p_ins = subparsers.add_parser("insert", help="Insert lines after line number")
+    p_ins.add_argument("file", help="Target file")
+    p_ins.add_argument("after_line", type=int, help="Line number to insert after (0 for top)")
+    p_ins.add_argument("content", nargs="?", default=None, help="Content to insert")
+
+    # delete
+    p_del = subparsers.add_parser("delete", help="Delete a line range")
+    p_del.add_argument("file", help="Target file")
+    p_del.add_argument("start", type=int, help="Start line")
+    p_del.add_argument("end", type=int, help="End line")
+
+    # check
+    p_chk = subparsers.add_parser("check", help="Check syntax and report complexity")
+    p_chk.add_argument("file", help="Target file")
+
+    # diff
+    p_diff = subparsers.add_parser("diff", help="Show unified diff against start of session")
+    p_diff.add_argument("file", help="Target file")
+
+    # eval
+    p_eval = subparsers.add_parser("eval", help="Run quick simulation sanity check")
+    p_eval.add_argument("file", nargs="?", default="strategy.py", help="Strategy file to evaluate")
+    p_eval.add_argument("--steps", type=int, default=50, help="Steps to run (default 50)")
+
+    # undo
+    p_undo = subparsers.add_parser("undo", help="Undo last modification")
+    p_undo.add_argument("file", help="Target file")
+
+    # submit
+    p_sub = subparsers.add_parser("submit", help="Finalize ablation and submit")
+    p_sub.add_argument("description", nargs="+", help="One-line summary of what was simplified")
+
+    # run (standalone harness execution)
+    p_run = subparsers.add_parser("run", help="Run ablation round via harness")
+    p_run.add_argument("--model", default=DEFAULT_MODEL, help="Model name")
+    p_run.add_argument("--mode", default="batch", choices=["batch", "agent"], help="Harness mode")
+    p_run.add_argument("--steps", type=int, default=12, help="Max steps for agent")
 
     args = parser.parse_args()
 
-    if args.self_test:
-        run_self_test()
-        return 0
+    if not args.command:
+        parser.print_help()
+        sys.exit(0)
 
-    target_path = Path(args.file)
-    if not target_path.exists():
-        print(f"Error: Target file '{args.file}' does not exist.", file=sys.stderr)
-        return 1
+    if args.command == "view":
+        editor = CodeEditor(args.file)
+        print(editor.view(args.start, args.end))
 
-    content = target_path.read_text(encoding="utf-8")
-    task = args.task or "Simplify this code while preserving its external behavior."
+    elif args.command == "replace_line":
+        editor = CodeEditor(args.file)
+        print(editor.replace_line(args.line_num, args.content))
 
-    model = GemmaModelClient(model_name=args.model)
+    elif args.command == "replace_block":
+        editor = CodeEditor(args.file)
+        content = args.content
+        if content is None:
+            content = sys.stdin.read()
+        print(editor.replace_block(args.start, args.end, content))
 
-    if args.mode == "agent":
-        editor = CodeEditor(content, filename=target_path.name)
-        agent = MiniSWEAgent(model, editor, max_steps=args.max_steps, verbose=True)
-        success, new_code, desc, diff = agent.run(task)
-    else:
-        editor = CodeEditor(content, filename=target_path.name)
-        prompt = SingleTurnPatchApplicator.BATCH_PROMPT_TEMPLATE.format(
-            task=task,
-            filename=target_path.name,
-            numbered_code=editor.view(1, len(editor.lines)),
+    elif args.command == "str_replace":
+        editor = CodeEditor(args.file)
+        search_str = args.search
+        replace_str = args.replace
+
+        if search_str is None and replace_str is None:
+            stdin_data = sys.stdin.read()
+            s, r = parse_str_replace_block(stdin_data)
+            if s is not None and r is not None:
+                search_str, replace_str = s, r
+            else:
+                print("Error: Input does not match <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE format.")
+                sys.exit(1)
+
+        print(editor.str_replace(search_str, replace_str or ""))
+
+    elif args.command == "insert":
+        editor = CodeEditor(args.file)
+        content = args.content or sys.stdin.read()
+        print(editor.insert_lines(args.after_line, content))
+
+    elif args.command == "delete":
+        editor = CodeEditor(args.file)
+        print(editor.delete_lines(args.start, args.end))
+
+    elif args.command == "check":
+        editor = CodeEditor(args.file)
+        ok, msg = editor.check_syntax()
+        if not ok:
+            print(f"❌ {msg}")
+            sys.exit(1)
+        print(f"✅ {msg}")
+        code = Path(args.file).read_text(encoding="utf-8")
+        info = compute_complexity_info(code)
+        print(
+            f"   Complexity: Combined Score = {info['combined_score']:.1f} | "
+            f"AST Nodes: {info['ast_nodes']} | Cyclomatic: {info['cyclomatic_total']} | "
+            f"Lines: {info['lines']}"
         )
-        print(f"Prompting {args.model} (batch block mode)...")
-        response = model.generate(prompt=prompt)
-        success, new_code, desc, diff = SingleTurnPatchApplicator.apply_response(
-            content, response, filename=target_path.name
+
+    elif args.command == "diff":
+        editor = CodeEditor(args.file)
+        print(editor.get_diff())
+
+    elif args.command == "eval":
+        res = quick_evaluate(args.file, steps=args.steps)
+        if res.get("success"):
+            print(f"✅ Simulation sanity check passed ({res.get('steps_run')} steps).")
+            if res.get("final_gini") is not None:
+                print(f"   Final Gini: {res['final_gini']:.4f}")
+        else:
+            print(f"❌ Simulation failed: {res.get('error')}")
+            sys.exit(1)
+
+    elif args.command == "undo":
+        editor = CodeEditor(args.file)
+        print(editor.undo())
+
+    elif args.command == "submit":
+        desc = " ".join(args.description)
+        print("COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT")
+        print(desc)
+
+    elif args.command == "run":
+        if not STRATEGY_FILE.exists():
+            print(f"Error: {STRATEGY_FILE} not found.")
+            sys.exit(1)
+
+        print(f"Starting ablation round (mode={args.mode}) with model: {args.model}")
+        current_code = STRATEGY_FILE.read_text(encoding="utf-8")
+        complexity = compute_complexity_info(current_code)
+
+        results_hist = "(No previous history)"
+        if RESULTS_FILE.exists():
+            results_hist = "\n".join(RESULTS_FILE.read_text(encoding="utf-8").strip().splitlines()[-20:])
+
+        baseline_metrics = {}
+        if BASELINE_METRICS_FILE.exists():
+            baseline_metrics = json.loads(BASELINE_METRICS_FILE.read_text(encoding="utf-8")).get("mean_metrics", {})
+
+        program_txt = PROGRAM_FILE.read_text(encoding="utf-8") if PROGRAM_FILE.exists() else ""
+
+        variants = generate_ablation_variants_harness(
+            client=None,
+            current_strategy=current_code,
+            results_history=results_hist,
+            baseline_metrics=baseline_metrics,
+            complexity=complexity,
+            program_text=program_txt,
+            n_variants=1,
+            mode=args.mode,
+            model_name=args.model,
+            step_limit=args.steps,
         )
 
-    if not success:
-        print(f"Edit failed: {desc}", file=sys.stderr)
-        return 1
-
-    print(f"\n✓ Success: {desc}")
-    print("\n--- Diff ---")
-    print(diff)
-
-    if not args.dry_run:
-        target_path.write_text(new_code, encoding="utf-8")
-        print(f"\nSaved changes to {args.file}")
-    else:
-        print("\nDry-run mode: file not written.")
-
-    return 0
+        if variants:
+            code, desc = variants[0]
+            new_comp = compute_complexity_info(code)
+            delta = complexity["combined_score"] - new_comp["combined_score"]
+            print(f"\n🎉 Successfully generated variant: {desc}")
+            print(f"   Score: {complexity['combined_score']:.1f} -> {new_comp['combined_score']:.1f} ({delta:+.1f})")
+            print(f"   Lines: {complexity['lines']} -> {new_comp['lines']}")
+        else:
+            print("\n❌ No passing variant generated this round.")
 
 
 if __name__ == "__main__":
-    sys.exit(main() or 0)
+    main()

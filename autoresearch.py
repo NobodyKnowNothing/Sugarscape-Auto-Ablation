@@ -51,9 +51,8 @@ RESULTS_FILE = Path(__file__).parent / "results.tsv"
 PROGRAM_FILE = Path(__file__).parent / "program.md"
 BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
 
-# Harness config (surgical edits vs full-file rewrites)
-USE_EDIT_HARNESS = os.environ.get("USE_EDIT_HARNESS", "1").lower() in ("1", "true", "yes")
-HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")  # "batch" (fast single-turn) or "agent" (interactive multi-turn)
+# Edit harness configuration ('batch' for fast single-turn surgical edits, 'agent' for interactive multi-turn)
+HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")
 
 # Simulation config
 SIM_STEPS = 200
@@ -435,6 +434,9 @@ def create_client() -> genai.Client:
     return genai.Client(api_key=API_KEY)
 
 
+from edit_harness import generate_ablation_variants_harness
+
+
 def generate_ablation_variants(
     client: genai.Client,
     current_strategy: str,
@@ -445,159 +447,23 @@ def generate_ablation_variants(
     temperature: float = 0.7,
 ) -> list[tuple[str, str]]:
     """
-    Ask the LLM to generate N structural simplifications of strategy.py.
-    Uses surgical edit harness if USE_EDIT_HARNESS is enabled,
-    otherwise falls back to full-file generation.
-    Returns list of (code, description) tuples.
+    Generate N structural simplifications of strategy.py using the surgical edit harness.
+    Applies pinpoint single-line or block replacements instead of full-file generation.
     """
-    if USE_EDIT_HARNESS:
-        try:
-            from edit_harness import generate_ablation_variants_harness
-            program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
-            log(f"Using surgical edit harness (mode={HARNESS_MODE}) for ablation variants...")
-            variants = generate_ablation_variants_harness(
-                client=client,
-                current_strategy=current_strategy,
-                results_history=results_history,
-                baseline_metrics=baseline_metrics,
-                complexity=complexity,
-                program_text=program,
-                n_variants=n_variants,
-                mode=HARNESS_MODE,
-                model_name=MODEL,
-                temperature=temperature,
-            )
-            if variants:
-                return variants
-            log("Edit harness produced no valid variants; falling back to full-file generation.")
-        except Exception as e:
-            log(f"Edit harness error ({e}); falling back to standard generation")
-            traceback.print_exc()
-
     program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
-    
-    prompt = textwrap.dedent(f"""\
-    {program}
-
-    ---
-
-    ## Current strategy.py (the code to simplify):
-    ```python
-    {current_strategy}
-    ```
-
-    ## Current Complexity (Combined AST + Cyclomatic Score):
-    - Lines of code: {complexity['lines']}
-    - Classes: {complexity['classes']}
-    - Methods/Functions: {complexity['methods']}
-    - AST Nodes: {complexity['ast_nodes']}
-    - Cyclomatic Complexity: {complexity['cyclomatic_total']}
-    - **Combined Score: {complexity['combined_score']:.1f}** (LOWER IS BETTER)
-
-    ## Baseline Metrics (target to preserve):
-    ```json
-    {json.dumps(baseline_metrics, indent=2)}
-    ```
-
-    ## Results History (previous ablation attempts):
-    ```
-    {results_history}
-    ```
-
-    ---
-
-    Generate {n_variants} different structural simplifications of strategy.py.
-    Each variant should try a DIFFERENT simplification strategy.
-    Learn from the results history — if a simplification caused a metric to fail,
-    avoid similar changes. If a simplification passed, try pushing further.
-
-    PRIORITY: Reduce the COMBINED COMPLEXITY SCORE (AST nodes + cyclomatic
-    complexity) while keeping ALL metrics within error bounds. The combined
-    score weights AST structural size (40%) and cyclomatic branching (60%).
-    Focus on reducing decision points, nested conditionals, and structural
-    depth — not just line count.
-
-    For EACH variant, output:
-    1. A brief one-line description of what was simplified
-    2. The complete strategy.py code in a ```python code block
-
-    Number them like: **Variant 1:**, **Variant 2:**, etc.
-    """)
-
-    max_retries = 5
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model=MODEL,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=temperature,
-                    max_output_tokens=16384,
-                ),
-            )
-            
-            if not response or not response.text:
-                log("LLM returned empty response")
-                return []
-            
-            return parse_variants(response.text, n_variants)
-        
-        except Exception as e:
-            if "500" in str(e) or "ServerError" in type(e).__name__:
-                log(f"LLM API error (attempt {attempt + 1}/{max_retries}): {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                    continue
-            log(f"LLM API error: {e}")
-            traceback.print_exc()
-            return []
-    
-    return []
-
-
-def parse_variants(text: str, expected: int) -> list[tuple[str, str]]:
-    """Parse LLM output into (code, description) pairs."""
-    variants = []
-    
-    parts = re.split(r'\*\*Variant\s+\d+[:\s]*\*\*', text)
-    if len(parts) > 1:
-        for part in parts[1:]:
-            lines = part.strip().split("\n")
-            desc = ""
-            for line in lines:
-                line = line.strip().strip("*").strip("-").strip()
-                if line and not line.startswith("```"):
-                    desc = line.replace("\t", " ")[:300]
-                    break
-            
-            code_match = re.search(r'```python\s*\n(.*?)```', part, re.DOTALL)
-            if code_match:
-                code = code_match.group(1).strip()
-                if "def create_model" in code and "def run_model" in code:
-                    variants.append((code, desc or "unnamed variant"))
-    
-    # Fallback
-    if not variants:
-        blocks = re.split(r'```python', text)
-        for i in range(1, len(blocks)):
-            pre_text = blocks[i-1]
-            code_part = blocks[i]
-            
-            desc = f"variant {len(variants) + 1}"
-            pre_lines = pre_text.strip().split("\n")
-            for line in reversed(pre_lines):
-                line = line.strip().strip("*").strip("-").strip()
-                if line and len(line) > 5:
-                    desc = line.replace("\t", " ")[:300]
-                    break
-            
-            code_match = re.search(r'^(.*?)```', code_part, re.DOTALL)
-            if code_match:
-                code = code_match.group(1).strip()
-                if "def create_model" in code and "def run_model" in code:
-                    variants.append((code, desc))
-    
-    return variants[:expected]
+    log(f"Prompting {MODEL} via mini-swe-agent edit harness (mode={HARNESS_MODE})...")
+    return generate_ablation_variants_harness(
+        client=client,
+        current_strategy=current_strategy,
+        results_history=results_history,
+        baseline_metrics=baseline_metrics,
+        complexity=complexity,
+        program_text=program,
+        n_variants=n_variants,
+        mode=HARNESS_MODE,
+        model_name=MODEL,
+        temperature=temperature,
+    )
 
 
 # ---------------------------------------------------------------------------
