@@ -791,7 +791,7 @@ class SingleTurnPatchApplicator:
     
     INSTRUCTIONS:
     Propose 1 to 4 surgical edits to simplify this code.
-    DO NOT output the entire file!
+    DO NOT output the entire file! Only output the specific lines being changed.
     
     Output your edits using ONE of these formats:
     
@@ -810,6 +810,10 @@ class SingleTurnPatchApplicator:
     =======
     <new replacement lines>
     >>>>>>>
+    
+    CRITICAL:
+    - Target only specific helper methods, conditions, or loops to simplify.
+    - Leave create_model(), run_model(), and SugarScapeScenario definitions untouched.
     
     At the end of your response, write:
     SUBMIT: <one-line description of the simplification>
@@ -884,6 +888,7 @@ def generate_ablation_variants_harness(
     results_history: str,
     baseline_metrics: dict,
     complexity: dict,
+    program_text: str = "",
     n_variants: int = 1,
     mode: str = "batch",  # "batch" (single-round blocks) or "agent" (interactive multi-turn)
     model_name: str = "gemma-4-26b-a4b-it",
@@ -906,15 +911,38 @@ def generate_ablation_variants_harness(
         temperature=temperature,
     )
 
-    task = textwrap.dedent(f"""\
-    Perform structural ablation on strategy.py.
-    Current Complexity: Score={complexity.get('combined_score', 0):.1f} (AST={complexity.get('ast_nodes', 0)}, Lines={complexity.get('lines', 0)})
-    Target: Simplify the implementation (inline helpers, remove unused rules, streamline data structures)
-    while keeping emergent Sugarscape metrics within baseline error bounds.
+    baseline_json = json.dumps(baseline_metrics, indent=2) if isinstance(baseline_metrics, dict) else str(baseline_metrics)
     
-    Recent Results History:
-    {results_history[-800:] if results_history else '(none)'}
-    """)
+    task_parts = []
+    if program_text:
+        task_parts.append(program_text.strip())
+        task_parts.append("\n---\n")
+
+    task_parts.append(textwrap.dedent(f"""\
+    ## Current Complexity:
+    - Score: {complexity.get('combined_score', 0):.1f}
+    - AST Nodes: {complexity.get('ast_nodes', 0)}
+    - Cyclomatic Complexity: {complexity.get('cyclomatic_total', 0)}
+    - Lines: {complexity.get('lines', 0)}
+
+    ## Target Baseline Metrics to Preserve:
+    ```json
+    {baseline_json}
+    ```
+
+    ## Results History (learn from past ablations):
+    ```
+    {results_history[-1000:] if results_history else '(none)'}
+    ```
+
+    ## CRITICAL API & CODE CONTRACT:
+    - DO NOT rewrite the entire file or whole classes!
+    - DO NOT change the signature or return format of create_model() or run_model().
+    - SugarScapeScenario MUST accept rng and kwargs (sc = SugarScapeScenario(rng=seed, **scenario_kwargs)).
+    - Focus on surgical ablations: inline helper methods, simplify trade calculations, prune dead branches.
+    """))
+
+    task = "\n".join(task_parts)
 
     variants: List[Tuple[str, str]] = []
 
@@ -941,6 +969,8 @@ def generate_ablation_variants_harness(
                 )
                 if success and "def create_model" in code and "def run_model" in code:
                     variants.append((code, desc))
+                else:
+                    print(f"[EditHarness] Batch apply unsuccessful: {desc}", file=sys.stderr)
             except Exception as e:
                 print(f"[EditHarness] Generation error: {e}", file=sys.stderr)
 

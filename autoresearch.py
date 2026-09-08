@@ -51,6 +51,10 @@ RESULTS_FILE = Path(__file__).parent / "results.tsv"
 PROGRAM_FILE = Path(__file__).parent / "program.md"
 BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
 
+# Harness config (surgical edits vs full-file rewrites)
+USE_EDIT_HARNESS = os.environ.get("USE_EDIT_HARNESS", "1").lower() in ("1", "true", "yes")
+HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")  # "batch" (fast single-turn) or "agent" (interactive multi-turn)
+
 # Simulation config
 SIM_STEPS = 200
 N_EVAL_RUNS = 3              # statistical runs per variant evaluation
@@ -442,8 +446,34 @@ def generate_ablation_variants(
 ) -> list[tuple[str, str]]:
     """
     Ask the LLM to generate N structural simplifications of strategy.py.
+    Uses surgical edit harness if USE_EDIT_HARNESS is enabled,
+    otherwise falls back to full-file generation.
     Returns list of (code, description) tuples.
     """
+    if USE_EDIT_HARNESS:
+        try:
+            from edit_harness import generate_ablation_variants_harness
+            program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
+            log(f"Using surgical edit harness (mode={HARNESS_MODE}) for ablation variants...")
+            variants = generate_ablation_variants_harness(
+                client=client,
+                current_strategy=current_strategy,
+                results_history=results_history,
+                baseline_metrics=baseline_metrics,
+                complexity=complexity,
+                program_text=program,
+                n_variants=n_variants,
+                mode=HARNESS_MODE,
+                model_name=MODEL,
+                temperature=temperature,
+            )
+            if variants:
+                return variants
+            log("Edit harness produced no valid variants; falling back to full-file generation.")
+        except Exception as e:
+            log(f"Edit harness error ({e}); falling back to standard generation")
+            traceback.print_exc()
+
     program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
     
     prompt = textwrap.dedent(f"""\
