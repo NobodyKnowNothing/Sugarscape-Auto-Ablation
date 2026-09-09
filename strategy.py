@@ -92,17 +92,13 @@ class Trader(CellAgent):
         mrs_s, mrs_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
         if math.isclose(mrs_s, mrs_o): return
         price = math.sqrt(mrs_s * mrs_o)
-        
-        if mrs_s > mrs_o:
-            s, b, w_s, w_b = self, other, self.calculate_welfare(self.sugar, self.spice), other.calculate_welfare(other.sugar, other.spice)
-        else:
-            s, b, w_s, w_b = other, self, other.calculate_welfare(other.sugar, other.spice), self.calculate_welfare(self.sugar, self.spice)
-
+        s, b = (self, other) if mrs_s > mrs_o else (other, self)
         s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
         s_s, o_s, s_p, o_p = s.sugar + s_ex, b.sugar - s_ex, s.spice - p_ex, b.spice + p_ex
 
         if (s_s > 0 and o_s > 0 and s_p > 0 and o_p > 0 and
-            w_s < s.calculate_welfare(s_s, s_p) and w_b < b.calculate_welfare(o_s, o_p) and
+            s.calculate_welfare(s.sugar, s.spice) < s.calculate_welfare(s_s, s_p) and 
+            b.calculate_welfare(b.sugar, b.spice) < b.calculate_welfare(o_s, o_p) and
             s.calculate_MRS(s_s, s_p) > b.calculate_MRS(o_s, o_p)):
             s.sugar, b.sugar, s.spice, b.spice = s_s, o_s, s_p, o_p
             self.prices.append(price)
