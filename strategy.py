@@ -76,13 +76,8 @@ class Trader(CellAgent):
 
     def move(self):
         ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
-        if not ns: return
-        ws = [self._w(self.sugar + c.sugar, self.spice + c.spice) for c in ns]
-        max_w = max(ws)
-        cands = [c for c, w in zip(ns, ws) if math.isclose(w, max_w)]
-        min_d = min(get_distance(self.cell, c) for c in cands)
-        self.cell = self.random.choice([c for c in cands if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-2)])
-
+        if ns:
+            self.cell = max(ns, key=lambda c: (self._w(self.sugar + c.sugar, self.spice + c.spice), -get_distance(self.cell, c), self.random.random()))
     def step(self):
         self.prices, self.trade_partners = [], []
         self.move()
