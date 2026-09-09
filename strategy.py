@@ -73,20 +73,8 @@ class Trader(CellAgent):
         self.trade_partners = []
 
     def calculate_welfare(self, sugar, spice):
-        """
-        helper function
-
-        part 2 self.move()
-        self.trade()
-        """
-
-        # calculate total resources
-        m_total = self.metabolism_sugar + self.metabolism_spice
-        # Cobb-Douglas functional form; starting on p. 97
-        # on Growing Artificial Societies
-        return sugar ** (self.metabolism_sugar / m_total) * spice ** (
-            self.metabolism_spice / m_total
-        )
+        m = self.metabolism_sugar + self.metabolism_spice
+        return sugar**(self.metabolism_sugar / m) * spice**(self.metabolism_spice / m)
 
     def is_starved(self):
         """
