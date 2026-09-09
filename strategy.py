@@ -152,14 +152,12 @@ class SugarscapeG1mt(mesa.Model):
 
 def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
     p = {k: v for k, v in params.items() if k != "steps"}
-    init_pop = p.get("initial_population", 200)
     if "SugarScapeScenario" in globals():
         sc = SugarScapeScenario(rng=seed, **{k: v for k, v in p.items() if hasattr(SugarScapeScenario, k)})
         model = SugarscapeG1mt(scenario=sc)
     else:
-        p.setdefault("rng", seed)
-        model = SugarscapeG1mt(**p)
-    model.initial_population = init_pop
+        model = SugarscapeG1mt(**{**p, "rng": seed})
+    model.initial_population = p.get("initial_population", 200)
     return model
 
 
