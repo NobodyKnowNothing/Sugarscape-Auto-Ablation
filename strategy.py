@@ -106,10 +106,6 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        # This method is being deprecated in favor of the merged trade method below.
-        pass
-
     def trade(self, other):
         mrs_s, mrs_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
         if math.isclose(mrs_s, mrs_o): return
