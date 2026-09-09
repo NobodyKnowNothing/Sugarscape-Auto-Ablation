@@ -118,41 +118,15 @@ class SugarscapeG1mt(mesa.Model):
         self.grid.add_property_layer("spice", self.spice_distribution.copy())
 
         n = self.scenario.initial_population
-        Trader.create_agents(
-            self,
-            self.scenario.initial_population,
-            self.random.choices(self.grid.all_cells.cells, k=n),
-            sugar=self.rng.integers(
-                self.scenario.endowment_min,
-                self.scenario.endowment_max,
-                (n,),
-                endpoint=True,
-            ),
-            spice=self.rng.integers(
-                self.scenario.endowment_min,
-                self.scenario.endowment_max,
-                (n,),
-                endpoint=True,
-            ),
-            metabolism_sugar=self.rng.integers(
-                self.scenario.metabolism_min,
-                self.scenario.metabolism_max,
-                (n,),
-                endpoint=True,
-            ),
-            metabolism_spice=self.rng.integers(
-                self.scenario.metabolism_min,
-                self.scenario.metabolism_max,
-                (n,),
-                endpoint=True,
-            ),
-            vision=self.rng.integers(
-                self.scenario.vision_min,
-                self.scenario.vision_max,
-                (n,),
-                endpoint=True,
-            ),
-        )
+        s, r = self.scenario, self.rng.integers
+        args = {
+            "sugar": r(s.endowment_min, s.endowment_max, n, endpoint=True),
+            "spice": r(s.endowment_min, s.endowment_max, n, endpoint=True),
+            "metabolism_sugar": r(s.metabolism_min, s.metabolism_max, n, endpoint=True),
+            "metabolism_spice": r(s.metabolism_min, s.metabolism_max, n, endpoint=True),
+            "vision": r(s.vision_min, s.vision_max, n, endpoint=True),
+        }
+        Trader.create_agents(self, n, self.random.choices(self.grid.all_cells.cells, k=n), **args)
 
     def step(self):
         """
@@ -177,23 +151,14 @@ class SugarscapeG1mt(mesa.Model):
 # ===========================================================================
 
 def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
-    """
-    Instantiate SugarscapeG1mt model configured with seed and parameter overrides.
-    Works seamlessly whether the model uses Mesa 4.x Scenario or Mesa 3.x kwargs.
-    """
-    p = dict(params)
-    p.pop("steps", None)
+    p = {k: v for k, v in params.items() if k != "steps"}
     init_pop = p.get("initial_population", 200)
-
     if "SugarScapeScenario" in globals():
-        scenario_kwargs = {k: v for k, v in p.items() if hasattr(SugarScapeScenario, k)}
-        sc = SugarScapeScenario(rng=seed, **scenario_kwargs)
+        sc = SugarScapeScenario(rng=seed, **{k: v for k, v in p.items() if hasattr(SugarScapeScenario, k)})
         model = SugarscapeG1mt(scenario=sc)
     else:
-        if "rng" not in p and seed is not None:
-            p["rng"] = seed
+        p.setdefault("rng", seed)
         model = SugarscapeG1mt(**p)
-
     model.initial_population = init_pop
     return model
 
