@@ -43,7 +43,7 @@ except ImportError:
 # Agent Helper Functions & Trader Class (from agents.py)
 # ===========================================================================
 
-get_distance = lambda c1, c2: math.sqrt((c1.coordinate[0]-c2.coordinate[0])**2 + (c1.coordinate[1]-c2.coordinate[1])**2)
+get_distance = lambda c1, c2: math.dist(c1.coordinate, c2.coordinate)
 
 class Trader(CellAgent):
     def __init__(self, model, cell, sugar=0, spice=0, metabolism_sugar=0, metabolism_spice=0, vision=0):
@@ -51,14 +51,9 @@ class Trader(CellAgent):
         self.cell, self.sugar, self.spice = cell, sugar, spice
         self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
         self.prices, self.trade_partners = [], []
-
-    def _w(self, s, p):
-        m = self.metabolism_sugar + self.metabolism_spice
-        return s**(self.metabolism_sugar/m) * p**(self.metabolism_spice/m)
-
-    def _m(self, s, p):
-        return (p/self.metabolism_spice) / (s/self.metabolism_sugar)
-
+        m = metabolism_sugar + metabolism_spice
+        self._w = lambda s, p: s**(self.metabolism_sugar/m) * p**(self.metabolism_spice/m)
+        self._m = lambda s, p: (p/self.metabolism_spice) / (s/self.metabolism_sugar)
     def trade(self, other):
         m_s, m_o = self._m(self.sugar, self.spice), other._m(other.sugar, other.spice)
         if math.isclose(m_s, m_o): return
@@ -73,11 +68,10 @@ class Trader(CellAgent):
             s.sugar, b.sugar, s.spice, b.spice = s_s, o_s, s_p, o_p
             self.prices.append(p); self.trade_partners.append(other.unique_id)
             self.trade(other)
-
     def move(self):
         ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if ns:
-            self.cell = max(ns, key=lambda c: (self._w(self.sugar + c.sugar, self.spice + c.spice), -get_distance(self.cell, c), self.random.random()))
+            self.cell = max(ns, key=lambda c: (self._w(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate), self.random.random()))
     def step(self):
         self.prices, self.trade_partners = [], []
         self.move()
