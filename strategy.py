@@ -46,107 +46,53 @@ except ImportError:
 get_distance = lambda c1, c2: math.sqrt((c1.coordinate[0]-c2.coordinate[0])**2 + (c1.coordinate[1]-c2.coordinate[1])**2)
 
 class Trader(CellAgent):
-    """
-    Trader:
-    - has a metabolism of sugar and spice
-    - harvest and trade sugar and spice to survive
-    """
-
-    def __init__(
-        self,
-        model,
-        cell,
-        sugar=0,
-        spice=0,
-        metabolism_sugar=0,
-        metabolism_spice=0,
-        vision=0,
-    ):
+    def __init__(self, model, cell, sugar=0, spice=0, metabolism_sugar=0, metabolism_spice=0, vision=0):
         super().__init__(model)
-        self.cell = cell
-        self.sugar = sugar
-        self.spice = spice
-        self.metabolism_sugar = metabolism_sugar
-        self.metabolism_spice = metabolism_spice
-        self.vision = vision
-        self.prices = []
-        self.trade_partners = []
+        self.cell, self.sugar, self.spice = cell, sugar, spice
+        self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
+        self.prices, self.trade_partners = [], []
 
-    def calculate_welfare(self, sugar, spice):
+    def _w(self, s, p):
         m = self.metabolism_sugar + self.metabolism_spice
-        return sugar**(self.metabolism_sugar / m) * spice**(self.metabolism_spice / m)
+        return s**(self.metabolism_sugar/m) * p**(self.metabolism_spice/m)
 
-
-    def calculate_MRS(self, sugar, spice):
-        """
-        Helper function for
-          - self.trade()
-          - self.maybe_self_spice()
-
-        Determines what trader agent needs and can give up
-        """
-
-        return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
+    def _m(self, s, p):
+        return (p/self.metabolism_spice) / (s/self.metabolism_sugar)
 
     def trade(self, other):
-        mrs_s, mrs_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
-        if math.isclose(mrs_s, mrs_o): return
-        price = math.sqrt(mrs_s * mrs_o)
-        s, b = (self, other) if mrs_s > mrs_o else (other, self)
-        s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        s_s, o_s, s_p, o_p = s.sugar + s_ex, b.sugar - s_ex, s.spice - p_ex, b.spice + p_ex
+        m_s, m_o = self._m(self.sugar, self.spice), other._m(other.sugar, other.spice)
+        if math.isclose(m_s, m_o): return
+        p = math.sqrt(m_s * m_o)
+        s, b = (self, other) if m_s > m_o else (other, self)
+        s_ex, p_ex = (1, int(p)) if p >= 1 else (int(1/p), 1)
+        s_s, o_s, s_p, o_p = s.sugar+s_ex, b.sugar-s_ex, s.spice-p_ex, b.spice+p_ex
         if all(v > 0 for v in (s_s, o_s, s_p, o_p)) and \
-           s.calculate_welfare(s.sugar, s.spice) < s.calculate_welfare(s_s, s_p) and \
-           b.calculate_welfare(b.sugar, b.spice) < b.calculate_welfare(o_s, o_p) and \
-           s.calculate_MRS(s_s, s_p) > b.calculate_MRS(o_s, o_p):
+           s._w(s.sugar, s.spice) < s._w(s_s, s_p) and \
+           b._w(b.sugar, b.spice) < b._w(o_s, o_p) and \
+           s._m(s_s, s_p) > b._m(o_s, o_p):
             s.sugar, b.sugar, s.spice, b.spice = s_s, o_s, s_p, o_p
-            self.prices.append(price); self.trade_partners.append(other.unique_id)
+            self.prices.append(p); self.trade_partners.append(other.unique_id)
             self.trade(other)
-    ######################################################################
-    #                                                                    #
-    #                      MAIN TRADE FUNCTIONS                          #
-    #                                                                    #
-    ######################################################################
 
     def move(self):
-        """Function for trader agent to identify optimal move."""
-        neighbors = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
-        if not neighbors: return
+        ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
+        if not ns: return
+        ws = [self._w(self.sugar + c.sugar, self.spice + c.spice) for c in ns]
+        max_w = max(ws)
+        cands = [c for c, w in zip(ns, ws) if math.isclose(w, max_w)]
+        min_d = min(get_distance(self.cell, c) for c in cands)
+        self.cell = self.random.choice([c for c in cands if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-2)])
 
-        welfares = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in neighbors]
-        max_w = max(welfares)
-        candidates = [c for c, w in zip(neighbors, welfares) if math.isclose(w, max_w)]
-
-        min_d = min(get_distance(self.cell, c) for c in candidates)
-        self.cell = self.random.choice([c for c in candidates if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-2)])
     def step(self):
-        """Agent step method."""
         self.prices, self.trade_partners = [], []
         self.move()
-        # Eat
-        self.sugar += self.cell.sugar
-        self.cell.sugar = 0
-        self.sugar -= self.metabolism_sugar
-        self.spice += self.cell.spice
-        self.cell.spice = 0
-        self.spice -= self.metabolism_spice
-        # Maybe die
-        if self.sugar <= 0 or self.spice <= 0:
-            self.remove()
+        self.sugar += self.cell.sugar - self.metabolism_sugar
+        self.spice += self.cell.spice - self.metabolism_spice
+        self.cell.sugar = self.cell.spice = 0
+        if self.sugar <= 0 or self.spice <= 0: self.remove()
+
     def trade_with_neighbors(self):
-        """
-        Function for trader agents to decide who to trade with in three parts
-
-        1- identify neighbors who can trade
-        2- trade (2 sessions)
-        3- collect data
-        """
-        # iterate through traders in neighboring cells and trade
-        for a in self.cell.get_neighborhood(radius=self.vision).agents:
-            self.trade(a)
-
-        return
-
+        for a in self.cell.get_neighborhood(radius=self.vision).agents: self.trade(a)
 # ===========================================================================
 # Model Helper Functions & Sugarscape Model (from model.py)
 # ===========================================================================
