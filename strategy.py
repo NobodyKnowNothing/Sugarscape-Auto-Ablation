@@ -131,31 +131,20 @@ class Trader(CellAgent):
 
         min_d = min(get_distance(self.cell, c) for c in candidates)
         self.cell = self.random.choice([c for c in candidates if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-2)])
-    def eat(self):
+    def step(self):
+        """Agent step method."""
+        self.prices, self.trade_partners = [], []
+        self.move()
+        # Eat
         self.sugar += self.cell.sugar
         self.cell.sugar = 0
         self.sugar -= self.metabolism_sugar
-
         self.spice += self.cell.spice
         self.cell.spice = 0
         self.spice -= self.metabolism_spice
-
-    def maybe_die(self):
-        """
-        Function to remove Traders who have consumed all their sugar or spice
-        """
-
-        if self.is_starved():
+        # Maybe die
+        if self.sugar <= 0 or self.spice <= 0:
             self.remove()
-
-    def step(self):
-        """Agent step method."""
-        self.prices = []
-        self.trade_partners = []
-        self.move()
-        self.eat()
-        self.maybe_die()
-
     def trade_with_neighbors(self):
         """
         Function for trader agents to decide who to trade with in three parts
