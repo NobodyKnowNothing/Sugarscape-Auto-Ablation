@@ -76,12 +76,6 @@ class Trader(CellAgent):
         m = self.metabolism_sugar + self.metabolism_spice
         return sugar**(self.metabolism_sugar / m) * spice**(self.metabolism_spice / m)
 
-    def is_starved(self):
-        """
-        Helper function for self.maybe_die()
-        """
-
-        return (self.sugar <= 0) or (self.spice <= 0)
 
     def calculate_MRS(self, sugar, spice):
         """
