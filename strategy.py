@@ -95,14 +95,12 @@ class Trader(CellAgent):
         s, b = (self, other) if mrs_s > mrs_o else (other, self)
         s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
         s_s, o_s, s_p, o_p = s.sugar + s_ex, b.sugar - s_ex, s.spice - p_ex, b.spice + p_ex
-
-        if (s_s > 0 and o_s > 0 and s_p > 0 and o_p > 0 and
-            s.calculate_welfare(s.sugar, s.spice) < s.calculate_welfare(s_s, s_p) and 
-            b.calculate_welfare(b.sugar, b.spice) < b.calculate_welfare(o_s, o_p) and
-            s.calculate_MRS(s_s, s_p) > b.calculate_MRS(o_s, o_p)):
+        if all(v > 0 for v in (s_s, o_s, s_p, o_p)) and \
+           s.calculate_welfare(s.sugar, s.spice) < s.calculate_welfare(s_s, s_p) and \
+           b.calculate_welfare(b.sugar, b.spice) < b.calculate_welfare(o_s, o_p) and \
+           s.calculate_MRS(s_s, s_p) > b.calculate_MRS(o_s, o_p):
             s.sugar, b.sugar, s.spice, b.spice = s_s, o_s, s_p, o_p
-            self.prices.append(price)
-            self.trade_partners.append(other.unique_id)
+            self.prices.append(price); self.trade_partners.append(other.unique_id)
             self.trade(other)
     ######################################################################
     #                                                                    #
