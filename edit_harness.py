@@ -38,15 +38,183 @@ import traceback
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 # ---------------------------------------------------------------------------
 # Workspace & Configuration Defaults
 # ---------------------------------------------------------------------------
-DEFAULT_MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-26b-a4b-it")
+DEFAULT_MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-31b-it")
+FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemma-4-26b-a4b-it")
 WORKSPACE_DIR = Path(__file__).parent.resolve()
 STRATEGY_FILE = WORKSPACE_DIR / "strategy.py"
 BASELINE_METRICS_FILE = WORKSPACE_DIR / "baseline_metrics.json"
 RESULTS_FILE = WORKSPACE_DIR / "results.tsv"
 PROGRAM_FILE = WORKSPACE_DIR / "program.md"
+
+
+def is_resource_exhausted_error(exc: Exception) -> bool:
+    """Check if exception represents an exhausted quota or rate-limit error (HTTP 429 / RESOURCE_EXHAUSTED)."""
+    if exc is None:
+        return False
+
+    code = getattr(exc, "code", None)
+    if code == 429:
+        return True
+
+    status = getattr(exc, "status", None)
+    if status and ("RESOURCE_EXHAUSTED" in str(status).upper() or "429" in str(status)):
+        return True
+
+    details = getattr(exc, "details", None)
+    if isinstance(details, dict):
+        d_code = details.get("code") or details.get("error", {}).get("code")
+        d_status = details.get("status") or details.get("error", {}).get("status")
+        if d_code == 429 or (d_status and "RESOURCE_EXHAUSTED" in str(d_status).upper()):
+            return True
+
+    msg = str(exc).upper()
+    exhaustion_keywords = [
+        "RESOURCE_EXHAUSTED",
+        "429",
+        "QUOTA EXCEEDED",
+        "RATE LIMIT",
+        "RESOURCE HAS BEEN EXHAUSTED",
+        "TOO MANY REQUESTS",
+        "EXHAUSTED",
+    ]
+    return any(keyword in msg for keyword in exhaustion_keywords)
+
+
+class ModelFailoverManager:
+    """
+    Manages primary model calls with automatic failover to a fallback model
+    ONLY when request quotas or rate limits are exhausted.
+    """
+
+    def __init__(
+        self,
+        primary_model: str = DEFAULT_MODEL,
+        fallback_model: str = FALLBACK_MODEL,
+        cooldown_seconds: float = 60.0,
+    ):
+        self.primary_model = primary_model
+        self.fallback_model = fallback_model
+        self.cooldown_seconds = cooldown_seconds
+        self.primary_exhausted_until: float = 0.0
+        self.last_model_used: str = primary_model
+
+    def is_primary_exhausted(self) -> bool:
+        return time.time() < self.primary_exhausted_until
+
+    def mark_primary_exhausted(self, cooldown: Optional[float] = None) -> None:
+        duration = cooldown if cooldown is not None else self.cooldown_seconds
+        self.primary_exhausted_until = time.time() + duration
+
+    def clear_primary_exhaustion(self) -> None:
+        self.primary_exhausted_until = 0.0
+
+    def generate_content(
+        self,
+        client: Any,
+        contents: Any,
+        config: Optional[Any] = None,
+        log_fn: Optional[Callable[[str], None]] = None,
+        override_model: Optional[str] = None,
+    ) -> Tuple[Any, str]:
+        """
+        Execute client.models.generate_content with strict failover on resource exhaustion.
+        Returns: (response, model_name_used)
+        """
+        _log = log_fn or (lambda m: print(f"[ModelFailover] {m}", file=sys.stderr))
+        primary = override_model or self.primary_model
+
+        if override_model and override_model != self.primary_model:
+            resp = client.models.generate_content(model=override_model, contents=contents, config=config)
+            self.last_model_used = override_model
+            return resp, override_model
+
+        if self.is_primary_exhausted():
+            remaining = max(1, int(self.primary_exhausted_until - time.time()))
+            _log(
+                f"Primary model '{primary}' is in quota cooldown ({remaining}s remaining). "
+                f"Routing to fallback model '{self.fallback_model}'."
+            )
+            try:
+                resp = client.models.generate_content(
+                    model=self.fallback_model,
+                    contents=contents,
+                    config=config,
+                )
+                self.last_model_used = self.fallback_model
+                return resp, self.fallback_model
+            except Exception as e:
+                raise e
+
+        try:
+            resp = client.models.generate_content(
+                model=primary,
+                contents=contents,
+                config=config,
+            )
+            if self.primary_exhausted_until > 0:
+                _log(f"Primary model '{primary}' quota recovered! Resumed as active default model.")
+                self.clear_primary_exhaustion()
+            self.last_model_used = primary
+            return resp, primary
+        except Exception as exc:
+            if not is_resource_exhausted_error(exc):
+                # ONLY switch when requests/quota are exhausted
+                raise exc
+
+            self.mark_primary_exhausted()
+            _log(
+                f"⚠️ Requests for primary model '{primary}' EXHAUSTED "
+                f"(HTTP 429 / RESOURCE_EXHAUSTED). "
+                f"Switching to fallback model '{self.fallback_model}'..."
+            )
+            resp = client.models.generate_content(
+                model=self.fallback_model,
+                contents=contents,
+                config=config,
+            )
+            self.last_model_used = self.fallback_model
+            return resp, self.fallback_model
+
+
+GLOBAL_MODEL_FAILOVER = ModelFailoverManager()
+
+
+def generate_content_with_failover(
+    client: Any,
+    contents: Any,
+    config: Optional[Any] = None,
+    primary_model: str = DEFAULT_MODEL,
+    fallback_model: str = FALLBACK_MODEL,
+    log_fn: Optional[Callable[[str], None]] = None,
+) -> Tuple[Any, str]:
+    """Helper function to run generate_content with automatic failover only on exhaustion."""
+    global GLOBAL_MODEL_FAILOVER
+    if primary_model != GLOBAL_MODEL_FAILOVER.primary_model or fallback_model != GLOBAL_MODEL_FAILOVER.fallback_model:
+        GLOBAL_MODEL_FAILOVER = ModelFailoverManager(
+            primary_model=primary_model,
+            fallback_model=fallback_model,
+        )
+    return GLOBAL_MODEL_FAILOVER.generate_content(
+        client=client,
+        contents=contents,
+        config=config,
+        log_fn=log_fn,
+    )
+
 
 
 # ===========================================================================
@@ -321,17 +489,19 @@ def quick_evaluate(strategy_path: Path | str, steps: int = 50) -> dict:
 
 class GemmaGenAIModel:
     """
-    Model adapter connecting Google GenAI SDK (for gemma-4-26b-a4b-it or gemini models)
-    to the mini-swe-agent Model protocol.
+    Model adapter connecting Google GenAI SDK (default: gemma-4-31b-it with failover
+    to gemma-4-26b-a4b-it on request exhaustion) to the mini-swe-agent Model protocol.
     """
 
     def __init__(
         self,
         model_name: str = DEFAULT_MODEL,
+        fallback_model: str = FALLBACK_MODEL,
         client: Any = None,
         api_key: Optional[str] = None
     ):
         self.model_name = model_name
+        self.fallback_model = fallback_model
         self.client = client
         if self.client is None:
             key = api_key or os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
@@ -342,12 +512,16 @@ class GemmaGenAIModel:
                 except ImportError:
                     self.client = None
 
+        self.failover_manager = ModelFailoverManager(
+            primary_model=self.model_name,
+            fallback_model=self.fallback_model,
+        )
         self.action_regex = r"```(?:mswea_bash_command|bash)?\s*\n(.*?)\n```"
         self.cost = 0.0
         self.n_calls = 0
 
     def query(self, messages: List[Dict[str, Any]], **kwargs) -> Dict[str, Any]:
-        """Query Gemma model and parse actions."""
+        """Query Gemma model (with quota-exhaustion failover) and parse actions."""
         if not self.client:
             raise RuntimeError(
                 "google-genai client not available. Ensure 'google-genai' is installed "
@@ -365,14 +539,15 @@ class GemmaGenAIModel:
         full_prompt = "\n".join(prompt_parts)
 
         self.n_calls += 1
-        response = self.client.models.generate_content(
-            model=self.model_name,
+        response, used_model = self.failover_manager.generate_content(
+            client=self.client,
             contents=full_prompt,
             config=types.GenerateContentConfig(
                 temperature=kwargs.get("temperature", 0.6),
                 max_output_tokens=kwargs.get("max_output_tokens", 16384),
             ),
         )
+        self.model_name = used_model
 
         text = extract_response_text(response)
         actions = self._parse_actions(text)
@@ -383,6 +558,7 @@ class GemmaGenAIModel:
             "extra": {
                 "actions": actions,
                 "cost": 0.0,
+                "model_used": used_model,
                 "timestamp": time.time(),
             },
         }
@@ -561,6 +737,7 @@ class MiniSweAgentHarness:
         self,
         workspace_dir: Path | str,
         model_name: str = DEFAULT_MODEL,
+        fallback_model: str = FALLBACK_MODEL,
         client: Any = None,
         step_limit: int = 15,
         temperature: float = 0.6,
@@ -568,12 +745,17 @@ class MiniSweAgentHarness:
         self.workspace_dir = Path(workspace_dir).resolve()
         self.step_limit = step_limit
         self.model_name = model_name
+        self.fallback_model = fallback_model
         self.temperature = temperature
         self.client = client
 
         self.messages: List[Dict[str, Any]] = []
         self.env = HarnessEnvironment(cwd=self.workspace_dir)
-        self.model = GemmaGenAIModel(model_name=self.model_name, client=self.client)
+        self.model = GemmaGenAIModel(
+            model_name=self.model_name,
+            fallback_model=self.fallback_model,
+            client=self.client,
+        )
 
     def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the agent interactive editing loop."""
@@ -644,6 +826,7 @@ def generate_surgical_batch_variants(
     program_text: str = "",
     n_variants: int = 1,
     model_name: str = DEFAULT_MODEL,
+    fallback_model: str = FALLBACK_MODEL,
     temperature: float = 0.7,
 ) -> List[Tuple[str, str]]:
     """
@@ -725,13 +908,15 @@ flattening nested branches, and simplifying agent decision rules.
 """
 
     try:
-        response = client.models.generate_content(
-            model=model_name,
+        response, used_model = generate_content_with_failover(
+            client=client,
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=16384,
             ),
+            primary_model=model_name,
+            fallback_model=fallback_model,
         )
         text = extract_response_text(response)
     except Exception as e:
@@ -863,6 +1048,7 @@ def generate_ablation_variants_harness(
     n_variants: int = 1,
     mode: str = "batch",
     model_name: str = DEFAULT_MODEL,
+    fallback_model: str = FALLBACK_MODEL,
     temperature: float = 0.7,
     step_limit: int = 12,
     **kwargs,
@@ -898,6 +1084,7 @@ def generate_ablation_variants_harness(
                 harness = MiniSweAgentHarness(
                     workspace_dir=tmppath,
                     model_name=model_name,
+                    fallback_model=fallback_model,
                     client=client,
                     step_limit=step_limit,
                     temperature=temperature,
@@ -926,6 +1113,7 @@ def generate_ablation_variants_harness(
             program_text=program_text,
             n_variants=n_variants,
             model_name=model_name,
+            fallback_model=fallback_model,
             temperature=temperature,
         )
 
@@ -1010,7 +1198,8 @@ def main():
 
     # run (standalone harness execution)
     p_run = subparsers.add_parser("run", help="Run ablation round via harness")
-    p_run.add_argument("--model", default=DEFAULT_MODEL, help="Model name")
+    p_run.add_argument("--model", default=DEFAULT_MODEL, help="Model name (default: gemma-4-31b-it)")
+    p_run.add_argument("--fallback-model", default=FALLBACK_MODEL, help="Fallback model when quota exhausted (default: gemma-4-26b-a4b-it)")
     p_run.add_argument("--mode", default="batch", choices=["batch", "agent"], help="Harness mode")
     p_run.add_argument("--steps", type=int, default=12, help="Max steps for agent")
 
@@ -1069,10 +1258,13 @@ def main():
         print(f"✅ {msg}")
         code = Path(args.file).read_text(encoding="utf-8")
         info = compute_complexity_info(code)
+        gz_str = ""
+        if "gzip_compression_ratio" in info:
+            gz_str = f" | Gzip: {info['gzip_compression_ratio']:.1%} ({info['gzip_compressed_bytes']}B)"
         print(
             f"   Complexity: Combined Score = {info['combined_score']:.1f} | "
-            f"AST Nodes: {info['ast_nodes']} | Cyclomatic: {info['cyclomatic_total']} | "
-            f"Lines: {info['lines']}"
+            f"AST Nodes: {info['ast_nodes']} | Cyclomatic: {info['cyclomatic_total']}"
+            f"{gz_str} | Lines: {info['lines']}"
         )
 
     elif args.command == "diff":
@@ -1127,6 +1319,7 @@ def main():
             n_variants=1,
             mode=args.mode,
             model_name=args.model,
+            fallback_model=args.fallback_model,
             step_limit=args.steps,
         )
 
@@ -1136,7 +1329,10 @@ def main():
             delta = complexity["combined_score"] - new_comp["combined_score"]
             print(f"\n🎉 Successfully generated variant: {desc}")
             print(f"   Score: {complexity['combined_score']:.1f} -> {new_comp['combined_score']:.1f} ({delta:+.1f})")
-            print(f"   Lines: {complexity['lines']} -> {new_comp['lines']}")
+            gz_delta = ""
+            if "gzip_compressed_bytes" in complexity and "gzip_compressed_bytes" in new_comp:
+                gz_delta = f" | Gzip: {complexity['gzip_compressed_bytes']}B -> {new_comp['gzip_compressed_bytes']}B"
+            print(f"   Lines: {complexity['lines']} -> {new_comp['lines']}{gz_delta}")
         else:
             print("\n❌ No passing variant generated this round.")
 

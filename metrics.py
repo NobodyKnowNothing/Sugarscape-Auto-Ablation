@@ -336,6 +336,31 @@ def compute_all_metrics(model_data: dict[str, Any]) -> dict[str, float]:
     }
 
 
+def compute_all_metrics_with_timeseries(model_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Compute all scalar metrics AND return raw time-series data for DTW analysis.
+    
+    Extends compute_all_metrics() with additional keys:
+        - "population_series": list of population counts per step
+        - "price_series": list of mean trade prices per step
+        - "gini_series": list of Gini coefficients per step
+        - "agent_wealths": raw wealth list (pass-through for KS tests)
+        - "agent_positions": raw position list (pass-through for Moran's I)
+    
+    Used by the Stage 3 Heavy Gauntlet in the validation waterfall.
+    """
+    result = compute_all_metrics(model_data)
+    
+    # Pass through raw data needed by downstream validation
+    result["agent_wealths"] = model_data.get("agent_wealths", [])
+    result["agent_positions"] = model_data.get("agent_positions", [])
+    result["population_series"] = model_data.get("population_series", [])
+    result["price_series"] = model_data.get("price_series", [])
+    result["gini_series"] = model_data.get("gini_series", [])
+    
+    return result
+
+
 def compute_similarity_matrix(baseline_metrics: dict[str, float],
                               variant_metrics: dict[str, float]) -> dict[str, float]:
     """

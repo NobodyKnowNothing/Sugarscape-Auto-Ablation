@@ -11,8 +11,10 @@ and control-flow branching.
 """
 
 import ast
+import gzip
 import inspect
 import math
+import os
 import re
 import sys
 from typing import Any, Callable
@@ -198,6 +200,71 @@ def cyclomatic_complexity(code: str) -> dict:
     }
 
 
+
+# ---------------------------------------------------------------------------
+# Gzip Compression Complexity Metrics
+# ---------------------------------------------------------------------------
+
+def gzip_compress_code(code: str, level: int = 9) -> bytes:
+    """Compress UTF-8 source string using gzip."""
+    return gzip.compress(code.encode("utf-8"), compresslevel=level)
+
+
+def gzip_compressed_size(code: str, level: int = 9) -> int:
+    """Return total bytes of gzipped UTF-8 source code (0 if code is empty)."""
+    if not code:
+        return 0
+    return len(gzip_compress_code(code, level=level))
+
+
+def gzip_compression_ratio(code: str, level: int = 9) -> float:
+    """
+    Compute gzip compression ratio: compressed_bytes / uncompressed_bytes.
+    Returns 0.0 if code is empty.
+    Lower values indicate higher compressibility / redundancy.
+    """
+    data = code.encode("utf-8")
+    if not data:
+        return 0.0
+    compressed = gzip.compress(data, compresslevel=level)
+    return len(compressed) / len(data)
+
+
+def gzip_complexity(code: str, level: int = 9) -> dict[str, Any]:
+    """
+    Compute detailed gzip compression metrics for a Python source string.
+
+    Returns:
+        {
+            "compressed_bytes": int,     # total size in bytes after gzip
+            "uncompressed_bytes": int,   # total size in bytes of raw UTF-8 string
+            "compression_ratio": float,  # compressed_bytes / uncompressed_bytes
+            "space_saving": float,       # 1.0 - compression_ratio
+            "compression_factor": float, # uncompressed_bytes / compressed_bytes
+        }
+    """
+    data = code.encode("utf-8")
+    raw_len = len(data)
+    if raw_len == 0:
+        return {
+            "compressed_bytes": 0,
+            "uncompressed_bytes": 0,
+            "compression_ratio": 0.0,
+            "space_saving": 0.0,
+            "compression_factor": 0.0,
+        }
+    compressed = gzip.compress(data, compresslevel=level)
+    comp_len = len(compressed)
+    ratio = comp_len / raw_len
+    return {
+        "compressed_bytes": comp_len,
+        "uncompressed_bytes": raw_len,
+        "compression_ratio": ratio,
+        "space_saving": 1.0 - ratio,
+        "compression_factor": (raw_len / comp_len) if comp_len > 0 else 0.0,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Pluggable Optimization & Complexity Scoring Functions
 # ---------------------------------------------------------------------------
@@ -211,7 +278,7 @@ def default_scoring_function(metrics: dict[str, Any]) -> float:
     """
     Default optimization objective:
     Weighted sum of AST nodes (structural size) and cyclomatic complexity (branching depth).
-    Score = (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclomatic_total).
+    Score = (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclo).
     Lower is simpler.
     """
     ast_nodes = metrics.get("ast_nodes", -1)
@@ -219,6 +286,55 @@ def default_scoring_function(metrics: dict[str, Any]) -> float:
     if ast_nodes < 0 or cyclo < 0:
         return float("inf")
     return (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclo)
+
+
+def gzip_ratio_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
+    """
+    Optimization objective minimizing gzip compression ratio (compressed / uncompressed).
+    Expressed as percentage (0-100), e.g. 26.8 for 0.268 ratio.
+    Lower indicates simpler / more compressible / more repetitive structure.
+    Accepts (metrics: dict), (code: str), or (code: str, metrics: dict).
+    """
+    if isinstance(target, dict):
+        if "gzip_compression_ratio" in target:
+            return float(target["gzip_compression_ratio"]) * 100.0
+        return 100.0
+    elif isinstance(target, str):
+        return gzip_compression_ratio(target) * 100.0
+    elif metrics and "gzip_compression_ratio" in metrics:
+        return float(metrics["gzip_compression_ratio"]) * 100.0
+    return 100.0
+
+
+def gzip_size_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
+    """
+    Optimization objective minimizing raw gzipped byte size (Kolmogorov complexity proxy).
+    Score = compressed byte count. Lower is simpler.
+    Accepts (metrics: dict), (code: str), or (code: str, metrics: dict).
+    """
+    if isinstance(target, dict):
+        if "gzip_compressed_bytes" in target:
+            return float(target["gzip_compressed_bytes"])
+        return float("inf")
+    elif isinstance(target, str):
+        return float(gzip_compressed_size(target))
+    elif metrics and "gzip_compressed_bytes" in metrics:
+        return float(metrics["gzip_compressed_bytes"])
+    return float("inf")
+
+
+def gzip_raw_ratio_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
+    """
+    Optimization objective minimizing gzip compression ratio on raw 0.0-1.0 scale.
+    """
+    if isinstance(target, dict):
+        return float(target.get("gzip_compression_ratio", 1.0))
+    elif isinstance(target, str):
+        return gzip_compression_ratio(target)
+    elif metrics and "gzip_compression_ratio" in metrics:
+        return float(metrics["gzip_compression_ratio"])
+    return 1.0
+
 
 
 # Active scoring function (optimization objective callable)
@@ -340,6 +456,61 @@ def get_active_scoring_function() -> tuple[Callable, str]:
     return ACTIVE_SCORING_FUNCTION, SCORER_NAME
 
 
+AVAILABLE_SCORERS: dict[str, Callable] = {
+    "weighted_ast_cyclomatic": default_scoring_function,
+    "default": default_scoring_function,
+    "ast_cyclomatic": default_scoring_function,
+    "gzip_ratio": gzip_ratio_scoring_function,
+    "gzip_compression_ratio": gzip_ratio_scoring_function,
+    "gzip_raw_ratio": gzip_raw_ratio_scoring_function,
+    "gzip_size": gzip_size_scoring_function,
+    "gzip_bytes": gzip_size_scoring_function,
+    "gzip_compressed_bytes": gzip_size_scoring_function,
+}
+
+
+def select_scoring_function(scorer: Callable | str, name: str | None = None) -> Callable:
+    """
+    Select an active scoring function by name or callable.
+    Named presets include:
+      - 'default' / 'weighted_ast_cyclomatic' (0.4*AST + 0.6*Cyclomatic)
+      - 'gzip_ratio' / 'gzip_compression_ratio' (percentage scale 0-100%, lower is simpler)
+      - 'gzip_size' / 'gzip_bytes' (compressed byte count, lower is simpler)
+      - 'gzip_raw_ratio' (raw 0.0-1.0 scale)
+    """
+    if isinstance(scorer, str):
+        key = scorer.strip().lower()
+        if key in AVAILABLE_SCORERS:
+            resolved_name = name or key
+            return set_scoring_function(AVAILABLE_SCORERS[key], name=resolved_name)
+        raise ValueError(
+            f"Unknown scorer preset '{scorer}'. Available presets: {list(AVAILABLE_SCORERS.keys())}"
+        )
+    return set_scoring_function(scorer, name=name)
+
+
+def use_gzip_ratio_scoring() -> Callable:
+    """Switch active optimization objective to gzip compression ratio (percentage)."""
+    return set_scoring_function(gzip_ratio_scoring_function, name="gzip_compression_ratio")
+
+
+def use_gzip_size_scoring() -> Callable:
+    """Switch active optimization objective to gzip compressed byte size."""
+    return set_scoring_function(gzip_size_scoring_function, name="gzip_compressed_bytes")
+
+
+def use_default_scoring() -> Callable:
+    """Reset to default weighted AST + Cyclomatic complexity scoring."""
+    reset_default_scoring()
+    return default_scoring_function
+
+
+# Auto-configure initial scorer from environment variable if present
+_ENV_SCORER = os.environ.get("COMPLEXITY_SCORER") or os.environ.get("OPTIMIZATION_OBJECTIVE")
+if _ENV_SCORER and _ENV_SCORER.strip().lower() in AVAILABLE_SCORERS:
+    select_scoring_function(_ENV_SCORER.strip().lower())
+
+
 def combined_complexity_score(code: str, scoring_fn: Callable | None = None) -> dict[str, Any]:
     """
     Compute complexity metrics and evaluate the active optimization objective.
@@ -353,6 +524,7 @@ def combined_complexity_score(code: str, scoring_fn: Callable | None = None) -> 
       - traditional metrics: lines, classes, methods, total_lines
       - AST metrics: ast_nodes, ast_breakdown
       - Cyclomatic metrics: cyclomatic_total, cyclomatic_max_function, cyclomatic_mean_function
+      - Gzip metrics: gzip_compressed_bytes, gzip_uncompressed_bytes, gzip_compression_ratio, gzip_space_saving
     """
     # Traditional metrics (kept for backward compatibility)
     lines = [l for l in code.split("\n") if l.strip() and not l.strip().startswith("#")]
@@ -367,6 +539,9 @@ def combined_complexity_score(code: str, scoring_fn: Callable | None = None) -> 
     # Cyclomatic complexity
     cc = cyclomatic_complexity(code)
 
+    # Gzip compression complexity
+    gz = gzip_complexity(code)
+
     base_metrics = {
         "lines": len(lines),
         "classes": classes,
@@ -378,6 +553,11 @@ def combined_complexity_score(code: str, scoring_fn: Callable | None = None) -> 
         "cyclomatic_max_function": cc.get("max_function", 0),
         "cyclomatic_mean_function": cc.get("mean_function", 0.0),
         "cyclomatic_functions": cc.get("functions", {}),
+        "gzip_compressed_bytes": gz["compressed_bytes"],
+        "gzip_uncompressed_bytes": gz["uncompressed_bytes"],
+        "gzip_compression_ratio": round(gz["compression_ratio"], 4),
+        "gzip_space_saving": round(gz["space_saving"], 4),
+        "gzip_compression_factor": round(gz["compression_factor"], 2),
     }
 
     # Evaluate optimization score using active or provided scoring function
@@ -410,6 +590,12 @@ def format_complexity_report(complexity: dict) -> str:
     lines.append(f"  Cyclomatic (total):     {complexity['cyclomatic_total']}")
     lines.append(f"  Cyclomatic (max func):  {complexity['cyclomatic_max_function']}")
     lines.append(f"  Cyclomatic (mean func): {complexity['cyclomatic_mean_function']:.1f}")
+    if "gzip_compressed_bytes" in complexity:
+        gz_comp = complexity["gzip_compressed_bytes"]
+        gz_raw = complexity.get("gzip_uncompressed_bytes", 0)
+        gz_ratio = complexity.get("gzip_compression_ratio", 0.0)
+        lines.append(f"  Gzip Compressed Bytes:  {gz_comp} B (raw: {gz_raw} B)")
+        lines.append(f"  Gzip Compression Ratio: {gz_ratio:.4f} ({gz_ratio * 100:.1f}%)")
     lines.append(f"  ╔═════════════════════════════════════════════════╗")
     lines.append(f"  ║  Optimization Score ({scorer_name:20s}): {complexity['combined_score']:>8.1f}  ║")
     lines.append(f"  ╚═════════════════════════════════════════════════╝")
@@ -418,3 +604,36 @@ def format_complexity_report(complexity: dict) -> str:
 
 # Alias for backward compatibility and convenience
 count_complexity = combined_complexity_score
+
+
+if __name__ == "__main__":
+    import argparse
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Compute code complexity and compression metrics.")
+    parser.add_argument("file", nargs="?", default="strategy.py", help="Python file to analyze (default: strategy.py)")
+    parser.add_argument(
+        "--scorer", "-s",
+        choices=list(AVAILABLE_SCORERS.keys()),
+        default=None,
+        help="Scorer preset to evaluate (default: weighted_ast_cyclomatic or $COMPLEXITY_SCORER)",
+    )
+    parser.add_argument("--json", "-j", action="store_true", help="Output metrics as JSON")
+    args = parser.parse_args()
+
+    target_path = Path(args.file)
+    if not target_path.exists():
+        print(f"Error: File not found: {target_path}", file=sys.stderr)
+        sys.exit(1)
+
+    code_content = target_path.read_text(encoding="utf-8")
+    if args.scorer:
+        select_scoring_function(args.scorer)
+
+    results = combined_complexity_score(code_content)
+    if args.json:
+        import json
+        print(json.dumps(results, indent=2))
+    else:
+        print(f"Target: {target_path}")
+        print(format_complexity_report(results))

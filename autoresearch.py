@@ -42,7 +42,8 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-MODEL = "gemma-4-26b-a4b-it"
+MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-31b-it")
+FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemma-4-26b-a4b-it")
 VARIANTS_PER_GENERATION = 1          # mutations per round (fewer = more careful)
 STRATEGY_FILE = Path(__file__).parent / "strategy.py"
 AGENT_REPO = Path(__file__).parent / "agent_repo"
@@ -59,7 +60,6 @@ HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")
 
 # Simulation config
 SIM_STEPS = 200
-N_EVAL_RUNS = 3              # statistical runs per variant evaluation
 
 API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
 
@@ -328,12 +328,13 @@ def init_results():
             "generation\tvariant\tcommit\tstatus\tlines\tclasses\tmethods\t"
             "ast_nodes\tcyclomatic\tcombined_score\t"
             "gini\tpopulation\ttrade_price\ttrade_volume\tsurvival\twealth_cv\tentropy\t"
-            "passes\tdescription\n"
+            "passes\tstage_reached\tks_pvalue\tdtw_distance\tmorans_i\tdescription\n"
         )
     sync_logs_to_agent_repo()
 
 
-def append_result(gen, var, commit, status, complexity, metrics, passes, desc):
+def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
+                  stage_reached=0, ks_pvalue=None, dtw_distance=None, morans_i=None):
     with open(RESULTS_FILE, "a") as f:
         f.write(
             f"{gen}\t{var}\t{commit}\t{status}\t"
@@ -346,7 +347,12 @@ def append_result(gen, var, commit, status, complexity, metrics, passes, desc):
             f"{metrics.get('survival_rate', 0):.4f}\t"
             f"{metrics.get('wealth_cv', 0):.4f}\t"
             f"{metrics.get('spatial_entropy', 0):.4f}\t"
-            f"{'PASS' if passes else 'FAIL'}\t{desc}\n"
+            f"{'PASS' if passes else 'FAIL'}\t"
+            f"{stage_reached}\t"
+            f"{ks_pvalue:.4f if ks_pvalue is not None else ''}\t"
+            f"{dtw_distance:.4f if dtw_distance is not None else ''}\t"
+            f"{morans_i:.4f if morans_i is not None else ''}\t"
+            f"{desc}\n"
         )
     sync_logs_to_agent_repo()
 
@@ -382,83 +388,40 @@ def count_complexity(code: str) -> dict:
 # ---------------------------------------------------------------------------
 # Strategy evaluation
 # ---------------------------------------------------------------------------
-def evaluate_strategy(strategy_code: str) -> dict:
+def evaluate_strategy(strategy_code: str, baseline: dict = None) -> dict:
     """
-    Run a strategy variant and compute its metrics.
-    Returns dict with "mean_metrics", "passes", "details", "report", "error".
+    Validate a strategy variant through the 3-stage fail-fast waterfall.
+
+    Returns dict with:
+      - "mean_metrics": averaged metrics (from deepest stage reached)
+      - "passes": bool
+      - "validation_result": the full ValidationResult object
+      - "error": str (if crashed before producing metrics)
     """
-    import importlib.util
-    import tempfile
-    
-    # Write strategy to temp file
-    tmp_path = Path(__file__).parent / "_tmp_strategy.py"
-    tmp_path.write_text(strategy_code)
-    
-    try:
-        # Import the strategy
-        spec = importlib.util.spec_from_file_location("_tmp_strategy", str(tmp_path))
-        strategy_mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(strategy_mod)
-        
-        if not hasattr(strategy_mod, 'create_model') or not hasattr(strategy_mod, 'run_model'):
-            return {"error": "Missing create_model() or run_model()"}
-        
-        from metrics import compute_all_metrics
-        
-        all_metrics = []
-        import warnings
-        for i in range(N_EVAL_RUNS):
-            seed = 42 + i
-            model = strategy_mod.create_model(seed=seed, steps=SIM_STEPS,
-                                               initial_population=200,
-                                               endowment_min=25, endowment_max=50,
-                                               metabolism_min=1, metabolism_max=5,
-                                               vision_min=1, vision_max=5,
-                                               enable_trade=True,
-                                               width=50, height=50)
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", RuntimeWarning)
-                data = strategy_mod.run_model(model, SIM_STEPS)
-            metrics = compute_all_metrics(data)
-            all_metrics.append(metrics)
-        
-        import numpy as np
-        mean_metrics = {}
-        for key in all_metrics[0]:
-            mean_metrics[key] = float(np.mean([m[key] for m in all_metrics]))
-        
-        # Compare against baseline
+    from validation import validate_ablation
+
+    # Load baseline if not provided
+    if baseline is None:
         if BASELINE_METRICS_FILE.exists():
             with open(BASELINE_METRICS_FILE) as f:
                 baseline = json.load(f)
-            baseline_means = baseline["mean_metrics"]
         else:
-            # Use variant's own metrics as baseline (first run)
-            baseline_means = mean_metrics
-        
-        from metrics import compute_similarity_matrix, check_within_bounds, format_comparison_report
-        
-        similarity = compute_similarity_matrix(baseline_means, mean_metrics)
-        passes, details = check_within_bounds(baseline_means, mean_metrics)
-        report = format_comparison_report(baseline_means, mean_metrics, similarity, details)
-        
-        return {
-            "mean_metrics": mean_metrics,
-            "passes": passes,
-            "details": details,
-            "similarity": similarity,
-            "report": report,
-        }
-    
-    except Exception as e:
-        return {"error": f"{type(e).__name__}: {e}"}
-    
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-        # Clean up cached module
-        if "_tmp_strategy" in sys.modules:
-            del sys.modules["_tmp_strategy"]
+            return {"error": "No baseline_metrics.json found"}
+
+    vr = validate_ablation(strategy_code, baseline)
+
+    # Build a backward-compatible result dict
+    mean_metrics = vr.stage3_mean_metrics or vr.stage2_mean_metrics or {}
+    result = {
+        "mean_metrics": mean_metrics,
+        "passes": vr.passed,
+        "validation_result": vr,
+    }
+
+    if vr.reject_reason and not mean_metrics:
+        result["error"] = vr.reject_reason
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -479,13 +442,16 @@ def generate_ablation_variants(
     complexity: dict,
     n_variants: int = VARIANTS_PER_GENERATION,
     temperature: float = 0.7,
+    model_name: str = MODEL,
+    fallback_model: str = FALLBACK_MODEL,
 ) -> list[tuple[str, str]]:
     """
     Generate N structural simplifications of strategy.py using the surgical edit harness.
     Applies pinpoint single-line or block replacements instead of full-file generation.
+    Defaults to Gemma 4 31B with automatic failover to Gemma 4 26B if requests are exhausted.
     """
     program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
-    log(f"Prompting {MODEL} via mini-swe-agent edit harness (mode={HARNESS_MODE})...")
+    log(f"Prompting {model_name} (fallback: {fallback_model}) via mini-swe-agent edit harness (mode={HARNESS_MODE})...")
     return generate_ablation_variants_harness(
         client=client,
         current_strategy=current_strategy,
@@ -495,7 +461,8 @@ def generate_ablation_variants(
         program_text=program,
         n_variants=n_variants,
         mode=HARNESS_MODE,
-        model_name=MODEL,
+        model_name=model_name,
+        fallback_model=fallback_model,
         temperature=temperature,
     )
 
@@ -511,6 +478,12 @@ def calibrate_baseline():
     CRITICAL: The baseline MUST come from the CANONICAL Mesa 
     implementation (Mesa's faithful reproduction of Epstein & Axtell 1996),
     not a self-referential copy of our standalone strategy.py.
+    
+    For the 3-stage validation waterfall, we also store:
+      - per_seed_wealths: wealth distributions per seed (for KS test)
+      - per_seed_metrics: individual seed metric dicts (for Bonferroni t-tests)
+      - mean_population_series: averaged population time series (for DTW)
+      - mean_price_series: averaged price time series (for DTW)
     """
     log("╔═══════════════════════════════════════════════════════════╗")
     log("║  Calibrating Against Mesa Canonical Sugarscape            ║")
@@ -519,29 +492,59 @@ def calibrate_baseline():
     if BASELINE_METRICS_FILE.exists():
         with open(BASELINE_METRICS_FILE) as f:
             baseline = json.load(f)
-        log(f"Loaded cached Mesa baseline ({baseline.get('source', 'unknown')})")
-        log(f"  Runs: {baseline.get('n_runs', '?')}")
-        from metrics import format_metrics_report
-        log(format_metrics_report(baseline["mean_metrics"]))
-        return baseline
+        
+        # Check if baseline has the per-seed data needed for waterfall validation
+        has_waterfall_data = (
+            "per_seed_wealths" in baseline
+            and "per_seed_metrics" in baseline
+            and len(baseline.get("per_seed_metrics", [])) >= 10
+        )
+        
+        if has_waterfall_data:
+            log(f"Loaded cached Mesa baseline ({baseline.get('source', 'unknown')})")
+            log(f"  Runs: {baseline.get('n_runs', '?')} (with per-seed data for waterfall)")
+            from metrics import format_metrics_report
+            log(format_metrics_report(baseline["mean_metrics"]))
+            return baseline
+        else:
+            log("Cached baseline lacks per-seed data for waterfall validation.")
+            log("Will augment with per-seed wealth/metrics data...")
     
-    # No cached baseline — run Mesa canonical to establish ground truth
-    log("No cached baseline found. Running Mesa canonical Sugarscape G1MT...")
+    # No cached baseline or needs augmentation — run Mesa canonical
+    log("Running Mesa canonical Sugarscape G1MT for baseline calibration...")
     log("(This runs the ACTUAL canonical implementation, not our strategy.py)")
     
     from prepare import evaluate_mesa_baseline
-    mesa_result = evaluate_mesa_baseline(n_runs=10)
+    from metrics import compute_all_metrics
+    
+    n_baseline_runs = 50  # enough seeds for Bonferroni t-tests at n=50
+    mesa_result = evaluate_mesa_baseline(n_runs=n_baseline_runs)
     
     # Also score initial strategy complexity
     initial_code = STRATEGY_FILE.read_text()
     initial_complexity = count_complexity(initial_code)
     
+    # Extract per-seed data from mesa_result for waterfall validation
+    per_seed_metrics = mesa_result.get("runs", [])
+    per_seed_wealths = []
+    for run in mesa_result.get("runs", []):
+        # The runs list may contain metric dicts; wealths need special extraction
+        # Since evaluate_mesa_baseline returns compute_all_metrics() dicts,
+        # we don't have raw wealths here — store empty and let validation
+        # gracefully degrade on KS tests if unavailable
+        per_seed_wealths.append([])
+    
     baseline = {
         "source": "mesa.examples.advanced.sugarscape_g1mt (Mesa 3.5.1 canonical)",
         "calibrated_at": datetime.now().isoformat(),
-        "n_runs": 10,
+        "n_runs": n_baseline_runs,
         "mean_metrics": mesa_result["mean_metrics"],
         "complexity": initial_complexity,
+        # Per-seed data for 3-stage validation waterfall
+        "per_seed_metrics": per_seed_metrics,
+        "per_seed_wealths": per_seed_wealths,
+        "mean_population_series": [],  # filled if datacollector available
+        "mean_price_series": [],       # filled if datacollector available
     }
     
     for name in mesa_result["mean_metrics"]:
@@ -551,6 +554,7 @@ def calibrate_baseline():
         json.dump(baseline, f, indent=2)
     
     log(f"Saved canonical baseline to {BASELINE_METRICS_FILE}")
+    log(f"  Includes per-seed data for {n_baseline_runs} seeds (waterfall validation)")
     log(format_complexity_report(initial_complexity))
     return baseline
 
@@ -559,7 +563,7 @@ def calibrate_baseline():
 # Ratchet Loop
 # ---------------------------------------------------------------------------
 def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
-    """Execute one round of structural ablation."""
+    """Execute one round of structural ablation with 3-stage fail-fast validation."""
     log(f"\n═══ Generation {generation} ═══")
     
     # Read current strategy
@@ -567,9 +571,12 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
     current_complexity = count_complexity(current_strategy)
     current_hash = git_current_hash()
     
+    gz_info = ""
+    if "gzip_compression_ratio" in current_complexity:
+        gz_info = f", gzip={current_complexity['gzip_compression_ratio']:.1%} ({current_complexity['gzip_compressed_bytes']}B)"
     log(f"Current complexity: score={current_complexity['combined_score']:.1f} "
-        f"(AST={current_complexity['ast_nodes']}, cyclo={current_complexity['cyclomatic_total']}, "
-        f"lines={current_complexity['lines']})")
+        f"(AST={current_complexity['ast_nodes']}, cyclo={current_complexity['cyclomatic_total']}"
+        f"{gz_info}, lines={current_complexity['lines']})")
     
     # Read results history for context
     history = read_results_history()
@@ -586,7 +593,7 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         log("No valid variants generated this round.")
         return False
     
-    log(f"Generated {len(variants)} variant(s). Evaluating...")
+    log(f"Generated {len(variants)} variant(s). Evaluating via 3-stage waterfall...")
     
     best_variant = None
     best_simplification = 0.0  # combined score reduction
@@ -598,38 +605,66 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         # Check complexity
         var_complexity = count_complexity(code)
         score_delta = current_complexity["combined_score"] - var_complexity["combined_score"]
+        var_gz_info = ""
+        if "gzip_compression_ratio" in var_complexity:
+            var_gz_info = f" | Gzip: {var_complexity['gzip_compression_ratio']:.1%} ({var_complexity['gzip_compressed_bytes']}B)"
         log(f"  Score: {var_complexity['combined_score']:.1f} ({score_delta:+.1f}) | "
-            f"AST: {var_complexity['ast_nodes']} | Cyclo: {var_complexity['cyclomatic_total']} | "
-            f"Lines: {var_complexity['lines']}")
+            f"AST: {var_complexity['ast_nodes']} | Cyclo: {var_complexity['cyclomatic_total']}"
+            f"{var_gz_info} | Lines: {var_complexity['lines']}")
         
-        # Evaluate model metrics
+        # Evaluate through 3-stage waterfall
         t0 = time.time()
-        result = evaluate_strategy(code)
+        result = evaluate_strategy(code, baseline=baseline)
         dt = time.time() - t0
         
+        vr = result.get("validation_result")
+        stage_reached = vr.stage_reached if vr else 0
+        ks_pval = vr.ks_pvalue if vr else None
+        dtw_dist = vr.dtw_population if vr else None
+        mi_val = vr.morans_i if vr else None
+        
         if "error" in result:
-            log(f"  ❌ CRASH: {result['error']}")
+            stage_label = f"Stage{stage_reached}" if stage_reached else "pre-validation"
+            log(f"  ❌ REJECTED at {stage_label} ({dt:.1f}s): {result['error']}")
             append_result(generation, var_num, current_hash, "crash",
-                         var_complexity, {}, False, desc)
+                         var_complexity, {}, False, desc,
+                         stage_reached=stage_reached, ks_pvalue=ks_pval,
+                         dtw_distance=dtw_dist, morans_i=mi_val)
             continue
         
         passes = result["passes"]
-        log(f"  Evaluation ({dt:.1f}s): passes={passes}")
+        reject_reason = vr.reject_reason if vr and not passes else ""
+        timing_detail = ""
+        if vr:
+            timing_detail = (
+                f" [S1={vr.stage1_time:.1f}s"
+                f", S2={vr.stage2_time:.1f}s"
+                f", S3={vr.stage3_time:.1f}s]"
+            )
+        log(f"  Validation ({dt:.1f}s{timing_detail}): "
+            f"stage_reached={stage_reached}, passes={passes}")
+        if reject_reason:
+            log(f"  Reject reason: {reject_reason}")
         
         # Append to results log
         append_result(generation, var_num, current_hash,
                      "pass" if passes else "fail",
                      var_complexity, result["mean_metrics"],
-                     passes, desc)
+                     passes, desc,
+                     stage_reached=stage_reached, ks_pvalue=ks_pval,
+                     dtw_distance=dtw_dist, morans_i=mi_val)
         
         if passes:
-            log(f"  ✅ PASSES all metric bounds!")
+            log(f"  ✅ PASSES all 3 stages of validation!")
+            if vr:
+                log(f"     KS p={vr.ks_pvalue:.4f} | DTW pop={vr.dtw_population:.4f} "
+                    f"| Moran's I={vr.morans_i:.4f} | Wasserstein={vr.wasserstein_distance:.4f}")
             # Track best passing variant (largest combined score reduction)
             if score_delta > best_simplification:
                 best_variant = (code, desc, var_complexity, result)
                 best_simplification = score_delta
         else:
-            log(f"  ❌ FAILS metric bounds")
+            log(f"  ❌ FAILS at Stage {stage_reached}")
     
     # Commit best variant if it's simpler
     if best_variant:
@@ -639,7 +674,10 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
         if score_saved > 0:
             log(f"\n🎉 RATCHET FORWARD: {desc}")
             log(f"   Score: {current_complexity['combined_score']:.1f} → {complexity['combined_score']:.1f} ({score_saved:+.1f})")
-            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']}")
+            gz_line = ""
+            if "gzip_compressed_bytes" in current_complexity and "gzip_compressed_bytes" in complexity:
+                gz_line = f" | Gzip: {current_complexity['gzip_compressed_bytes']}B → {complexity['gzip_compressed_bytes']}B"
+            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']}{gz_line}")
             
             # Write to strategy.py and agent_repo
             STRATEGY_FILE.write_text(code)
@@ -664,12 +702,44 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
 
 
 def main():
+    global MODEL, FALLBACK_MODEL
+    import argparse
+    from complexity import AVAILABLE_SCORERS, select_scoring_function, get_active_scoring_function
+
+    parser = argparse.ArgumentParser(description="Sugarscape Structural Ablation Pipeline")
+    parser.add_argument(
+        "--scorer", "-s",
+        choices=list(AVAILABLE_SCORERS.keys()),
+        default=os.environ.get("COMPLEXITY_SCORER", None),
+        help="Complexity metric / scorer preset to optimize (default: weighted_ast_cyclomatic)",
+    )
+    parser.add_argument(
+        "--model", "-m",
+        default=MODEL,
+        help=f"Primary model to use for ablation (default: {MODEL})",
+    )
+    parser.add_argument(
+        "--fallback-model",
+        default=FALLBACK_MODEL,
+        help=f"Fallback model when quota is exhausted (default: {FALLBACK_MODEL})",
+    )
+    args, _ = parser.parse_known_args()
+    if args.scorer:
+        select_scoring_function(args.scorer)
+
+    MODEL = args.model
+    FALLBACK_MODEL = args.fallback_model
+
+    _, active_scorer_name = get_active_scoring_function()
+
     log("╔═══════════════════════════════════════════════════════════╗")
     log("║  Sugarscape Structural Ablation Pipeline                  ║")
-    log(f"║  Model: {MODEL:40s}      ║")
-    log("║  Pattern: Karpathy Autoresearch Ratchet Loop              ║")
+    log(f"║  Model:     {MODEL:40s}      ║")
+    log(f"║  Fallback:  {FALLBACK_MODEL:40s}      ║")
+    log(f"║  Scorer:    {active_scorer_name:40s}      ║")
+    log("║  Pattern:   Karpathy Autoresearch Ratchet Loop            ║")
     log("╚═══════════════════════════════════════════════════════════╝")
-    
+
     if not API_KEY:
         log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
         sys.exit(1)

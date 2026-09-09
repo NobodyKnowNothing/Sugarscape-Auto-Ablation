@@ -1,10 +1,10 @@
 # ABM Auto-Ablation (Sugarscape)
 
-This repository hosts an automated research program where an AI agent performs **structural ablation** on Epstein & Axtell's classic *Sugarscape* agent-based model (1996).
+This repository hosts a **work in progress** automated research program where an AI agent performs **structural ablation** on a flattened version of the mesa implementation of Epstein & Axtell's classic *Sugarscape* agent-based model.
 
 ## Objective
 
-The goal of this experiment is to systematically strip away, merge, and simplify code to discover the **absolute minimal viable model** capable of reproducing the emergent macroscopic behaviors documented in the original paper. The AI is tasked with reducing structural and computational complexity while strictly maintaining emergent metrics within narrow error bounds:
+The goal of this experiment is to systematically strip away, merge, and simplify code to approach the **absolute minimal viable model** capable of reproducing the emergent macroscopic behaviors documented in the original paper. Stubborn functions that refuse to simplify are a sign of underlying logic required to produce the macrophenomena, revealing true key components of the emergent behavior. The AI is tasked with reducing structural and computational complexity while strictly maintaining emergent metrics within narrow error bounds:
 
 - **Wealth Inequality** (Gini Coefficient ≈ 0.3–0.6)
 - **Population Dynamics** (converging to environmental carrying capacity)
@@ -91,6 +91,8 @@ export GOOGLE_API_KEY="your-api-key-here"  # On Windows PowerShell: $env:GOOGLE_
 python autoresearch.py
 ```
 
+The pipeline defaults to **Gemma 4 31B** (`gemma-4-31b-it`). If Google GenAI API rate limits or quota requests are exhausted (HTTP 429 / `RESOURCE_EXHAUSTED`), the pipeline automatically routes requests to **Gemma 4 26B** (`gemma-4-26b-a4b-it`) so experimentation continues without interruption. Non-quota errors (such as formatting or syntax issues) do not trigger failover.
+
 Results of each generation will be logged to `results.tsv`.
 
 ### 5. Autonomous GitHub Synchronization
@@ -100,7 +102,10 @@ Results of each generation will be logged to `results.tsv`.
 Whenever a candidate variant passes all metric bounds and reduces complexity, the agent commits the change and pushes it autonomously to your remote GitHub repository.
 
 #### Configuration Options (in `.env` or environment):
+- `ABLATION_MODEL`: Primary LLM for ablation mutations (default: `gemma-4-31b-it`).
+- `FALLBACK_MODEL`: Fallback model when request quota is exhausted (default: `gemma-4-26b-a4b-it`).
 - `GITHUB_TOKEN`: GitHub Personal Access Token or OAuth token (auto-detected from Windows Credential Manager if omitted).
 - `ABLATION_BRANCH`: Custom remote branch name (defaults to `ablation/<month><day>`, e.g., `ablation/sep08`).
 - `GITHUB_REMOTE_URL`: Custom remote repository URL (auto-detected from the parent repo's `origin` remote).
+
 
