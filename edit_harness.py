@@ -370,11 +370,11 @@ class GemmaGenAIModel:
             contents=full_prompt,
             config=types.GenerateContentConfig(
                 temperature=kwargs.get("temperature", 0.6),
-                max_output_tokens=kwargs.get("max_output_tokens", 4096),
+                max_output_tokens=kwargs.get("max_output_tokens", 16384),
             ),
         )
 
-        text = response.text or ""
+        text = extract_response_text(response)
         actions = self._parse_actions(text)
 
         return {
@@ -730,15 +730,33 @@ flattening nested branches, and simplifying agent decision rules.
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=temperature,
-                max_output_tokens=8192,
+                max_output_tokens=16384,
             ),
         )
-        text = response.text or ""
+        text = extract_response_text(response)
     except Exception as e:
         print(f"[edit_harness] Batch generation API error: {e}", file=sys.stderr)
         return []
 
     return parse_surgical_edits(text, current_strategy, expected=n_variants)
+
+
+def extract_response_text(response: Any) -> str:
+    """Extract clean assistant text, handling thinking blocks and multi-part responses."""
+    if not response:
+        return ""
+    if hasattr(response, "text") and response.text:
+        return response.text
+    if hasattr(response, "candidates") and response.candidates:
+        content = getattr(response.candidates[0], "content", None)
+        parts = getattr(content, "parts", []) if content else []
+        for p in reversed(parts):
+            if not getattr(p, "thought", False) and getattr(p, "text", None):
+                return p.text
+        for p in parts:
+            if getattr(p, "text", None):
+                return p.text
+    return ""
 
 
 def parse_surgical_edits(
@@ -749,16 +767,18 @@ def parse_surgical_edits(
     """Parse surgical edit blocks from model response and apply them to original_code."""
     variants = []
 
-    parts = re.split(r'\*\*Variant\s+(\d+)[:\s]*\*\*', response_text)
+    pattern = r'\*\*Variant\s+\d+[:\s]*(.*?)\*\*(.*?)(?=(?:\*\*Variant|\Z))'
+    matches = re.findall(pattern, response_text, re.DOTALL)
     variant_chunks: List[Tuple[str, str]] = []
 
-    if len(parts) > 1:
-        for idx in range(1, len(parts), 2):
-            var_num = parts[idx]
-            chunk = parts[idx + 1]
-            lines = chunk.strip().splitlines()
-            desc = lines[0].strip().strip("*").strip("-").strip() if lines else f"Variant {var_num}"
-            variant_chunks.append((desc, chunk))
+    if matches:
+        for header, body in matches:
+            desc = header.strip().strip("*").strip("-").strip()
+            if not desc:
+                first_lines = [l.strip().strip("*").strip("-").strip() for l in body.strip().splitlines()]
+                first_lines = [l for l in first_lines if l and not l.startswith("```")]
+                desc = first_lines[0] if first_lines else "Surgical simplification"
+            variant_chunks.append((desc, body))
     else:
         variant_chunks.append(("Surgical simplification", response_text))
 
