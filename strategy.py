@@ -137,58 +137,16 @@ class Trader(CellAgent):
     ######################################################################
 
     def move(self):
-        """
-        Function for trader agent to identify optimal move for each step in 4 parts
-        1 - identify all possible moves
-        2 - determine which move maximizes welfare
-        3 - find closest best option
-        4 - move
-        """
+        """Function for trader agent to identify optimal move."""
+        neighbors = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
+        if not neighbors: return
 
-        # 1. identify all possible moves
+        welfares = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in neighbors]
+        max_w = max(welfares)
+        candidates = [c for c, w in zip(neighbors, welfares) if math.isclose(w, max_w)]
 
-        neighboring_cells = [
-            cell
-            for cell in self.cell.get_neighborhood(self.vision, include_center=True)
-            if cell.is_empty
-        ]
-
-        if not neighboring_cells:
-            # all neighboring cells are occupied
-            return
-
-        # 2. determine which move maximizes welfare
-
-        welfares = [
-            self.calculate_welfare(
-                self.sugar + cell.sugar,
-                self.spice + cell.spice,
-            )
-            for cell in neighboring_cells
-        ]
-
-        # 3. Find closest best option
-
-        # find the highest welfare in welfares
-        max_welfare = max(welfares)
-        # Get cells with the highest welfare
-        candidates = [
-            cell
-            for cell, welfare in zip(neighboring_cells, welfares)
-            if math.isclose(welfare, max_welfare)
-        ]
-
-        min_dist = min(get_distance(self.cell, cell) for cell in candidates)
-
-        final_candidates = [
-            cell
-            for cell in candidates
-            if math.isclose(get_distance(self.cell, cell), min_dist, rel_tol=1e-02)
-        ]
-
-        # 4. Move Agent
-        self.cell = self.random.choice(final_candidates)
-
+        min_d = min(get_distance(self.cell, c) for c in candidates)
+        self.cell = self.random.choice([c for c in candidates if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-2)])
     def eat(self):
         self.sugar += self.cell.sugar
         self.cell.sugar = 0
