@@ -48,6 +48,9 @@ STRATEGY_FILE = Path(__file__).parent / "strategy.py"
 AGENT_REPO = Path(__file__).parent / "agent_repo"
 AGENT_STRATEGY = AGENT_REPO / "strategy.py"
 RESULTS_FILE = Path(__file__).parent / "results.tsv"
+AGENT_RESULTS = AGENT_REPO / "results.tsv"
+SWEEPS_FILE = Path(__file__).parent / "sweep_results.json"
+AGENT_SWEEPS = AGENT_REPO / "sweep_results.json"
 PROGRAM_FILE = Path(__file__).parent / "program.md"
 BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
 
@@ -153,13 +156,37 @@ def git(cmd: str, cwd: str | None = None, timeout: int = 30) -> str:
         return ""
 
 
+def sync_logs_to_agent_repo():
+    """Ensure results.tsv, sweep_results.json, and .gitignore are mirrored into agent_repo."""
+    if not AGENT_REPO.exists():
+        return
+    try:
+        if RESULTS_FILE.exists():
+            shutil.copy2(RESULTS_FILE, AGENT_RESULTS)
+        if SWEEPS_FILE.exists():
+            shutil.copy2(SWEEPS_FILE, AGENT_SWEEPS)
+        parent_gitignore = Path(__file__).parent / ".gitignore"
+        if parent_gitignore.exists():
+            shutil.copy2(parent_gitignore, AGENT_REPO / ".gitignore")
+    except Exception as e:
+        log(f"⚠️  Failed to sync logs to agent_repo: {e}")
+
+
 def git_commit(message: str):
+    sync_logs_to_agent_repo()
     git("add strategy.py")
+    if AGENT_RESULTS.exists():
+        git("add results.tsv")
+    if AGENT_SWEEPS.exists():
+        git("add sweep_results.json")
     git(f'commit -m "{message}"')
 
 
 def git_revert_to(commit_hash: str):
-    git(f"reset --hard {commit_hash}")
+    # Revert strategy.py to commit_hash without discarding test logs in results.tsv
+    git(f"checkout {commit_hash} -- strategy.py")
+    if AGENT_STRATEGY.exists():
+        shutil.copy2(AGENT_STRATEGY, STRATEGY_FILE)
 
 
 def git_current_hash() -> str:
@@ -257,14 +284,15 @@ def init_agent_repo():
                 cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
             )
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            git("add strategy.py")
+            sync_logs_to_agent_repo()
             status = git("status --porcelain")
             if status:
-                git_commit("Baseline Sugarscape strategy for ablation")
+                git_commit("Baseline Sugarscape strategy and logs for ablation")
         else:
             git_create_branch(branch)
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            git_commit("Initial Sugarscape strategy")
+            sync_logs_to_agent_repo()
+            git_commit("Initial Sugarscape strategy and logs")
     else:
         # Existing repo: update remote URL and disable interactive prompts
         git('config credential.helper ""')
@@ -281,6 +309,10 @@ def init_agent_repo():
         git_create_branch(branch)
         if not AGENT_STRATEGY.exists():
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+        # If remote branch already had results.tsv but parent doesn't, recover it
+        if AGENT_RESULTS.exists() and not RESULTS_FILE.exists():
+            shutil.copy2(AGENT_RESULTS, RESULTS_FILE)
+        sync_logs_to_agent_repo()
 
     log(f"Subrepo ready on branch '{branch}' -> {safe_remote_url}")
     if token:
@@ -298,6 +330,7 @@ def init_results():
             "gini\tpopulation\ttrade_price\ttrade_volume\tsurvival\twealth_cv\tentropy\t"
             "passes\tdescription\n"
         )
+    sync_logs_to_agent_repo()
 
 
 def append_result(gen, var, commit, status, complexity, metrics, passes, desc):
@@ -315,6 +348,7 @@ def append_result(gen, var, commit, status, complexity, metrics, passes, desc):
             f"{metrics.get('spatial_entropy', 0):.4f}\t"
             f"{'PASS' if passes else 'FAIL'}\t{desc}\n"
         )
+    sync_logs_to_agent_repo()
 
 
 def read_results_history(max_lines: int = 50) -> str:
@@ -610,6 +644,7 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
             # Write to strategy.py and agent_repo
             STRATEGY_FILE.write_text(code)
             AGENT_STRATEGY.write_text(code)
+            sync_logs_to_agent_repo()
             git_commit(f"Gen {generation}: {desc[:50]} | score -{score_saved:.1f}")
             
             chash = git_current_hash()
@@ -639,9 +674,9 @@ def main():
         log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
         sys.exit(1)
     
-    # Initialize agent_repo & configure remote tracking branch
-    init_agent_repo()
+    # Initialize results log & agent_repo tracking branch
     init_results()
+    init_agent_repo()
     
     # Calibrate baseline
     baseline = calibrate_baseline()
@@ -651,6 +686,7 @@ def main():
     log("\n═══ Running Parameter Sweep Validation ═══")
     try:
         sweep_results = run_all_sweeps(n_runs=5)  # quick validation (5 runs)
+        sync_logs_to_agent_repo()
         if not all(r["all_valid"] for r in sweep_results.values()):
             log("⚠️  Some parameter sweeps failed — model may not fully match paper.")
             log("    Proceeding with ablation, but results should be interpreted cautiously.")
@@ -674,6 +710,10 @@ def main():
             
         except KeyboardInterrupt:
             log("\nInterrupted by user. Pushing final state to GitHub before exit...")
+            sync_logs_to_agent_repo()
+            status = git("status --porcelain")
+            if status:
+                git_commit("Update experiment logs before exit")
             git_push()
             log("Exiting early.")
             break
@@ -684,6 +724,10 @@ def main():
             time.sleep(10)
             
     # Final push of completed research
+    sync_logs_to_agent_repo()
+    status = git("status --porcelain")
+    if status:
+        git_commit("Final experiment logs")
     git_push()
             
     # Print final summary

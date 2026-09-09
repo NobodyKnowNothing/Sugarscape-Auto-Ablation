@@ -13,9 +13,7 @@ ENV/
 # Autoresearch artifacts & logs
 agent_repo/
 scratch/
-results.tsv
 results LOC count.tsv
-sweep_results.json
 *.png
 
 # Secrets & Environment variables
