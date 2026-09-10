@@ -120,30 +120,21 @@ class Trader(CellAgent):
 
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
         """helper function for self.trade()"""
-        # Calculate amount to exchange
-        if price >= 1:
-            s_ex, sp_ex = 1, int(price)
-        else:
-            s_ex, sp_ex = int(1 / price), 1
-
-        # Assess new resource levels
+        s_ex, sp_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
         s_sugar, o_sugar = self.sugar + s_ex, other.sugar - s_ex
         s_spice, o_spice = self.spice - sp_ex, other.spice + sp_ex
 
-        # Check resources and welfare/MRS criteria
-        if (s_sugar <= 0 or o_sugar <= 0 or s_spice <= 0 or o_spice <= 0):
+        if any(v <= 0 for v in (s_sugar, o_sugar, s_spice, o_spice)):
             return False
         
-        if not (welfare_self < self.calculate_welfare(s_sugar, s_spice) and
-                welfare_other < other.calculate_welfare(o_sugar, o_spice)):
+        if not (self.calculate_welfare(s_sugar, s_spice) > welfare_self and 
+                other.calculate_welfare(o_sugar, o_spice) > welfare_other):
             return False
 
         if self.calculate_MRS(s_sugar, s_spice) <= other.calculate_MRS(o_sugar, o_spice):
             return False
 
-        # Execute trade
-        self.sugar, other.sugar = s_sugar, o_sugar
-        self.spice, other.spice = s_spice, o_spice
+        self.sugar, other.sugar, self.spice, other.spice = s_sugar, o_sugar, s_spice, o_spice
         return True
 
     def trade(self, other):
@@ -220,21 +211,13 @@ class Trader(CellAgent):
         self.cell.spice = 0
         self.spice -= self.metabolism_spice
 
-    def maybe_die(self):
-        """
-        Function to remove Traders who have consumed all their sugar or spice
-        """
-
-        if self.is_starved():
-            self.remove()
-
     def step(self):
         """Agent step method."""
-        self.prices = []
-        self.trade_partners = []
+        self.prices, self.trade_partners = [], []
         self.move()
         self.eat()
-        self.maybe_die()
+        if self.is_starved():
+            self.remove()
 
     def trade_with_neighbors(self):
         """Function for trader agents to decide who to trade with."""
