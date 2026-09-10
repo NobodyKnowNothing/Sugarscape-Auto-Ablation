@@ -237,18 +237,9 @@ class Trader(CellAgent):
         self.maybe_die()
 
     def trade_with_neighbors(self):
-        """
-        Function for trader agents to decide who to trade with in three parts
-
-        1- identify neighbors who can trade
-        2- trade (2 sessions)
-        3- collect data
-        """
-        # iterate through traders in neighboring cells and trade
+        """Function for trader agents to decide who to trade with."""
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
             self.trade(a)
-
-        return
 
 # ===========================================================================
 # Model Helper Functions & Sugarscape Model (from model.py)
