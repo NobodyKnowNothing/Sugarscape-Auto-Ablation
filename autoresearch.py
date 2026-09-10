@@ -360,6 +360,9 @@ def init_results():
 
 def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
                   stage_reached=0, ks_pvalue=None, dtw_distance=None, morans_i=None):
+    ks_str = f"{ks_pvalue:.4f}" if ks_pvalue is not None else ""
+    dtw_str = f"{dtw_distance:.4f}" if dtw_distance is not None else ""
+    mi_str = f"{morans_i:.4f}" if morans_i is not None else ""
     with open(RESULTS_FILE, "a") as f:
         f.write(
             f"{gen}\t{var}\t{commit}\t{status}\t"
@@ -374,9 +377,9 @@ def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
             f"{metrics.get('spatial_entropy', 0):.4f}\t"
             f"{'PASS' if passes else 'FAIL'}\t"
             f"{stage_reached}\t"
-            f"{ks_pvalue:.4f if ks_pvalue is not None else ''}\t"
-            f"{dtw_distance:.4f if dtw_distance is not None else ''}\t"
-            f"{morans_i:.4f if morans_i is not None else ''}\t"
+            f"{ks_str}\t"
+            f"{dtw_str}\t"
+            f"{mi_str}\t"
             f"{desc}\n"
         )
     sync_logs_to_agent_repo()
