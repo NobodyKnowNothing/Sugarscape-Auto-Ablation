@@ -1,5 +1,10 @@
 """
-Code Complexity Scoring — AST Node Complexity + Cyclomatic Complexity
+Code Complexity Diagnostics — AST Node Complexity + Cyclomatic Complexity
+
+NOTE: the research loop's acceptance objective is NOT computed here. It is the
+judge's canonical compressed size of all executed model logic (judge/complexity.py),
+which is invariant to names/comments/formatting and counts executed Mesa code.
+This module remains for human-readable diagnostics.
 
 Replaces the simplistic line-count metric with a principled combined score:
   1. AST Node Complexity: total number of AST nodes in the parse tree
@@ -288,24 +293,6 @@ def default_scoring_function(metrics: dict[str, Any]) -> float:
     return (WEIGHT_AST_NODES * ast_nodes) + (WEIGHT_CYCLOMATIC * cyclo)
 
 
-def gzip_ratio_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
-    """
-    Optimization objective minimizing gzip compression ratio (compressed / uncompressed).
-    Expressed as percentage (0-100), e.g. 26.8 for 0.268 ratio.
-    Lower indicates simpler / more compressible / more repetitive structure.
-    Accepts (metrics: dict), (code: str), or (code: str, metrics: dict).
-    """
-    if isinstance(target, dict):
-        if "gzip_compression_ratio" in target:
-            return float(target["gzip_compression_ratio"]) * 100.0
-        return 100.0
-    elif isinstance(target, str):
-        return gzip_compression_ratio(target) * 100.0
-    elif metrics and "gzip_compression_ratio" in metrics:
-        return float(metrics["gzip_compression_ratio"]) * 100.0
-    return 100.0
-
-
 def gzip_size_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
     """
     Optimization objective minimizing raw gzipped byte size (Kolmogorov complexity proxy).
@@ -323,22 +310,6 @@ def gzip_size_scoring_function(target: Any, metrics: dict[str, Any] | None = Non
     return float("inf")
 
 
-def gzip_raw_ratio_scoring_function(target: Any, metrics: dict[str, Any] | None = None) -> float:
-    """
-    Optimization objective minimizing gzip compression ratio on raw 0.0-1.0 scale.
-    """
-    if isinstance(target, dict):
-        return float(target.get("gzip_compression_ratio", 1.0))
-    elif isinstance(target, str):
-        return gzip_compression_ratio(target)
-    elif metrics and "gzip_compression_ratio" in metrics:
-        return float(metrics["gzip_compression_ratio"])
-    return 1.0
-
-
-
-# Active scoring function (optimization objective callable)
-# Exposed as global variables so they can be inspected or switched in a notebook
 ACTIVE_SCORING_FUNCTION: Callable = default_scoring_function
 OPTIMIZATION_FUNCTION: Callable = default_scoring_function  # intuitive alias
 active_scoring_function: Callable = default_scoring_function
@@ -460,9 +431,6 @@ AVAILABLE_SCORERS: dict[str, Callable] = {
     "weighted_ast_cyclomatic": default_scoring_function,
     "default": default_scoring_function,
     "ast_cyclomatic": default_scoring_function,
-    "gzip_ratio": gzip_ratio_scoring_function,
-    "gzip_compression_ratio": gzip_ratio_scoring_function,
-    "gzip_raw_ratio": gzip_raw_ratio_scoring_function,
     "gzip_size": gzip_size_scoring_function,
     "gzip_bytes": gzip_size_scoring_function,
     "gzip_compressed_bytes": gzip_size_scoring_function,
@@ -474,9 +442,7 @@ def select_scoring_function(scorer: Callable | str, name: str | None = None) -> 
     Select an active scoring function by name or callable.
     Named presets include:
       - 'default' / 'weighted_ast_cyclomatic' (0.4*AST + 0.6*Cyclomatic)
-      - 'gzip_ratio' / 'gzip_compression_ratio' (percentage scale 0-100%, lower is simpler)
       - 'gzip_size' / 'gzip_bytes' (compressed byte count, lower is simpler)
-      - 'gzip_raw_ratio' (raw 0.0-1.0 scale)
     """
     if isinstance(scorer, str):
         key = scorer.strip().lower()
@@ -487,11 +453,6 @@ def select_scoring_function(scorer: Callable | str, name: str | None = None) -> 
             f"Unknown scorer preset '{scorer}'. Available presets: {list(AVAILABLE_SCORERS.keys())}"
         )
     return set_scoring_function(scorer, name=name)
-
-
-def use_gzip_ratio_scoring() -> Callable:
-    """Switch active optimization objective to gzip compression ratio (percentage)."""
-    return set_scoring_function(gzip_ratio_scoring_function, name="gzip_compression_ratio")
 
 
 def use_gzip_size_scoring() -> Callable:

@@ -2,6 +2,12 @@
 """
 Mesa Sugarscape G1MT — Clone & Deterministic Flattening Pipeline
 
+NOTE: this produces the raw flattened Mesa example (legacy create_model/run_model
+interface). canonical_strategy.py is a documented port of that output to the
+judge contract (init/step/observe); see its module docstring for the exact,
+behaviour-neutral port changes. The default output therefore no longer
+overwrites canonical_strategy.py.
+
 Clones Epstein & Axtell's Sugarscape with Traders (sugarscape_g1mt) from the
 official Mesa repository and deterministically flattens its multi-file package
 (agents.py, model.py, sugar-map.txt) into a single, self-contained Python module
@@ -46,7 +52,7 @@ from typing import Any
 DEFAULT_GITHUB_URL = (
     "https://github.com/mesa/mesa/tree/main/mesa/examples/advanced/sugarscape_g1mt"
 )
-DEFAULT_OUTPUT_FILE = "canonical_strategy.py"
+DEFAULT_OUTPUT_FILE = "mesa_flattened_raw.py"
 DEFAULT_MAP_FILE = "sugar-map.txt"
 
 

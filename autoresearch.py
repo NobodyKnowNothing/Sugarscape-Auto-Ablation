@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
-Sugarscape Structural Ablation — Autoresearch Pipeline
+Sugarscape Minimal-Viable-Model Research Loop
 
-Adapts Karpathy's autoresearch ratchet loop to perform structural ablation
-on the Sugarscape agent-based model. The LLM (Gemma) proposes simplifications
-to strategy.py; if the emergent metrics from Epstein & Axtell (1996) remain
-within tight error bounds, the simplification is committed. Otherwise reverted.
+An LLM (Gemma) proposes mechanism-level changes to strategy.py. Each candidate
+is scored by the judge's canonical compressed complexity (including all executed
+Mesa code) and accepted only if its EMERGENT FEATURES are statistically
+equivalent to canonical Sugarscape across the pre-registered design of seeds and
+input parameters (judge/). Accepted models enter a Pareto archive; periodic
+holdout audits roll back unconfirmed changes.
 
-Architecture (3-file Karpathy pattern):
-  - prepare.py  (FIXED) — baseline runner, evaluation harness
-  - strategy.py (MUTABLE) — the code the LLM simplifies
-  - program.md  (HUMAN)  — research agenda for the LLM
+Architecture:
+  - judge/            (FIXED)   contract, features, equivalence tests, complexity, design
+  - calibrate_judge.py (FIXED)  reference ensemble, margins, control calibration
+  - strategy.py       (MUTABLE) current best model
+  - program.md        (HUMAN)   research agenda for the LLM
+  - mechanisms.json   (LEDGER)  rule statuses and evidence
+  - certify.py                  knockout certificate for the final model
 
 Usage:
-    export GOOGLE_API_KEY="your_key_here"
-    python autoresearch.py
+    python calibrate_judge.py --profile full
+    python autoresearch.py --profile full
 
-The loop runs indefinitely — kill with Ctrl+C.
+The loop runs until interrupted (or --generations N).
 """
 
 import json
@@ -35,9 +40,16 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from google import genai
-from google.genai import types
+import numpy as np
 from dotenv import load_dotenv
+
+from judge import judge_hash
+from judge import complexity as cx
+from judge.contract import code_hash
+from judge.design import load_profile
+from judge.parallel import shutdown as shutdown_pool
+from judge.pipeline import (audit, calibration_status, evaluate_candidate, identity_digests,
+                            load_reference)
 
 load_dotenv()
 
@@ -46,16 +58,17 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-31b-it")
 FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemma-4-26b-a4b-it")
-VARIANTS_PER_GENERATION = 1          # mutations per round (fewer = more careful)
-STRATEGY_FILE = Path(__file__).parent / "strategy.py"
+VARIANTS_PER_GENERATION = int(os.environ.get("VARIANTS_PER_GENERATION", 4))
+ROOT = Path(__file__).resolve().parent
+STRATEGY_FILE = ROOT / "strategy.py"
 AGENT_REPO = Path(__file__).parent / "agent_repo"
 AGENT_STRATEGY = AGENT_REPO / "strategy.py"
 RESULTS_FILE = Path(__file__).parent / "results.tsv"
 AGENT_RESULTS = AGENT_REPO / "results.tsv"
-SWEEPS_FILE = Path(__file__).parent / "sweep_results.json"
-AGENT_SWEEPS = AGENT_REPO / "sweep_results.json"
-PROGRAM_FILE = Path(__file__).parent / "program.md"
-BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
+PROGRAM_FILE = ROOT / "program.md"
+LEDGER_FILE = ROOT / "mechanisms.json"
+AGENT_LEDGER = AGENT_REPO / "mechanisms.json"
+ARCHIVE_ROOT = ROOT / "archive"
 
 # Edit harness configuration ('batch' for fast single-turn surgical edits, 'agent' for interactive multi-turn)
 HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")
@@ -191,14 +204,14 @@ def merge_results_tsv(file_a: Path, file_b: Path):
 
 
 def sync_logs_to_agent_repo():
-    """Ensure results.tsv, sweep_results.json, and .gitignore are mirrored into agent_repo."""
+    """Ensure results.tsv, mechanisms.json, and .gitignore are mirrored into agent_repo."""
     if not AGENT_REPO.exists():
         return
     try:
         if RESULTS_FILE.exists() or AGENT_RESULTS.exists():
             merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
-        if SWEEPS_FILE.exists():
-            shutil.copy2(SWEEPS_FILE, AGENT_SWEEPS)
+        if LEDGER_FILE.exists():
+            shutil.copy2(LEDGER_FILE, AGENT_LEDGER)
         parent_gitignore = Path(__file__).parent / ".gitignore"
         if parent_gitignore.exists():
             shutil.copy2(parent_gitignore, AGENT_REPO / ".gitignore")
@@ -211,8 +224,8 @@ def git_commit(message: str):
     git("add strategy.py")
     if AGENT_RESULTS.exists():
         git("add results.tsv")
-    if AGENT_SWEEPS.exists():
-        git("add sweep_results.json")
+    if AGENT_LEDGER.exists():
+        git("add mechanisms.json")
     git(f"commit -m {shlex.quote(message)}")
 
 
@@ -389,507 +402,380 @@ def init_agent_repo():
 # ---------------------------------------------------------------------------
 # Results tracking
 # ---------------------------------------------------------------------------
+RESULTS_COLUMNS = [
+    "generation", "variant", "parent", "candidate", "status", "stage", "label", "move", "mechanism",
+    "action", "C", "delta_C", "eq_distance", "E1", "E2", "E3", "E4", "E5", "seeds_per_point",
+    "seconds", "judge_hash", "reason", "description",
+]
+
+
 def init_results():
+    header = "\t".join(RESULTS_COLUMNS) + "\n"
+    if RESULTS_FILE.exists():
+        first = RESULTS_FILE.read_text(encoding="utf-8").split("\n", 1)[0] + "\n"
+        if first != header:
+            legacy = RESULTS_FILE.with_name("results_legacy.tsv")
+            RESULTS_FILE.replace(legacy)
+            log(f"Old-format results moved to {legacy.name}")
     if not RESULTS_FILE.exists():
-        RESULTS_FILE.write_text(
-            "generation\tvariant\tcommit\tstatus\tlines\tclasses\tmethods\t"
-            "ast_nodes\tcyclomatic\tcombined_score\t"
-            "gini\tpopulation\ttrade_price\ttrade_volume\tsurvival\twealth_cv\tentropy\t"
-            "passes\tstage_reached\tks_pvalue\tdtw_distance\tmorans_i\tdescription\n"
-        )
+        RESULTS_FILE.write_text(header, encoding="utf-8")
     sync_logs_to_agent_repo()
 
 
-def _fmt_optional(val, fmt=".4f") -> str:
-    """Safely format an optional numeric value or return empty string."""
-    if val is None or (isinstance(val, float) and math.isnan(val)):
+def _clean(v) -> str:
+    if v is None:
         return ""
-    try:
-        return f"{val:{fmt}}"
-    except (ValueError, TypeError):
-        return str(val)
+    if isinstance(v, float):
+        return "" if math.isnan(v) else (f"{v:.3f}" if not math.isinf(v) else "inf")
+    return str(v).replace("\t", " ").replace("\n", " ")
 
 
-def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
-                  stage_reached=0, ks_pvalue=None, dtw_distance=None, morans_i=None):
+def append_result(row: dict):
     try:
-        with open(RESULTS_FILE, "a") as f:
-            f.write(
-                f"{gen}\t{var}\t{commit}\t{status}\t"
-                f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
-                f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
-                f"{metrics.get('gini_coefficient', 0):.4f}\t"
-                f"{metrics.get('final_population', 0):.0f}\t"
-                f"{metrics.get('mean_trade_price', 0):.4f}\t"
-                f"{metrics.get('trade_volume', 0):.0f}\t"
-                f"{metrics.get('survival_rate', 0):.4f}\t"
-                f"{metrics.get('wealth_cv', 0):.4f}\t"
-                f"{metrics.get('spatial_entropy', 0):.4f}\t"
-                f"{'PASS' if passes else 'FAIL'}\t"
-                f"{stage_reached}\t"
-                f"{_fmt_optional(ks_pvalue)}\t"
-                f"{_fmt_optional(dtw_distance)}\t"
-                f"{_fmt_optional(morans_i)}\t"
-                f"{desc}\n"
-            )
+        with open(RESULTS_FILE, "a", encoding="utf-8") as f:
+            f.write("\t".join(_clean(row.get(c)) for c in RESULTS_COLUMNS) + "\n")
         sync_logs_to_agent_repo()
     except Exception as e:
         log(f"⚠️ Warning: Failed to append result row to {RESULTS_FILE}: {e}")
 
 
-def read_results_history(max_lines: int = 50) -> str:
-    if RESULTS_FILE.exists():
-        lines = RESULTS_FILE.read_text().strip().split("\n")
-        if len(lines) <= max_lines + 1:
-            return "\n".join(lines)
-        header = lines[0]
-        recent = lines[-max_lines:]
-        return f"{header}\n... ({len(lines) - max_lines - 1} older rows truncated) ...\n" + "\n".join(recent)
-    return "(no results yet)"
+# ---------------------------------------------------------------------------
+# Archive (Pareto front over complexity x equivalence distance), resumable
+# ---------------------------------------------------------------------------
+class Archive:
+    def __init__(self, profile_name: str):
+        self.dir = ARCHIVE_ROOT / profile_name
+        self.models = self.dir / "models"
+        self.file = self.dir / "archive.json"
+        self.attempts_file = self.dir / "attempts.jsonl"
+        self.models.mkdir(parents=True, exist_ok=True)
+        self.data = json.loads(self.file.read_text(encoding="utf-8")) if self.file.exists() else {
+            "entries": [], "audits": [], "generation": 0}
+
+    @property
+    def entries(self) -> list[dict]:
+        return self.data["entries"]
+
+    def save(self):
+        self.file.write_text(json.dumps(self.data, indent=1), encoding="utf-8")
+
+    def code(self, entry_id: str) -> str:
+        return (self.models / f"{entry_id}.py").read_text(encoding="utf-8")
+
+    def get(self, entry_id: str) -> dict:
+        return next(e for e in self.entries if e["id"] == entry_id)
+
+    def add(self, code: str, info: dict) -> dict:
+        (self.models / f"{info['id']}.py").write_text(code, encoding="utf-8")
+        self.entries.append(info)
+        self.save()
+        return info
+
+    def live(self) -> list[dict]:
+        return [e for e in self.entries if not e.get("excluded")]
+
+    def front(self) -> list[dict]:
+        live = self.live()
+        return [e for e in live if not any(
+            o is not e and o["C"] <= e["C"] and o["eq_distance"] <= e["eq_distance"]
+            and (o["C"] < e["C"] or o["eq_distance"] < e["eq_distance"]) for o in live)]
+
+    def best(self) -> dict:
+        return min(self.live(), key=lambda e: (e["C"], e["eq_distance"]))
+
+    def choose_parent(self, rng) -> dict:
+        front = sorted(self.front(), key=lambda e: e["C"])
+        if rng.random() < 0.6 or len(front) == 1:
+            return front[0]
+        return front[int(rng.integers(len(front)))]
+
+    def lineage(self, entry: dict) -> list[dict]:
+        chain = [entry]
+        while chain[-1].get("parent"):
+            chain.append(self.get(chain[-1]["parent"]))
+        return chain
+
+    def log_attempt(self, rec: dict):
+        with open(self.attempts_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+
+    def recent_attempts(self, n: int = 12) -> list[dict]:
+        if not self.attempts_file.exists():
+            return []
+        lines = self.attempts_file.read_text(encoding="utf-8").strip().splitlines()
+        return [json.loads(l) for l in lines[-n:]]
 
 
 # ---------------------------------------------------------------------------
-# Code complexity metrics (AST + Cyclomatic combined score)
+# Mechanism ledger
 # ---------------------------------------------------------------------------
-from complexity import combined_complexity_score, format_complexity_report
+def load_ledger() -> dict:
+    return json.loads(LEDGER_FILE.read_text(encoding="utf-8"))
 
 
-def count_complexity(code: str) -> dict:
-    """Compute combined AST node + cyclomatic complexity score.
-    
-    Returns dict with traditional metrics (lines, classes, methods) plus:
-      - ast_nodes: total AST node count
-      - cyclomatic_total: total cyclomatic complexity
-      - combined_score: weighted sum (0.4*AST + 0.6*cyclomatic)
-    """
-    return combined_complexity_score(code)
-
-
-# ---------------------------------------------------------------------------
-# Strategy evaluation
-# ---------------------------------------------------------------------------
-def evaluate_strategy(strategy_code: str, baseline: dict = None) -> dict:
-    """
-    Validate a strategy variant through the 3-stage fail-fast waterfall.
-
-    Returns dict with:
-      - "mean_metrics": averaged metrics (from deepest stage reached)
-      - "passes": bool
-      - "validation_result": the full ValidationResult object
-      - "error": str (if crashed before producing metrics)
-    """
-    from validation import validate_ablation
-
-    # Load baseline if not provided
-    if baseline is None:
-        if BASELINE_METRICS_FILE.exists():
-            with open(BASELINE_METRICS_FILE) as f:
-                baseline = json.load(f)
-        else:
-            return {"error": "No baseline_metrics.json found"}
-
-    vr = validate_ablation(strategy_code, baseline)
-
-    # Build a backward-compatible result dict
-    mean_metrics = vr.stage3_mean_metrics or vr.stage2_mean_metrics or {}
-    result = {
-        "mean_metrics": mean_metrics,
-        "passes": vr.passed,
-        "validation_result": vr,
-    }
-
-    if vr.reject_reason and not mean_metrics:
-        result["error"] = vr.reject_reason
-
-    return result
+def update_ledger(ledger: dict, variant: dict, res, generation: int) -> None:
+    mid = (variant.get("mechanism") or "").strip().lower()
+    action = (variant.get("action") or "").strip().lower()
+    mechs = ledger["mechanisms"]
+    if mid not in mechs or res.label != "mechanism":
+        return
+    status = {"remove": "removed", "substitute": "replaced", "merge": "merged"}.get(action)
+    entry = mechs[mid]
+    entry.setdefault("evidence", []).append({
+        "generation": generation, "candidate": res.code_hash, "action": action or "modify",
+        "description": variant.get("desc"), "hypothesis": variant.get("hypothesis"),
+        "judge_hash": res.judge_hash, "features": res.features, "eq_distance": res.eq_distance,
+    })
+    if status:
+        entry["status"] = status
+    LEDGER_FILE.write_text(json.dumps(ledger, indent=2), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
-# LLM Agent — Gemma via google-genai
+# Proposers
 # ---------------------------------------------------------------------------
-def create_client() -> genai.Client:
-    return genai.Client(api_key=API_KEY)
+class GeminiProposer:
+    def __init__(self, model: str, fallback: str):
+        from google import genai
+        self.client = genai.Client(api_key=API_KEY)
+        self.model, self.fallback = model, fallback
+
+    def propose(self, parent_code, ledger, recent, complexity, moves) -> list[dict]:
+        from edit_harness import generate_research_variants
+        program = PROGRAM_FILE.read_text(encoding="utf-8") if PROGRAM_FILE.exists() else ""
+        return generate_research_variants(self.client, parent_code, program, ledger, recent, complexity,
+                                          moves, self.model, self.fallback, log_fn=log)
 
 
-from edit_harness import generate_ablation_variants_harness
+class ScriptedProposer:
+    """Offline proposer for tests: a JSON list of generations, each a list of variants with edits."""
 
+    def __init__(self, script: Path):
+        self.gens = json.loads(Path(script).read_text(encoding="utf-8"))
+        self.i = 0
 
-def generate_ablation_variants(
-    client: genai.Client,
-    current_strategy: str,
-    results_history: str,
-    baseline_metrics: dict,
-    complexity: dict,
-    n_variants: int = VARIANTS_PER_GENERATION,
-    temperature: float = 0.7,
-    model_name: str = MODEL,
-    fallback_model: str = FALLBACK_MODEL,
-) -> list[tuple[str, str]]:
-    """
-    Generate N structural simplifications of strategy.py using the surgical edit harness.
-    Applies pinpoint single-line or block replacements instead of full-file generation.
-    Defaults to Gemma 4 31B with automatic failover to Gemma 4 26B if requests are exhausted.
-    """
-    program = PROGRAM_FILE.read_text() if PROGRAM_FILE.exists() else ""
-    log(f"Prompting {model_name} (fallback: {fallback_model}) via mini-swe-agent edit harness (mode={HARNESS_MODE})...")
-    return generate_ablation_variants_harness(
-        client=client,
-        current_strategy=current_strategy,
-        results_history=results_history,
-        baseline_metrics=baseline_metrics,
-        complexity=complexity,
-        program_text=program,
-        n_variants=n_variants,
-        mode=HARNESS_MODE,
-        model_name=model_name,
-        fallback_model=fallback_model,
-        temperature=temperature,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Calibration against Mesa Canonical
-# ---------------------------------------------------------------------------
-def calibrate_baseline():
-    """
-    Establish ground-truth metrics against Mesa's canonical Sugarscape G1MT.
-    Uses cached baseline if available, otherwise runs Mesa canonical.
-    
-    CRITICAL: The baseline MUST come from the CANONICAL Mesa 
-    implementation (Mesa's faithful reproduction of Epstein & Axtell 1996),
-    not a self-referential copy of our standalone strategy.py.
-    
-    For the 3-stage validation waterfall, we also store:
-      - per_seed_wealths: wealth distributions per seed (for KS test)
-      - per_seed_metrics: individual seed metric dicts (for Bonferroni t-tests)
-      - mean_population_series: averaged population time series (for DTW)
-      - mean_price_series: averaged price time series (for DTW)
-    """
-    log("╔═══════════════════════════════════════════════════════════╗")
-    log("║  Calibrating Against Mesa Canonical Sugarscape            ║")
-    log("╚═══════════════════════════════════════════════════════════╝")
-    
-    if BASELINE_METRICS_FILE.exists():
-        with open(BASELINE_METRICS_FILE) as f:
-            baseline = json.load(f)
-        
-        # Check if baseline has the per-seed data needed for waterfall validation
-        has_waterfall_data = (
-            "per_seed_wealths" in baseline
-            and "per_seed_metrics" in baseline
-            and len(baseline.get("per_seed_metrics", [])) >= 10
-        )
-        
-        if has_waterfall_data:
-            log(f"Loaded cached Mesa baseline ({baseline.get('source', 'unknown')})")
-            log(f"  Runs: {baseline.get('n_runs', '?')} (with per-seed data for waterfall)")
-            from metrics import format_metrics_report
-            log(format_metrics_report(baseline["mean_metrics"]))
-            return baseline
-        else:
-            log("Cached baseline lacks per-seed data for waterfall validation.")
-            log("Will augment with per-seed wealth/metrics data...")
-    
-    # No cached baseline or needs augmentation — run Mesa canonical
-    log("Running Mesa canonical Sugarscape G1MT for baseline calibration...")
-    log("(This runs the ACTUAL canonical implementation, not our strategy.py)")
-    
-    from prepare import evaluate_mesa_baseline
-    from metrics import compute_all_metrics
-    
-    n_baseline_runs = 50  # enough seeds for Bonferroni t-tests at n=50
-    mesa_result = evaluate_mesa_baseline(n_runs=n_baseline_runs)
-    
-    # Also score initial strategy complexity
-    initial_code = STRATEGY_FILE.read_text()
-    initial_complexity = count_complexity(initial_code)
-    
-    # Extract per-seed data from mesa_result for waterfall validation
-    per_seed_metrics = mesa_result.get("runs", [])
-    per_seed_wealths = mesa_result.get("wealths", [])
-    
-    baseline = {
-        "source": "mesa.examples.advanced.sugarscape_g1mt (Mesa 3.5.1 canonical)",
-        "calibrated_at": datetime.now().isoformat(),
-        "n_runs": n_baseline_runs,
-        "mean_metrics": mesa_result["mean_metrics"],
-        "complexity": initial_complexity,
-        # Per-seed data for 3-stage validation waterfall
-        "per_seed_metrics": per_seed_metrics,
-        "per_seed_wealths": per_seed_wealths,
-        "mean_population_series": mesa_result.get("mean_population_series", []),
-        "mean_price_series": mesa_result.get("mean_price_series", []),
-    }
-    
-    for name in mesa_result["mean_metrics"]:
-        baseline[f"{name}_std"] = mesa_result.get(f"{name}_std", 0.0)
-    
-    with open(BASELINE_METRICS_FILE, "w") as f:
-        json.dump(baseline, f, indent=2)
-    
-    log(f"Saved canonical baseline to {BASELINE_METRICS_FILE}")
-    log(f"  Includes per-seed data for {n_baseline_runs} seeds (waterfall validation)")
-    log(format_complexity_report(initial_complexity))
-    return baseline
+    def propose(self, parent_code, ledger, recent, complexity, moves) -> list[dict]:
+        if self.i >= len(self.gens):
+            return []
+        out = []
+        for v in self.gens[self.i]:
+            code = parent_code
+            ok = True
+            for old, new in v.get("edits", []):
+                if code.count(old) != 1:
+                    ok = False
+                    break
+                code = code.replace(old, new)
+            if v.get("full_file"):
+                code = (ROOT / v["full_file"]).read_text(encoding="utf-8")
+            item = {k: v.get(k, "") for k in ("desc", "move", "mechanism", "action", "hypothesis")}
+            out.append({**item, "code": code if ok and code != parent_code else None,
+                        **({} if ok else {"parse_error": "scripted edit anchor not found"})})
+        self.i += 1
+        return out
 
 
 # ---------------------------------------------------------------------------
-# Ratchet Loop
+# Ratchet loop
 # ---------------------------------------------------------------------------
-def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
-    """Execute one round of structural ablation with 3-stage fail-fast validation."""
-    log(f"\n═══ Generation {generation} ═══")
-    
-    # Read current strategy
-    current_strategy = STRATEGY_FILE.read_text()
-    current_complexity = count_complexity(current_strategy)
-    current_hash = git_current_hash()
-    
-    gz_info = ""
-    if "gzip_compression_ratio" in current_complexity:
-        gz_info = f", gzip={current_complexity['gzip_compression_ratio']:.1%} ({current_complexity['gzip_compressed_bytes']}B)"
-    log(f"Current complexity: score={current_complexity['combined_score']:.1f} "
-        f"(AST={current_complexity['ast_nodes']}, cyclo={current_complexity['cyclomatic_total']}"
-        f"{gz_info}, lines={current_complexity['lines']})")
-    
-    # Read results history for context
-    history = read_results_history()
-    
-    # Generate ablation variants from LLM
-    log(f"Prompting {MODEL} for structural simplifications...")
-    variants = generate_ablation_variants(
-        client, current_strategy, history,
-        baseline["mean_metrics"], current_complexity,
-        n_variants=VARIANTS_PER_GENERATION,
-    )
-    
+def seed_archive(archive: Archive, profile) -> None:
+    if archive.entries:
+        return
+    code = STRATEGY_FILE.read_text(encoding="utf-8")
+    log("Seeding archive with the current strategy.py (measuring complexity and identity digests)...")
+    comp = cx.measure(code, profile)
+    digests = identity_digests(code, profile)
+    archive.add(code, {"id": code_hash(code), "parent": None, "C": comp["C"], "eq_distance": 0.0,
+                       "label": "origin", "delta_C": 0, "digests": digests, "generation": 0,
+                       "desc": "starting model", "audited": True})
+
+
+def portfolio(n: int, rng) -> list[str]:
+    from edit_harness import MOVE_TYPES
+    kinds = list(MOVE_TYPES)
+    start = int(rng.integers(len(kinds)))
+    return [kinds[(start + i) % len(kinds)] for i in range(n)]
+
+
+def run_generation(gen: int, archive: Archive, proposer, profile, ref, margins, ledger, rng, args) -> int:
+    parent = archive.choose_parent(rng)
+    parent_code = archive.code(parent["id"])
+    pcomp = cx.measure(parent_code, profile)
+    moves = portfolio(args.variants, rng)
+    log(f"\n═══ Generation {gen} ═══  parent {parent['id']} (C={parent['C']}, front size {len(archive.front())})")
+    log(f"Moves: {', '.join(moves)}")
+    variants = proposer.propose(parent_code, ledger, archive.recent_attempts(), pcomp, moves)
     if not variants:
-        log("No valid variants generated this round.")
-        return False
-    
-    log(f"Generated {len(variants)} variant(s). Evaluating via 3-stage waterfall...")
-    
-    best_variant = None
-    best_simplification = 0.0  # combined score reduction
-    
-    for v_idx, (code, desc) in enumerate(variants):
-        var_num = v_idx + 1
-        log(f"\n--- Variant {var_num}/{len(variants)}: {desc} ---")
-        
-        # Check complexity
-        var_complexity = count_complexity(code)
-        score_delta = current_complexity["combined_score"] - var_complexity["combined_score"]
-        var_gz_info = ""
-        if "gzip_compression_ratio" in var_complexity:
-            var_gz_info = f" | Gzip: {var_complexity['gzip_compression_ratio']:.1%} ({var_complexity['gzip_compressed_bytes']}B)"
-        log(f"  Score: {var_complexity['combined_score']:.1f} ({score_delta:+.1f}) | "
-            f"AST: {var_complexity['ast_nodes']} | Cyclo: {var_complexity['cyclomatic_total']}"
-            f"{var_gz_info} | Lines: {var_complexity['lines']}")
-        
-        # Evaluate through 3-stage waterfall
-        t0 = time.time()
-        result = evaluate_strategy(code, baseline=baseline)
-        dt = time.time() - t0
-        
-        vr = result.get("validation_result")
-        stage_reached = vr.stage_reached if vr else 0
-        ks_pval = vr.ks_pvalue if vr else None
-        dtw_dist = vr.dtw_population if vr else None
-        mi_val = vr.morans_i if vr else None
-        
-        if "error" in result:
-            stage_label = f"Stage{stage_reached}" if stage_reached else "pre-validation"
-            log(f"  ❌ REJECTED at {stage_label} ({dt:.1f}s): {result['error']}")
-            append_result(generation, var_num, current_hash, "crash",
-                         var_complexity, {}, False, desc,
-                         stage_reached=stage_reached, ks_pvalue=ks_pval,
-                         dtw_distance=dtw_dist, morans_i=mi_val)
+        log("No variants proposed this generation.")
+        return 0
+    accepted = 0
+    for k, v in enumerate(variants, 1):
+        log(f"--- Variant {k}/{len(variants)} [{v.get('move')}/{v.get('mechanism')}/{v.get('action')}]: {v.get('desc')}")
+        row = {"generation": gen, "variant": k, "parent": parent["id"], "move": v.get("move"),
+               "mechanism": v.get("mechanism"), "action": v.get("action"), "description": v.get("desc")}
+        if not v.get("code"):
+            log(f"    unusable proposal: {v.get('parse_error')}")
+            append_result({**row, "status": "parse_error", "reason": v.get("parse_error")})
+            archive.log_attempt({**row, "outcome": "unusable", "reason": v.get("parse_error"), "desc": v.get("desc")})
             continue
-        
-        passes = result["passes"]
-        reject_reason = vr.reject_reason if vr and not passes else ""
-        timing_detail = ""
-        if vr:
-            timing_detail = (
-                f" [S1={vr.stage1_time:.1f}s"
-                f", S2={vr.stage2_time:.1f}s"
-                f", S3={vr.stage3_time:.1f}s]"
-            )
-        log(f"  Validation ({dt:.1f}s{timing_detail}): "
-            f"stage_reached={stage_reached}, passes={passes}")
-        if reject_reason:
-            log(f"  Reject reason: {reject_reason}")
-        
-        # Append to results log
-        append_result(generation, var_num, current_hash,
-                     "pass" if passes else "fail",
-                     var_complexity, result["mean_metrics"],
-                     passes, desc,
-                     stage_reached=stage_reached, ks_pvalue=ks_pval,
-                     dtw_distance=dtw_dist, morans_i=mi_val)
-        
-        if passes:
-            log(f"  ✅ PASSES all 3 stages of validation!")
-            if vr:
-                log(f"     KS p={vr.ks_pvalue:.4f} | DTW pop={vr.dtw_population:.4f} "
-                    f"| Moran's I={vr.morans_i:.4f} | Wasserstein={vr.wasserstein_distance:.4f}")
-            # Track best passing variant (largest combined score reduction)
-            if score_delta > best_simplification:
-                best_variant = (code, desc, var_complexity, result)
-                best_simplification = score_delta
-        else:
-            log(f"  ❌ FAILS at Stage {stage_reached}")
-    
-    # Commit best variant if it's simpler
-    if best_variant:
-        code, desc, complexity, result = best_variant
-        score_saved = current_complexity["combined_score"] - complexity["combined_score"]
-        
-        if score_saved > 0:
-            log(f"\n🎉 RATCHET FORWARD: {desc}")
-            log(f"   Score: {current_complexity['combined_score']:.1f} → {complexity['combined_score']:.1f} ({score_saved:+.1f})")
-            gz_line = ""
-            if "gzip_compressed_bytes" in current_complexity and "gzip_compressed_bytes" in complexity:
-                gz_line = f" | Gzip: {current_complexity['gzip_compressed_bytes']}B → {complexity['gzip_compressed_bytes']}B"
-            log(f"   Lines: {current_complexity['lines']} → {complexity['lines']}{gz_line}")
-            
-            # Write to strategy.py and agent_repo
-            STRATEGY_FILE.write_text(code)
-            AGENT_STRATEGY.write_text(code)
-            sync_logs_to_agent_repo()
-            git_commit(f"Gen {generation}: {desc[:50]} | score -{score_saved:.1f}")
-            
-            chash = git_current_hash()
-            log(f"   Committed as {chash}")
-            
-            # Autonomously push new commit to remote GitHub repository
-            git_push()
-            
-            return True
-        else:
-            log(f"\n⏸️  Variant passes but not simpler — skipping commit")
-            return False
+        res = evaluate_candidate(v["code"], profile, parent={"C": parent["C"], "digests": parent.get("digests")},
+                                 ref=ref, margins=margins, log=log)
+        status = "accepted" if res.accepted else ("rejected" if res.stage >= 1 else "rejected_static")
+        log(f"    {'✅ ACCEPTED' if res.accepted else '❌ rejected'} at stage {res.stage}"
+            f"{' (' + res.label + ')' if res.label else ''}: {res.reason or 'all features equivalent'}"
+            f" [{res.seconds}s]")
+        append_result({**row, "candidate": res.code_hash, "status": status, "stage": res.stage, "label": res.label,
+                       "C": res.complexity.get("C"), "delta_C": res.delta_C, "eq_distance": res.eq_distance,
+                       **{f: res.features.get(f, "") for f in ("E1", "E2", "E3", "E4", "E5")},
+                       "seeds_per_point": res.seeds_per_point, "seconds": res.seconds,
+                       "judge_hash": res.judge_hash, "reason": res.reason})
+        archive.log_attempt({**row, "desc": v.get("desc"), "outcome": status, "stage": res.stage,
+                             "reason": res.reason, "feedback": res.feedback, "label": res.label})
+        if not res.accepted:
+            continue
+        accepted += 1
+        archive.add(v["code"], {"id": res.code_hash, "parent": parent["id"], "C": res.complexity["C"],
+                                "eq_distance": res.eq_distance, "label": res.label, "delta_C": res.delta_C,
+                                "digests": res.identity_digests, "generation": gen, "desc": v.get("desc"),
+                                "move": v.get("move"), "mechanism": v.get("mechanism"), "action": v.get("action"),
+                                "hypothesis": v.get("hypothesis"), "audited": False})
+        update_ledger(ledger, v, res, gen)
+        best = archive.best()
+        if best["id"] == res.code_hash:
+            STRATEGY_FILE.write_text(v["code"], encoding="utf-8")
+            log(f"    🎉 new best model: C {parent['C']} -> {res.complexity['C']} ({res.label})")
+            if not args.no_git:
+                AGENT_STRATEGY.write_text(v["code"], encoding="utf-8")
+                git_commit(f"Gen {gen}: {res.label} {v.get('desc', '')[:50]} | C -{res.delta_C:.0f}")
+                if not args.no_push:
+                    git_push()
+    return accepted
+
+
+def maybe_audit(archive: Archive, profile, ref, margins, args) -> None:
+    pending = [e for e in archive.live() if e.get("audited") is False and e.get("label") == "mechanism"]
+    if len(pending) < profile["audit_every"]:
+        return
+    best = archive.best()
+    log(f"\n═══ Audit: best model {best['id']} on holdout seeds over {len(profile.audit_points)} design points ═══")
+    result = audit(archive.code(best["id"]), profile, ref, margins)
+    archive.data["audits"].append({"model": best["id"], "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                   **{k: result.get(k) for k in ("passed", "features", "reason", "eq_distance")}})
+    if result["passed"]:
+        log("    audit passed: lineage confirmed on holdout seeds and the full design")
+        for e in archive.lineage(best):
+            e["audited"] = True
+        for e in pending:
+            e["audited"] = True
     else:
-        log(f"\n❌ No passing variants this generation — reverting")
-        git_revert_to(current_hash)
-        return False
+        log(f"    audit FAILED: {result.get('features') or result.get('reason')} - rolling back unaudited changes")
+        for e in pending:
+            e["excluded"] = True
+            e["audited"] = "failed"
+        STRATEGY_FILE.write_text(archive.code(archive.best()["id"]), encoding="utf-8")
+    archive.save()
+
+
+def summarize(archive: Archive) -> None:
+    origin = archive.entries[0]
+    best = archive.best()
+    chain = archive.lineage(best)
+    by_label = {"refactor": 0.0, "mechanism": 0.0}
+    for e in chain:
+        if e.get("label") in by_label:
+            by_label[e["label"]] += e.get("delta_C", 0) or 0
+    log("\n═══ Summary ═══")
+    log(f"  Archive entries: {len(archive.entries)} (front {len(archive.front())}, excluded {len([e for e in archive.entries if e.get('excluded')])})")
+    log(f"  Complexity C: {origin['C']} -> {best['C']} bytes ({origin['C'] - best['C']} saved)")
+    log(f"    from code-level refactors:   {by_label['refactor']:.0f} bytes")
+    log(f"    from mechanism-level changes: {by_label['mechanism']:.0f} bytes")
+    ledger = load_ledger()
+    changed = {k: v["status"] for k, v in ledger["mechanisms"].items() if v["status"] != "kept"}
+    log(f"  Mechanisms removed/replaced/merged: {changed or 'none'}")
 
 
 def main():
     global MODEL, FALLBACK_MODEL
     import argparse
-    from complexity import AVAILABLE_SCORERS, select_scoring_function, get_active_scoring_function
 
-    parser = argparse.ArgumentParser(description="Sugarscape Structural Ablation Pipeline")
-    parser.add_argument(
-        "--scorer", "-s",
-        choices=list(AVAILABLE_SCORERS.keys()),
-        default=os.environ.get("COMPLEXITY_SCORER", None),
-        help="Complexity metric / scorer preset to optimize (default: weighted_ast_cyclomatic)",
-    )
-    parser.add_argument(
-        "--model", "-m",
-        default=MODEL,
-        help=f"Primary model to use for ablation (default: {MODEL})",
-    )
-    parser.add_argument(
-        "--fallback-model",
-        default=FALLBACK_MODEL,
-        help=f"Fallback model when quota is exhausted (default: {FALLBACK_MODEL})",
-    )
-    args, _ = parser.parse_known_args()
-    if args.scorer:
-        select_scoring_function(args.scorer)
+    ap = argparse.ArgumentParser(description="Sugarscape minimal-viable-model research loop")
+    ap.add_argument("--profile", default=os.environ.get("ABLATION_PROFILE", "full"))
+    ap.add_argument("--generations", type=int, default=0, help="number of generations (0 = run until interrupted)")
+    ap.add_argument("--variants", type=int, default=VARIANTS_PER_GENERATION)
+    ap.add_argument("--proposer", choices=["gemini", "scripted"], default="gemini")
+    ap.add_argument("--script", help="JSON script for --proposer scripted")
+    ap.add_argument("--model", "-m", default=MODEL)
+    ap.add_argument("--fallback-model", default=FALLBACK_MODEL)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--no-git", action="store_true", help="do not use the agent_repo sub-repository")
+    ap.add_argument("--no-push", action="store_true", help="commit locally but never push")
+    ap.add_argument("--allow-failed-calibration", action="store_true",
+                    help="run even if calibration does not meet the control criteria (smoke tests only)")
+    args = ap.parse_args()
+    MODEL, FALLBACK_MODEL = args.model, args.fallback_model
 
-    MODEL = args.model
-    FALLBACK_MODEL = args.fallback_model
-
-    _, active_scorer_name = get_active_scoring_function()
+    profile = load_profile(args.profile)
+    ok, msg = calibration_status(profile.name)
+    if not ok:
+        stale_or_missing = "stale" in msg or "no calibration" in msg
+        if stale_or_missing or not args.allow_failed_calibration:
+            log(f"ERROR: {msg}")
+            sys.exit(2)
+        log(f"⚠️  {msg} - continuing because --allow-failed-calibration was given. Results are NOT scientifically valid.")
+    ref, margins, calib = load_reference(profile.name)
 
     log("╔═══════════════════════════════════════════════════════════╗")
-    log("║  Sugarscape Structural Ablation Pipeline                  ║")
-    log(f"║  Model:     {MODEL:40s}      ║")
-    log(f"║  Fallback:  {FALLBACK_MODEL:40s}      ║")
-    log(f"║  Scorer:    {active_scorer_name:40s}      ║")
-    log("║  Pattern:   Karpathy Autoresearch Ratchet Loop            ║")
+    log("║  Sugarscape Minimal-Viable-Model Research Loop            ║")
+    log(f"║  Profile:   {profile.name:40s}      ║")
+    log(f"║  Proposer:  {args.proposer + ' (' + MODEL + ')':40s}      ║")
+    log(f"║  Judge:     {judge_hash():40s}      ║")
     log("╚═══════════════════════════════════════════════════════════╝")
 
-    if not API_KEY:
-        log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
-        sys.exit(1)
-    
-    # Initialize results log & agent_repo tracking branch
+    if args.proposer == "gemini":
+        if not API_KEY:
+            log("ERROR: No API key. Set GOOGLE_API_KEY or GEMINI_API_KEY env var.")
+            sys.exit(1)
+        proposer = GeminiProposer(MODEL, FALLBACK_MODEL)
+    else:
+        if not args.script:
+            log("ERROR: --proposer scripted requires --script")
+            sys.exit(1)
+        proposer = ScriptedProposer(Path(args.script))
+
     init_results()
-    init_agent_repo()
-    
-    # Calibrate baseline
-    baseline = calibrate_baseline()
-    
-    # Run parameter sweep validation before starting ablation
-    from parameter_sweeps import run_all_sweeps
-    log("\n═══ Running Parameter Sweep Validation ═══")
+    if not args.no_git:
+        init_agent_repo()
+    archive = Archive(profile.name)
+    seed_archive(archive, profile)
+    ledger = load_ledger()
+    rng = np.random.default_rng(args.seed + archive.data["generation"])
+
     try:
-        sweep_results = run_all_sweeps(n_runs=5)  # quick validation (5 runs)
-        sync_logs_to_agent_repo()
-        if not all(r["all_valid"] for r in sweep_results.values()):
-            log("⚠️  Some parameter sweeps failed — model may not fully match paper.")
-            log("    Proceeding with ablation, but results should be interpreted cautiously.")
-    except Exception as e:
-        log(f"⚠️  Parameter sweep validation failed: {e}")
-        log("    Proceeding with ablation anyway.")
-    
-    client = create_client()
-    
-    generation = 1
-    while True:
-        try:
-            success = run_ablation_round(generation, client, baseline)
-            if success:
-                generation += 1
-            else:
-                log(f"Generation {generation} did not produce a valid simplification. Retrying...")
-            
-            # Brief pause between generations
-            time.sleep(2)
-            
-        except KeyboardInterrupt:
-            log("\nInterrupted by user. Pushing final state to GitHub before exit...")
+        done = 0
+        while args.generations == 0 or done < args.generations:
+            archive.data["generation"] += 1
+            gen = archive.data["generation"]
+            archive.save()
+            try:
+                run_generation(gen, archive, proposer, profile, ref, margins, ledger, rng, args)
+                maybe_audit(archive, profile, ref, margins, args)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                log(f"Generation {gen} failed: {e}")
+                traceback.print_exc()
+            done += 1
+    except KeyboardInterrupt:
+        log("\nInterrupted by user.")
+    finally:
+        shutdown_pool()
+        summarize(archive)
+        if not args.no_git:
             sync_logs_to_agent_repo()
-            status = git("status --porcelain")
-            if status:
-                git_commit("Update experiment logs before exit")
-            git_push()
-            log("Exiting early.")
-            break
-        except Exception as e:
-            log(f"Generation {generation} failed: {e}")
-            import traceback
-            traceback.print_exc()
-            time.sleep(10)
-            
-    # Final push of completed research
-    sync_logs_to_agent_repo()
-    status = git("status --porcelain")
-    if status:
-        git_commit("Final experiment logs")
-    git_push()
-            
-    # Print final summary
-    current = STRATEGY_FILE.read_text()
-    final_complexity = count_complexity(current)
-    initial_complexity = baseline.get("complexity", {})
-    
-    log(f"\n═══ Final Summary ═══")
-    log(f"  Generations run: {generation - 1}")
-    log(f"  Initial combined score: {initial_complexity.get('combined_score', '?')}")
-    log(f"  Final combined score:   {final_complexity['combined_score']:.1f}")
-    log(f"  Final lines:            {final_complexity['lines']}")
-    if initial_complexity.get('combined_score'):
-        score_red = initial_complexity['combined_score'] - final_complexity['combined_score']
-        pct = 100 * score_red / initial_complexity['combined_score']
-        log(f"  Score reduction:    {score_red:.1f} ({pct:.1f}%)")
-        line_red = initial_complexity.get('lines', 0) - final_complexity['lines']
-        log(f"  Line reduction:     {line_red}")
+            if git("status --porcelain"):
+                git_commit("Update experiment logs")
+            if not args.no_push:
+                git_push()
 
 
 if __name__ == "__main__":
