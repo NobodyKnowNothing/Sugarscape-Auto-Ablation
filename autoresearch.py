@@ -31,7 +31,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 import textwrap
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from google import genai
@@ -194,7 +194,7 @@ def git_current_hash() -> str:
 
 def git_current_branch() -> str:
     branch = git("rev-parse --abbrev-ref HEAD")
-    return branch if branch and "fatal:" not in branch else f"ablation/{datetime.now().strftime('%b%d').lower()}"
+    return branch if branch and "fatal:" not in branch else f"ablation/{datetime.now(timezone.utc).strftime('%b%d').lower()}"
 
 
 def git_create_branch(name: str):
@@ -246,7 +246,7 @@ def init_agent_repo():
     token = get_github_token()
     remote_url = get_remote_repo_url(token)
     safe_remote_url = get_remote_repo_url(token=None)
-    branch = os.environ.get("ABLATION_BRANCH") or f"ablation/{datetime.now().strftime('%b%d').lower()}"
+    branch = os.environ.get("ABLATION_BRANCH") or f"ablation/{datetime.now(timezone.utc).strftime('%b%d').lower()}"
     parent_repo = str(Path(__file__).parent)
 
     AGENT_REPO.mkdir(exist_ok=True)
@@ -271,27 +271,49 @@ def init_agent_repo():
         
         git(f'remote add origin "{remote_url}"')
         
-        # Align commit history with parent repository main branch (instant local fetch)
-        log("Aligning commit history with repository main branch...")
-        fetch_res = subprocess.run(
-            ["git", "fetch", parent_repo, "main"],
-            cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
-        )
-        if fetch_res.returncode == 0:
-            subprocess.run(
-                ["git", "checkout", "-B", branch, "FETCH_HEAD"],
-                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+        # Check if target branch already exists on remote origin
+        remote_synced = False
+        if token:
+            log(f"Checking if remote branch '{branch}' exists on GitHub...")
+            fetch_remote = subprocess.run(
+                ["git", "fetch", "origin", f"{branch}:{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
             )
-            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            sync_logs_to_agent_repo()
-            status = git("status --porcelain")
-            if status:
-                git_commit("Baseline Sugarscape strategy and logs for ablation")
-        else:
-            git_create_branch(branch)
-            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            sync_logs_to_agent_repo()
-            git_commit("Initial Sugarscape strategy and logs")
+            if fetch_remote.returncode == 0:
+                log(f"Synced with existing remote branch '{branch}' from GitHub.")
+                subprocess.run(
+                    ["git", "checkout", branch],
+                    cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+                )
+                remote_synced = True
+                if not AGENT_STRATEGY.exists():
+                    shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                if AGENT_RESULTS.exists() and not RESULTS_FILE.exists():
+                    shutil.copy2(AGENT_RESULTS, RESULTS_FILE)
+                sync_logs_to_agent_repo()
+
+        if not remote_synced:
+            # Align commit history with parent repository main branch (instant local fetch)
+            log("Aligning commit history with repository main branch...")
+            fetch_res = subprocess.run(
+                ["git", "fetch", parent_repo, "main"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
+            )
+            if fetch_res.returncode == 0:
+                subprocess.run(
+                    ["git", "checkout", "-B", branch, "FETCH_HEAD"],
+                    cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+                )
+                shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                sync_logs_to_agent_repo()
+                status = git("status --porcelain")
+                if status:
+                    git_commit("Baseline Sugarscape strategy and logs for ablation")
+            else:
+                git_create_branch(branch)
+                shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                sync_logs_to_agent_repo()
+                git_commit("Initial Sugarscape strategy and logs")
     else:
         # Existing repo: update remote URL and disable interactive prompts
         git('config credential.helper ""')
@@ -305,6 +327,11 @@ def init_agent_repo():
             git(f'remote set-url origin "{remote_url}"')
         else:
             git(f'remote add origin "{remote_url}"')
+        if token:
+            subprocess.run(
+                ["git", "fetch", "origin", f"{branch}:{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
+            )
         git_create_branch(branch)
         if not AGENT_STRATEGY.exists():
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
