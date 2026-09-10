@@ -12,19 +12,19 @@
       "gini_coefficient": {
         "metric": "gini_coefficient",
         "cohens_d": 1.6485256828069248,
-        "welch_t_p": 0.035257467781891046,
+        "welch_t_p": 0.035257467781891094,
         "significant": true
       },
       "final_population": {
         "metric": "final_population",
         "cohens_d": 1.653011741590728,
-        "welch_t_p": 0.03476021578149799,
+        "welch_t_p": 0.03476021578149802,
         "significant": true
       },
       "survival_rate": {
         "metric": "survival_rate",
         "cohens_d": 1.6530117415907266,
-        "welch_t_p": 0.03476021578149817,
+        "welch_t_p": 0.03476021578149821,
         "significant": true
       },
       "trade_volume": {
@@ -36,13 +36,13 @@
       "wealth_cv": {
         "metric": "wealth_cv",
         "cohens_d": 1.5200828526463697,
-        "welch_t_p": 0.049109614161710745,
+        "welch_t_p": 0.04910961416171079,
         "significant": true
       },
       "spatial_entropy": {
         "metric": "spatial_entropy",
         "cohens_d": -0.6859843010887179,
-        "welch_t_p": 0.32348845247498387,
+        "welch_t_p": 0.3234884524749838,
         "significant": false
       }
     }
@@ -59,32 +59,30 @@
       "high_vs_low_pop": {
         "metric": "final_population",
         "cohens_d": 3.4413944855238197,
-        "welch_t_p": 0.0007642585956887563,
+        "welch_t_p": 0.0007642585956887571,
         "significant": true
       },
       "high_vs_low_gini": {
         "metric": "gini_coefficient",
         "cohens_d": 2.1528862557663593,
-        "welch_t_p": 0.025790920134090248,
+        "welch_t_p": 0.025790920134090255,
         "significant": true
       },
       "high_vs_low_entropy": {
         "metric": "spatial_entropy",
         "cohens_d": -0.771192936949678,
-        "welch_t_p": 0.26607509378911903,
+        "welch_t_p": 0.266075093789119,
         "significant": false
       }
     }
   },
   "sweep_c_density": {
     "name": "Sweep C: Carrying Capacity & Density",
-    "all_valid": true,
+    "all_valid": false,
     "validations": {
       "overpopulation_die_off": true,
-      "population_viable": true,
-      "trade_volume_density_scaling": true,
-      "survival_rate_bounded": true,
-      "matches_mesa_canonical": true
+      "low_pop_high_survival": false,
+      "carrying_capacity_convergence": false
     }
   },
   "sweep_d_scarcity": {
@@ -99,19 +97,19 @@
       "survival": {
         "metric": "survival_rate",
         "cohens_d": 10.657169831489236,
-        "welch_t_p": 5.251483227670908e-05,
+        "welch_t_p": 5.251483227670912e-05,
         "significant": true
       },
       "population": {
         "metric": "final_population",
         "cohens_d": 10.657169831489234,
-        "welch_t_p": 5.251483227670908e-05,
+        "welch_t_p": 5.251483227670912e-05,
         "significant": true
       },
       "gini": {
         "metric": "gini_coefficient",
         "cohens_d": 3.2753532514073522,
-        "welch_t_p": 0.005358040084157832,
+        "welch_t_p": 0.0053580400841578306,
         "significant": true
       }
     }

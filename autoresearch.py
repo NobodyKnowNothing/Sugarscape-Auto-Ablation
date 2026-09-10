@@ -20,8 +20,10 @@ The loop runs indefinitely — kill with Ctrl+C.
 """
 
 import json
+import math
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -30,7 +32,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 import textwrap
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from google import genai
@@ -154,13 +156,47 @@ def git(cmd: str, cwd: str | None = None, timeout: int = 30) -> str:
         return ""
 
 
+def merge_results_tsv(file_a: Path, file_b: Path):
+    """
+    Ensure both file_a and file_b contain a unified superset of results rows,
+    preserving row order and avoiding duplicate entries.
+    """
+    if not file_a.exists() and not file_b.exists():
+        return
+    if not file_a.exists():
+        file_a.write_text(file_b.read_text(encoding="utf-8"), encoding="utf-8")
+        return
+    if not file_b.exists():
+        file_b.write_text(file_a.read_text(encoding="utf-8"), encoding="utf-8")
+        return
+
+    lines_a = [l.strip() for l in file_a.read_text(encoding="utf-8").splitlines() if l.strip()]
+    lines_b = [l.strip() for l in file_b.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+    if not lines_a and not lines_b:
+        return
+
+    seen = set(lines_a)
+    combined = list(lines_a)
+    for line in lines_b[1:]:
+        if line not in seen:
+            seen.add(line)
+            combined.append(line)
+
+    content = "\n".join(combined) + "\n"
+    if content != file_a.read_text(encoding="utf-8"):
+        file_a.write_text(content, encoding="utf-8")
+    if content != file_b.read_text(encoding="utf-8"):
+        file_b.write_text(content, encoding="utf-8")
+
+
 def sync_logs_to_agent_repo():
     """Ensure results.tsv, sweep_results.json, and .gitignore are mirrored into agent_repo."""
     if not AGENT_REPO.exists():
         return
     try:
-        if RESULTS_FILE.exists():
-            shutil.copy2(RESULTS_FILE, AGENT_RESULTS)
+        if RESULTS_FILE.exists() or AGENT_RESULTS.exists():
+            merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
         if SWEEPS_FILE.exists():
             shutil.copy2(SWEEPS_FILE, AGENT_SWEEPS)
         parent_gitignore = Path(__file__).parent / ".gitignore"
@@ -177,7 +213,7 @@ def git_commit(message: str):
         git("add results.tsv")
     if AGENT_SWEEPS.exists():
         git("add sweep_results.json")
-    git(f'commit -m "{message}"')
+    git(f"commit -m {shlex.quote(message)}")
 
 
 def git_revert_to(commit_hash: str):
@@ -193,7 +229,7 @@ def git_current_hash() -> str:
 
 def git_current_branch() -> str:
     branch = git("rev-parse --abbrev-ref HEAD")
-    return branch if branch and "fatal:" not in branch else f"ablation/{datetime.now().strftime('%b%d').lower()}"
+    return branch if branch and "fatal:" not in branch else f"ablation/{datetime.now(timezone.utc).strftime('%b%d').lower()}"
 
 
 def git_create_branch(name: str):
@@ -245,7 +281,7 @@ def init_agent_repo():
     token = get_github_token()
     remote_url = get_remote_repo_url(token)
     safe_remote_url = get_remote_repo_url(token=None)
-    branch = os.environ.get("ABLATION_BRANCH") or f"ablation/{datetime.now().strftime('%b%d').lower()}"
+    branch = os.environ.get("ABLATION_BRANCH") or f"ablation/{datetime.now(timezone.utc).strftime('%b%d').lower()}"
     parent_repo = str(Path(__file__).parent)
 
     AGENT_REPO.mkdir(exist_ok=True)
@@ -270,27 +306,49 @@ def init_agent_repo():
         
         git(f'remote add origin "{remote_url}"')
         
-        # Align commit history with parent repository main branch (instant local fetch)
-        log("Aligning commit history with repository main branch...")
-        fetch_res = subprocess.run(
-            ["git", "fetch", parent_repo, "main"],
-            cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
-        )
-        if fetch_res.returncode == 0:
-            subprocess.run(
-                ["git", "checkout", "-B", branch, "FETCH_HEAD"],
-                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+        # Check if target branch already exists on remote origin
+        remote_synced = False
+        if token:
+            log(f"Checking if remote branch '{branch}' exists on GitHub...")
+            fetch_remote = subprocess.run(
+                ["git", "fetch", "origin", f"{branch}:{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
             )
-            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            sync_logs_to_agent_repo()
-            status = git("status --porcelain")
-            if status:
-                git_commit("Baseline Sugarscape strategy and logs for ablation")
-        else:
-            git_create_branch(branch)
-            shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-            sync_logs_to_agent_repo()
-            git_commit("Initial Sugarscape strategy and logs")
+            if fetch_remote.returncode == 0:
+                log(f"Synced with existing remote branch '{branch}' from GitHub.")
+                subprocess.run(
+                    ["git", "checkout", branch],
+                    cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+                )
+                remote_synced = True
+                if not AGENT_STRATEGY.exists():
+                    shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                if AGENT_RESULTS.exists() or RESULTS_FILE.exists():
+                    merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
+                sync_logs_to_agent_repo()
+
+        if not remote_synced:
+            # Align commit history with parent repository main branch (instant local fetch)
+            log("Aligning commit history with repository main branch...")
+            fetch_res = subprocess.run(
+                ["git", "fetch", parent_repo, "main"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
+            )
+            if fetch_res.returncode == 0:
+                subprocess.run(
+                    ["git", "checkout", "-B", branch, "FETCH_HEAD"],
+                    cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+                )
+                shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                sync_logs_to_agent_repo()
+                status = git("status --porcelain")
+                if status:
+                    git_commit("Baseline Sugarscape strategy and logs for ablation")
+            else:
+                git_create_branch(branch)
+                shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
+                sync_logs_to_agent_repo()
+                git_commit("Initial Sugarscape strategy and logs")
     else:
         # Existing repo: update remote URL and disable interactive prompts
         git('config credential.helper ""')
@@ -304,12 +362,23 @@ def init_agent_repo():
             git(f'remote set-url origin "{remote_url}"')
         else:
             git(f'remote add origin "{remote_url}"')
+        if token:
+            subprocess.run(
+                ["git", "fetch", "origin", f"{branch}:{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
+            )
         git_create_branch(branch)
-        if not AGENT_STRATEGY.exists():
+        if token:
+            subprocess.run(
+                ["git", "merge", "--ff-only", f"origin/{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+            )
+        if AGENT_STRATEGY.exists():
+            shutil.copy2(AGENT_STRATEGY, STRATEGY_FILE)
+        elif not AGENT_STRATEGY.exists():
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-        # If remote branch already had results.tsv but parent doesn't, recover it
-        if AGENT_RESULTS.exists() and not RESULTS_FILE.exists():
-            shutil.copy2(AGENT_RESULTS, RESULTS_FILE)
+        if AGENT_RESULTS.exists() or RESULTS_FILE.exists():
+            merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
         sync_logs_to_agent_repo()
 
     log(f"Subrepo ready on branch '{branch}' -> {safe_remote_url}")
@@ -331,28 +400,41 @@ def init_results():
     sync_logs_to_agent_repo()
 
 
+def _fmt_optional(val, fmt=".4f") -> str:
+    """Safely format an optional numeric value or return empty string."""
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return ""
+    try:
+        return f"{val:{fmt}}"
+    except (ValueError, TypeError):
+        return str(val)
+
+
 def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
                   stage_reached=0, ks_pvalue=None, dtw_distance=None, morans_i=None):
-    with open(RESULTS_FILE, "a") as f:
-        f.write(
-            f"{gen}\t{var}\t{commit}\t{status}\t"
-            f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
-            f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
-            f"{metrics.get('gini_coefficient', 0):.4f}\t"
-            f"{metrics.get('final_population', 0):.0f}\t"
-            f"{metrics.get('mean_trade_price', 0):.4f}\t"
-            f"{metrics.get('trade_volume', 0):.0f}\t"
-            f"{metrics.get('survival_rate', 0):.4f}\t"
-            f"{metrics.get('wealth_cv', 0):.4f}\t"
-            f"{metrics.get('spatial_entropy', 0):.4f}\t"
-            f"{'PASS' if passes else 'FAIL'}\t"
-            f"{stage_reached}\t"
-            f"{ks_pvalue:.4f if ks_pvalue is not None else ''}\t"
-            f"{dtw_distance:.4f if dtw_distance is not None else ''}\t"
-            f"{morans_i:.4f if morans_i is not None else ''}\t"
-            f"{desc}\n"
-        )
-    sync_logs_to_agent_repo()
+    try:
+        with open(RESULTS_FILE, "a") as f:
+            f.write(
+                f"{gen}\t{var}\t{commit}\t{status}\t"
+                f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
+                f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
+                f"{metrics.get('gini_coefficient', 0):.4f}\t"
+                f"{metrics.get('final_population', 0):.0f}\t"
+                f"{metrics.get('mean_trade_price', 0):.4f}\t"
+                f"{metrics.get('trade_volume', 0):.0f}\t"
+                f"{metrics.get('survival_rate', 0):.4f}\t"
+                f"{metrics.get('wealth_cv', 0):.4f}\t"
+                f"{metrics.get('spatial_entropy', 0):.4f}\t"
+                f"{'PASS' if passes else 'FAIL'}\t"
+                f"{stage_reached}\t"
+                f"{_fmt_optional(ks_pvalue)}\t"
+                f"{_fmt_optional(dtw_distance)}\t"
+                f"{_fmt_optional(morans_i)}\t"
+                f"{desc}\n"
+            )
+        sync_logs_to_agent_repo()
+    except Exception as e:
+        log(f"⚠️ Warning: Failed to append result row to {RESULTS_FILE}: {e}")
 
 
 def read_results_history(max_lines: int = 50) -> str:
