@@ -93,15 +93,11 @@ class Trader(CellAgent):
     def step(self):
         self.prices, self.trade_partners = [], []
         self.move()
-        self.sugar += self.cell.sugar
-        self.cell.sugar = 0
-        self.sugar -= self.metabolism_sugar
-        self.spice += self.cell.spice
-        self.cell.spice = 0
-        self.spice -= self.metabolism_spice
+        self.sugar += self.cell.sugar - self.metabolism_sugar
+        self.spice += self.cell.spice - self.metabolism_spice
+        self.cell.sugar = self.cell.spice = 0
         if self.sugar <= 0 or self.spice <= 0:
             self.remove()
-
     def trade_with_neighbors(self):
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
             self.trade(a)
