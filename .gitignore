@@ -25,3 +25,9 @@ results LOC count.tsv
 Thumbs.db
 .vscode/
 .idea/
+
+# Judge cache and research-loop state
+judge/_cache/
+archive/
+knockouts/
+mesa_flattened_raw.py

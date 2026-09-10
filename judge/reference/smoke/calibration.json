@@ -1,0 +1,229 @@
+{
+ "profile": "smoke",
+ "passed": false,
+ "min_positive_pass_rate": 0.0,
+ "min_negative_fail_rate": 0.0,
+ "required": {
+  "positive": 0.95,
+  "negative": 0.95
+ },
+ "controls": {
+  "numpy_reimplementation": {
+   "role": "positive",
+   "doc": "independent plain-numpy implementation of the same rules (no Mesa)",
+   "targets": [],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "pass",
+      "E2": "pass",
+      "E3": "pass",
+      "E4": "pass",
+      "E5": "pass"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "rng_reorder": {
+   "role": "positive",
+   "doc": "same rules, different dice: trait draws reordered and model seed remixed",
+   "targets": [],
+   "rate_as_expected": 0.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "pass",
+      "E2": "undecided",
+      "E3": "pass",
+      "E4": "pass",
+      "E5": "pass"
+     },
+     "as_expected": false
+    }
+   ]
+  },
+  "ko_no_trade": {
+   "role": "negative",
+   "doc": "trade rule T removed (agents never exchange)",
+   "targets": [
+    "E3"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "fail"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "ko_no_growback": {
+   "role": "negative",
+   "doc": "resources never regrow",
+   "targets": [
+    "E2"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "fail"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "ko_random_move": {
+   "role": "negative",
+   "doc": "movement rule M replaced by a random empty cell within vision",
+   "targets": [
+    "E4"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "fail"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "ko_no_mrs_stop": {
+   "role": "negative",
+   "doc": "MRS-crossing stop removed from the trade rule",
+   "targets": [
+    "E3"
+   ],
+   "rate_as_expected": 0.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "pass",
+      "E2": "pass",
+      "E3": "pass",
+      "E4": "pass",
+      "E5": "pass"
+     },
+     "as_expected": false
+    }
+   ]
+  },
+  "ko_uniform_vision": {
+   "role": "negative",
+   "doc": "vision fixed at 1 regardless of the vision inputs",
+   "targets": [
+    "E5"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "undecided"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "null_random_walk": {
+   "role": "null",
+   "doc": "random walkers with multiplicative random wealth; no resources, no interaction",
+   "targets": [
+    "E3",
+    "E4"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "fail"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "null_static_agents": {
+   "role": "null",
+   "doc": "agents never move (no foraging)",
+   "targets": [
+    "E4"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "fail",
+      "E2": "fail",
+      "E3": "fail",
+      "E4": "fail",
+      "E5": "fail"
+     },
+     "as_expected": true
+    }
+   ]
+  },
+  "null_random_price": {
+   "role": "null",
+   "doc": "exchanges happen at a random price unrelated to MRS",
+   "targets": [
+    "E3"
+   ],
+   "rate_as_expected": 1.0,
+   "replications": [
+    {
+     "features": {
+      "E1": "pass",
+      "E2": "pass",
+      "E3": "undecided",
+      "E4": "pass",
+      "E5": "pass"
+     },
+     "as_expected": true
+    }
+   ]
+  }
+ },
+ "dropped_statistics": [],
+ "canonical_complexity": {
+  "C": 5890,
+  "C_strategy_only": 1578,
+  "compressor": "lzma",
+  "sizes": {
+   "gzip": 6290,
+   "bz2": 6072,
+   "lzma": 6008
+  },
+  "template_bytes": 118,
+  "canonical_chars": 19354,
+  "dependency_functions": 76,
+  "code_hash": "af314acdce5789e2"
+ },
+ "judge_hash": "e8c7d8b5fd70592e",
+ "design_hash": "e76d84262354341b",
+ "created": "2026-10-23T19:56:59+00:00",
+ "seconds": 302.6,
+ "note": "Pipeline smoke test only: short runs, small samples and wide margin floors so every code path (including acceptance) is exercised quickly. Not valid for scientific conclusions."
+}

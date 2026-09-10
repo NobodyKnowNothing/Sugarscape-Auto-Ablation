@@ -1,0 +1,290 @@
+{
+  "description": "Pre-registered test design: input-space design points, seed pools, sample sizes and margin floors. Frozen and hashed into judge_hash(); changing it invalidates calibration.",
+  "alpha": 0.05,
+  "margin_floor": {
+    "scalar_sigma": 1.0,
+    "vector_sigma": 1.25,
+    "effect_sigma": 1.4,
+    "comment": "Smallest margin (in reference between-seed SDs). Margins are max(floor, largest innocuous-perturbation shift UCB). A shift under one seed-to-seed SD is treated as scientifically indistinguishable. Power: every test must pass (intersection-union), so the margin must exceed the CI half-width by ~3 SE; with 60 reference and 60 candidate seeds (SE ~0.18 SD) that requires margins of ~1 SD. Vector (sup over components) and effect (difference of differences) floors are scaled for their extra noise."
+  },
+  "complexity": {
+    "delta_abs_bytes": 8,
+    "delta_rel": 0.001,
+    "comment": "A candidate must reduce canonical compressed size by at least max(delta_abs_bytes, delta_rel * parent C)."
+  },
+  "points": {
+    "default": {},
+    "A_notrade": {
+      "enable_trade": false
+    },
+    "B_lowvision": {
+      "vision_min": 1,
+      "vision_max": 2
+    },
+    "B_highvision": {
+      "vision_min": 4,
+      "vision_max": 8
+    },
+    "C_lowpop": {
+      "initial_population": 50
+    },
+    "C_highpop": {
+      "initial_population": 400
+    },
+    "D_harshmetab": {
+      "metabolism_min": 3,
+      "metabolism_max": 7
+    },
+    "D_lowregrowth": {
+      "regrowth_rate": 0.5
+    },
+    "L01": {
+      "initial_population": 395,
+      "vision_max": 3,
+      "metabolism_max": 3,
+      "regrowth_rate": 0.92
+    },
+    "L02": {
+      "initial_population": 328,
+      "vision_max": 5,
+      "metabolism_max": 7,
+      "regrowth_rate": 1.95
+    },
+    "L03": {
+      "initial_population": 197,
+      "vision_max": 2,
+      "metabolism_max": 6,
+      "regrowth_rate": 1.73
+    },
+    "L04": {
+      "initial_population": 80,
+      "vision_max": 8,
+      "metabolism_max": 4,
+      "regrowth_rate": 1.2
+    },
+    "L05": {
+      "initial_population": 357,
+      "vision_max": 8,
+      "metabolism_max": 4,
+      "regrowth_rate": 0.57
+    },
+    "L06": {
+      "initial_population": 309,
+      "vision_max": 5,
+      "metabolism_max": 6,
+      "regrowth_rate": 1.29
+    },
+    "L07": {
+      "initial_population": 138,
+      "vision_max": 6,
+      "metabolism_max": 5,
+      "regrowth_rate": 1.0
+    },
+    "L08": {
+      "initial_population": 283,
+      "vision_max": 4,
+      "metabolism_max": 5,
+      "regrowth_rate": 0.98
+    },
+    "L09": {
+      "initial_population": 195,
+      "vision_max": 2,
+      "metabolism_max": 7,
+      "regrowth_rate": 1.39
+    },
+    "L10": {
+      "initial_population": 291,
+      "vision_max": 6,
+      "metabolism_max": 5,
+      "regrowth_rate": 0.87
+    },
+    "L11": {
+      "initial_population": 237,
+      "vision_max": 3,
+      "metabolism_max": 6,
+      "regrowth_rate": 0.51
+    },
+    "L12": {
+      "initial_population": 178,
+      "vision_max": 5,
+      "metabolism_max": 3,
+      "regrowth_rate": 1.58
+    },
+    "L13": {
+      "initial_population": 345,
+      "vision_max": 3,
+      "metabolism_max": 7,
+      "regrowth_rate": 0.8
+    },
+    "L14": {
+      "initial_population": 262,
+      "vision_max": 5,
+      "metabolism_max": 5,
+      "regrowth_rate": 1.11
+    },
+    "L15": {
+      "initial_population": 162,
+      "vision_max": 4,
+      "metabolism_max": 4,
+      "regrowth_rate": 1.92
+    },
+    "L16": {
+      "initial_population": 216,
+      "vision_max": 7,
+      "metabolism_max": 3,
+      "regrowth_rate": 1.45
+    },
+    "L17": {
+      "initial_population": 252,
+      "vision_max": 4,
+      "metabolism_max": 6,
+      "regrowth_rate": 1.85
+    },
+    "L18": {
+      "initial_population": 114,
+      "vision_max": 7,
+      "metabolism_max": 5,
+      "regrowth_rate": 0.65
+    },
+    "L19": {
+      "initial_population": 51,
+      "vision_max": 6,
+      "metabolism_max": 5,
+      "regrowth_rate": 1.79
+    },
+    "L20": {
+      "initial_population": 137,
+      "vision_max": 6,
+      "metabolism_max": 6,
+      "regrowth_rate": 0.7
+    },
+    "L21": {
+      "initial_population": 72,
+      "vision_max": 3,
+      "metabolism_max": 4,
+      "regrowth_rate": 1.13
+    },
+    "L22": {
+      "initial_population": 101,
+      "vision_max": 7,
+      "metabolism_max": 6,
+      "regrowth_rate": 1.31
+    },
+    "L23": {
+      "initial_population": 381,
+      "vision_max": 4,
+      "metabolism_max": 4,
+      "regrowth_rate": 1.52
+    },
+    "L24": {
+      "initial_population": 321,
+      "vision_max": 7,
+      "metabolism_max": 4,
+      "regrowth_rate": 1.68
+    }
+  },
+  "lhs_note": "L01-L24: Latin hypercube (scipy qmc, seed 20261023) over initial_population [50,400], vision_max [2,8], metabolism_max [3,7], regrowth_rate [0.5,2.0]; other inputs at defaults.",
+  "profiles": {
+    "full": {
+      "steps": 200,
+      "screening_points": [
+        "default",
+        "A_notrade",
+        "B_lowvision",
+        "B_highvision",
+        "C_lowpop",
+        "C_highpop",
+        "D_harshmetab",
+        "D_lowregrowth"
+      ],
+      "audit_points": [
+        "default",
+        "A_notrade",
+        "B_lowvision",
+        "B_highvision",
+        "C_lowpop",
+        "C_highpop",
+        "D_harshmetab",
+        "D_lowregrowth",
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "L08",
+        "L09",
+        "L10",
+        "L11",
+        "L12",
+        "L13",
+        "L14",
+        "L15",
+        "L16",
+        "L17",
+        "L18",
+        "L19",
+        "L20",
+        "L21",
+        "L22",
+        "L23",
+        "L24"
+      ],
+      "n_reference": 60,
+      "n_perturbation": 30,
+      "n_presence": 10,
+      "candidate_schedule": [
+        20,
+        40,
+        60
+      ],
+      "n_holdout": 40,
+      "control_block": 20,
+      "control_replications": 10,
+      "trace_steps": 40,
+      "trace_seeds": 2,
+      "audit_every": 5,
+      "required_positive_pass_rate": 0.95,
+      "required_negative_fail_rate": 0.95
+    },
+    "smoke": {
+      "comment": "Pipeline smoke test only: short runs, small samples and wide margin floors so every code path (including acceptance) is exercised quickly. Not valid for scientific conclusions.",
+      "steps": 100,
+      "screening_points": [
+        "default",
+        "A_notrade",
+        "B_highvision",
+        "C_highpop"
+      ],
+      "audit_points": [
+        "default",
+        "A_notrade",
+        "B_highvision",
+        "C_highpop",
+        "L03",
+        "L08"
+      ],
+      "n_reference": 20,
+      "n_perturbation": 10,
+      "n_presence": 8,
+      "candidate_schedule": [
+        10,
+        20
+      ],
+      "n_holdout": 12,
+      "control_block": 12,
+      "control_replications": 1,
+      "trace_steps": 20,
+      "trace_seeds": 1,
+      "audit_every": 2,
+      "required_positive_pass_rate": 0.95,
+      "required_negative_fail_rate": 0.95,
+      "margin_floor": {
+        "scalar_sigma": 2.0,
+        "vector_sigma": 2.5,
+        "effect_sigma": 2.8
+      }
+    }
+  }
+}

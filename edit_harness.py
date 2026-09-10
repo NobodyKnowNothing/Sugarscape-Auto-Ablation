@@ -57,7 +57,7 @@ DEFAULT_MODEL = os.environ.get("ABLATION_MODEL", "gemma-4-31b-it")
 FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemma-4-26b-a4b-it")
 WORKSPACE_DIR = Path(__file__).parent.resolve()
 STRATEGY_FILE = WORKSPACE_DIR / "strategy.py"
-BASELINE_METRICS_FILE = WORKSPACE_DIR / "baseline_metrics.json"
+LEDGER_FILE = WORKSPACE_DIR / "mechanisms.json"
 RESULTS_FILE = WORKSPACE_DIR / "results.tsv"
 PROGRAM_FILE = WORKSPACE_DIR / "program.md"
 
@@ -516,35 +516,32 @@ class CodeEditor:
 # ===========================================================================
 
 def compute_complexity_info(code: str) -> dict:
-    """Calculate AST nodes, cyclomatic complexity, lines, and combined score."""
+    """Legacy AST/cyclomatic diagnostics plus the judge's strategy-only canonical size (no tracing)."""
     from complexity import combined_complexity_score
-    return combined_complexity_score(code)
+    from judge.complexity import static_size
+    info = combined_complexity_score(code)
+    info["canonical_bytes"] = static_size(code)["C_strategy_only"]
+    return info
 
 
 def quick_evaluate(strategy_path: Path | str, steps: int = 50) -> dict:
     """
-    Fast simulation test to verify strategy.py compiles and runs without crashing.
-    Uses Stage 1 of the validation waterfall for exact pipeline alignment.
+    Fast check that the model satisfies the judge contract and runs without crashing
+    (one seed at the default environment, judge-owned loop, snapshot validation).
     """
     path = Path(strategy_path)
     if not path.exists():
         return {"success": False, "error": f"File {path} does not exist"}
-
     code = path.read_text(encoding="utf-8")
     try:
-        from validation import stage1_fast_filter
-        vr = stage1_fast_filter(code, steps=steps)
-        if vr.stage1_ok:
-            return {
-                "success": True,
-                "steps_run": steps,
-                "message": f"Stage 1 Fast Filter passed ({steps} steps in {vr.stage1_time:.2f}s).",
-            }
-        else:
-            return {
-                "success": False,
-                "error": vr.reject_reason or "Stage 1 Fast Filter rejected variant.",
-            }
+        from judge import guard
+        from judge.contract import materialize, run_model
+        problems = guard.check(code)
+        if problems:
+            return {"success": False, "error": "guard: " + "; ".join(problems[:5])}
+        run_model(materialize(code), {}, 12345, steps)
+        return {"success": True, "steps_run": steps,
+                "message": f"Contract check passed ({steps} steps)."}
     except Exception as e:
         return {"success": False, "error": f"{type(e).__name__}: {e}"}
 
@@ -670,7 +667,7 @@ class GemmaGenAIModel:
 
 SYSTEM_TEMPLATE = """\
 You are an expert AI software researcher performing structural ablation on the Sugarscape model.
-Your objective is to simplify `strategy.py` to reduce AST node count and cyclomatic branching while preserving emergent behaviors.
+Your objective is to find a mechanistically simpler `strategy.py` (lower canonical compressed size of all executed model logic, including any Mesa code it uses) whose EMERGENT FEATURES stay statistically equivalent to Sugarscape.
 
 IMPORTANT: DO NOT output the entire `strategy.py` file!
 Instead, use surgical single-line or block editing commands. You interact with the environment via bash commands.
@@ -712,9 +709,9 @@ INSTANCE_TEMPLATE = """\
 ## Task: Perform Structural Ablation Round on strategy.py
 
 Current Baseline & Constraints:
-- Baseline Combined Complexity: {{ current_complexity.combined_score | round(1) if current_complexity else 'N/A' }}
-  (AST Nodes: {{ current_complexity.ast_nodes if current_complexity else 'N/A' }}, Cyclomatic: {{ current_complexity.cyclomatic_total if current_complexity else 'N/A' }}, Lines: {{ current_complexity.lines if current_complexity else 'N/A' }})
-- Target: Lower the combined complexity score while maintaining valid Python syntax and emergent properties.
+- Strategy-only canonical size: {{ current_complexity.canonical_bytes if current_complexity else 'N/A' }} bytes
+  (the judge also counts every Mesa function the model executes)
+- Target: remove, merge or substitute mechanisms while keeping the emergent features (inequality, carrying capacity, price discovery, spatial self-organization, environmental response).
 
 Ablation History / Lessons Learned:
 ```
@@ -1086,9 +1083,7 @@ def parse_surgical_edits(
                 try:
                     ast.parse(modified_code)
                     if modified_code != original_code:
-                        if "def create_model" in original_code and "def create_model" not in modified_code:
-                            pass
-                        else:
+                        if "def init" in modified_code:
                             variants.append((modified_code, desc[:120]))
                 except SyntaxError:
                     pass
@@ -1161,7 +1156,7 @@ def generate_ablation_variants_harness(
                     modified_code = sandbox_strategy.read_text(encoding="utf-8")
                     try:
                         ast.parse(modified_code)
-                        if modified_code != current_strategy and "def create_model" in modified_code:
+                        if modified_code != current_strategy and "def init" in modified_code:
                             desc = res.get("submission", f"Variant {var_idx + 1}")
                             variants.append((modified_code, desc[:120]))
                     except SyntaxError:
@@ -1182,6 +1177,206 @@ def generate_ablation_variants_harness(
             fallback_model=fallback_model,
             temperature=temperature,
         )
+
+
+
+# ===========================================================================
+# 6b. Mechanism-level research proposals (used by autoresearch.py)
+# ===========================================================================
+
+MOVE_TYPES = {
+    "remove_rule": "Delete a rule entirely (e.g. a heterogeneity, a stopping condition, a phase) and argue why the emergent features survive.",
+    "substitute_rule": "Replace a rule with a simpler rule that should produce the same emergent features (e.g. a simpler price or movement rule).",
+    "representation": "Change the representation (e.g. numpy arrays instead of agent objects, a dict grid instead of Mesa cells).",
+    "replace_library": "Replace Mesa machinery with small purpose-built code. Mesa code that runs is counted in complexity, so this pays off when the local code is smaller than what Mesa executes.",
+    "collapse_parameters": "Merge parallel structures (e.g. treat both goods with one code path) or collapse redundant state.",
+    "refactor": "Pure simplification that should not change behaviour at all.",
+}
+
+RESEARCH_FORMAT = """\
+For EACH variant use exactly this structure:
+
+**Variant <N>:** <one-line description>
+MOVE: <one of: {moves}>
+MECHANISM: <ledger id the change targets, or none>
+ACTION: <remove | substitute | merge | refactor>
+HYPOTHESIS: <one or two sentences: why the emergent features should survive this change>
+Then ONE of these edit formats:
+
+(a) one or more exact search/replace blocks, applied in order:
+```str_replace
+<<<<<<< SEARCH
+<exact existing code>
+=======
+<replacement code>
+>>>>>>> REPLACE
+```
+
+(b) a complete rewrite of the file (use for large structural changes):
+```full_file
+<the entire new strategy.py>
+```
+"""
+
+
+def build_research_prompt(
+    parent_code: str,
+    program_text: str,
+    ledger: dict,
+    recent: List[dict],
+    complexity: dict,
+    moves: List[str],
+) -> str:
+    lines = parent_code.splitlines()
+    numbered = "\n".join(f"{i + 1:4d} | {l}" for i, l in enumerate(lines))
+    ledger_txt = "\n".join(
+        f"- {mid} [{m['status']}]: {m['rule']}" for mid, m in ledger.get("mechanisms", {}).items()
+    )
+    hist = []
+    for r in recent[-12:]:
+        fb = "; ".join(f"{k}: {', '.join(v[:3])}" for k, v in (r.get("feedback") or {}).items())
+        hist.append(f"- [{r.get('outcome')}] ({r.get('move')}, {r.get('mechanism')}) {r.get('desc')}"
+                    + (f" -> {r.get('reason')}" if r.get("reason") else "") + (f" | {fb}" if fb else ""))
+    manifest = complexity.get("dependency_manifest") or []
+    mesa_summary = ", ".join(sorted({m.split(':')[0] for m in manifest})) or "none"
+    move_lines = "\n".join(f"Variant {i + 1}: MOVE = {m} - {MOVE_TYPES[m]}" for i, m in enumerate(moves))
+    history = "\n".join(hist) if hist else "(none yet)"
+    return f"""{program_text}
+
+---
+
+## Current model (parent), {len(lines)} lines:
+```python
+{numbered}
+```
+
+## Complexity of the parent (lower is better)
+- Total C = {complexity.get('C')} bytes (canonical compressed size of strategy.py plus all executed library code)
+- strategy.py alone: {complexity.get('C_strategy_only')} bytes
+- Library code executed and counted: {complexity.get('dependency_functions', 0)} functions from {mesa_summary}
+
+## Mechanism ledger
+{ledger_txt}
+
+## Recent attempts and the judge's qualitative feedback
+{history}
+
+---
+
+## Task
+Propose {len(moves)} variant(s), one per assigned move type:
+{move_lines}
+
+{RESEARCH_FORMAT.format(moves=', '.join(MOVE_TYPES))}
+The file must keep the contract functions init(env, rng), step(state, rng), observe(state)
+with the same observe() keys. Do not read files, use global randomness, exec/eval, or import
+anything except math, numpy, mesa and small standard-library helpers.
+"""
+
+
+def _meta(chunk: str, key: str) -> str:
+    m = re.search(rf"^\s*\**{key}\**\s*:\s*\**\s*(.+)$", chunk, re.MULTILINE)
+    return m.group(1).strip().strip("*").strip() if m else ""
+
+
+def apply_research_edit(chunk: str, original_code: str) -> Optional[str]:
+    """Apply a full_file block, or all str_replace blocks in order. Returns new code or None."""
+    full = re.search(r"```full_file\s*\n(.*?)```", chunk, re.DOTALL)
+    if full:
+        code = full.group(1)
+        return code if code.strip() else None
+    blocks = re.findall(r"<<<<<<<\s*SEARCH\s*\n(.*?)\n=======\s*\n(.*?)\n>>>>>>>\s*REPLACE", chunk, re.DOTALL)
+    if blocks:
+        code = original_code
+        for old, new in blocks:
+            if code.count(old) != 1:
+                return None
+            code = code.replace(old, new)
+        return code
+    # fall back to the legacy single-edit formats
+    legacy = parse_surgical_edits("**Variant 1:** x**" + chunk, original_code, expected=1)
+    return legacy[0][0] if legacy else None
+
+
+def parse_research_variants(text: str, original_code: str) -> List[Dict[str, str]]:
+    chunks = re.split(r"(?=\*\*Variant\s+\d+)", text)
+    out = []
+    for chunk in chunks:
+        head = re.match(r"\*\*Variant\s+\d+[:\s]*\**\s*(.*)", chunk)
+        if not head:
+            continue
+        item = {"desc": (head.group(1).strip().strip("*").strip() or "variant")[:160],
+                "move": _meta(chunk, "MOVE"), "mechanism": _meta(chunk, "MECHANISM"),
+                "action": _meta(chunk, "ACTION"), "hypothesis": _meta(chunk, "HYPOTHESIS")}
+        code = apply_research_edit(chunk, original_code)
+        if code is None or code == original_code:
+            out.append({**item, "code": None, "parse_error": "edit could not be applied"})
+            continue
+        try:
+            ast.parse(code)
+        except SyntaxError as e:
+            out.append({**item, "code": None, "parse_error": f"SyntaxError line {e.lineno}"})
+            continue
+        out.append({**item, "code": code})
+    return out
+
+
+def generate_research_variants(
+    client: Any,
+    parent_code: str,
+    program_text: str,
+    ledger: dict,
+    recent: List[dict],
+    complexity: dict,
+    moves: List[str],
+    model_name: str = DEFAULT_MODEL,
+    fallback_model: str = FALLBACK_MODEL,
+    temperature: float = 0.8,
+    log_fn: Optional[Callable[[str], None]] = None,
+) -> List[Dict[str, str]]:
+    from google.genai import types
+
+    prompt = build_research_prompt(parent_code, program_text, ledger, recent, complexity, moves)
+    try:
+        response, used = generate_content_with_failover(
+            client=client,
+            contents=prompt,
+            config=types.GenerateContentConfig(temperature=temperature, max_output_tokens=32768),
+            primary_model=model_name,
+            fallback_model=fallback_model,
+            log_fn=log_fn,
+        )
+    except Exception as e:
+        print(f"[edit_harness] research generation API error: {e}", file=sys.stderr)
+        return []
+    return parse_research_variants(extract_response_text(response), parent_code)
+
+
+def generate_knockout_variant(model_code: str, mechanism_id: str, rule: str,
+                              model_name: str = DEFAULT_MODEL, fallback_model: str = FALLBACK_MODEL) -> Optional[str]:
+    """Ask the LLM for a copy of the model with exactly one rule knocked out (for certify.py)."""
+    from google import genai
+    from google.genai import types
+
+    api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+    client = genai.Client(api_key=api_key)
+    prompt = f"""Here is an agent-based model:
+```python
+{model_code}
+```
+Write a KNOCKOUT variant that disables exactly this rule and nothing else:
+  {mechanism_id}: {rule}
+Keep everything else (including init/step/observe) identical. Output only the complete file in
+a single ```full_file block."""
+    try:
+        response, _ = generate_content_with_failover(
+            client=client, contents=prompt,
+            config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=32768),
+            primary_model=model_name, fallback_model=fallback_model)
+    except Exception as e:
+        print(f"[edit_harness] knockout generation error: {e}", file=sys.stderr)
+        return None
+    return apply_research_edit(extract_response_text(response), model_code)
 
 
 # ===========================================================================
@@ -1370,8 +1565,6 @@ def main():
             results_hist = "\n".join(RESULTS_FILE.read_text(encoding="utf-8").strip().splitlines()[-20:])
 
         baseline_metrics = {}
-        if BASELINE_METRICS_FILE.exists():
-            baseline_metrics = json.loads(BASELINE_METRICS_FILE.read_text(encoding="utf-8")).get("mean_metrics", {})
 
         program_txt = PROGRAM_FILE.read_text(encoding="utf-8") if PROGRAM_FILE.exists() else ""
 
@@ -1392,13 +1585,9 @@ def main():
         if variants:
             code, desc = variants[0]
             new_comp = compute_complexity_info(code)
-            delta = complexity["combined_score"] - new_comp["combined_score"]
             print(f"\n🎉 Successfully generated variant: {desc}")
-            print(f"   Score: {complexity['combined_score']:.1f} -> {new_comp['combined_score']:.1f} ({delta:+.1f})")
-            gz_delta = ""
-            if "gzip_compressed_bytes" in complexity and "gzip_compressed_bytes" in new_comp:
-                gz_delta = f" | Gzip: {complexity['gzip_compressed_bytes']}B -> {new_comp['gzip_compressed_bytes']}B"
-            print(f"   Lines: {complexity['lines']} -> {new_comp['lines']}{gz_delta}")
+            print(f"   Strategy-only canonical size: {complexity['canonical_bytes']} -> {new_comp['canonical_bytes']} bytes "
+                  f"(full traced complexity is measured by the judge)")
         else:
             print("\n❌ No passing variant generated this round.")
 

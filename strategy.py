@@ -1,11 +1,22 @@
 """
-Canonical Mesa Sugarscape G1MT — Deterministically Flattened Module.
-Generated directly from upstream Mesa Sugarscape with Traders repository.
+Canonical Mesa Sugarscape G1MT — flattened module ported to the judge contract.
+
+Generated from upstream Mesa Sugarscape with Traders (via flatten_sugarscape.py),
+then ported to the judge's model contract (see judge/contract.py):
+
+    init(env, rng) -> state
+    step(state, rng) -> None
+    observe(state) -> dict
+
+Port changes (behaviour-neutral at the default environment):
+  1. The landscape comes from env["landscape"] instead of reading sugar-map.txt.
+  2. Growback adds env["regrowth_rate"] per step (default 1, as upstream).
+  3. Each executed trade is appended to model.exchanges so the judge can observe it.
+  4. Measurement-only code (DataCollector, prices/trade_partners logs) is removed;
+     the judge observes the model itself.
 """
 
 import math
-from pathlib import Path
-from typing import Any
 
 from mesa.discrete_space import CellAgent, OrthogonalVonNeumannGrid
 from mesa.experimental.scenarios import Scenario
@@ -80,8 +91,6 @@ class Trader(CellAgent):
         self.metabolism_sugar = metabolism_sugar
         self.metabolism_spice = metabolism_spice
         self.vision = vision
-        self.prices = []
-        self.trade_partners = []
 
     def get_trader(self, cell):
         """
@@ -151,6 +160,7 @@ class Trader(CellAgent):
         other.sugar -= sugar
         self.spice -= spice
         other.spice += spice
+        self.model.exchanges.append((self.unique_id, other.unique_id, (sugar, -spice)))
 
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
         """
@@ -233,10 +243,6 @@ class Trader(CellAgent):
             if not sold:
                 return
 
-        # Capture data
-        self.prices.append(price)
-        self.trade_partners.append(other.unique_id)
-
         # continue trading
         self.trade(other)
 
@@ -318,8 +324,6 @@ class Trader(CellAgent):
 
     def step(self):
         """Agent step method."""
-        self.prices = []
-        self.trade_partners = []
         self.move()
         self.eat()
         self.maybe_die()
@@ -339,24 +343,8 @@ class Trader(CellAgent):
         return
 
 # ===========================================================================
-# Model Helper Functions & Sugarscape Model (from model.py)
+# Sugarscape Model (from model.py)
 # ===========================================================================
-
-def flatten(list_of_lists):
-    """
-    helper function for model datacollector for trade price
-    collapses agent price list into one list
-    """
-    return [item for sublist in list_of_lists for item in sublist]
-
-def geometric_mean(list_of_prices):
-    """
-    find the geometric mean of a list of prices
-    """
-    # protects against an invalid value if no prices
-    if len(list_of_prices) == 0:
-        return -1
-    return np.exp(np.log(list_of_prices).mean())
 
 class SugarScapeScenario(Scenario):
     """Sugarscape scenario class."""
@@ -369,41 +357,33 @@ class SugarScapeScenario(Scenario):
     vision_min: int = 1
     vision_max: int = 5
     enable_trade: bool = True
+    regrowth_rate: float = 1
+
 
 class SugarscapeG1mt(mesa.Model):
     """
     Manager class to run Sugarscape with Traders
     """
 
-    def __init__(self, scenario: SugarScapeScenario = SugarScapeScenario):
+    def __init__(self, landscape, scenario: SugarScapeScenario = SugarScapeScenario):
         super().__init__(scenario=scenario)
         # Initiate width and height of sugarscape
-        self.width = 50
-        self.height = 50
+        self.width = landscape.shape[1]
+        self.height = landscape.shape[2]
 
         # Initiate population attributes
         self.enable_trade = self.scenario.enable_trade
         self.running = True
+        self.exchanges = []
 
         # initiate mesa grid class
         self.grid = OrthogonalVonNeumannGrid(
             (self.width, self.height), torus=False, random=self.random
         )
-        # initiate datacollector
-        self.datacollector = mesa.DataCollector(
-            model_reporters={
-                "#Traders": lambda m: len(m.agents),
-                "Trade Volume": lambda m: sum(len(a.trade_partners) for a in m.agents),
-                "Price": lambda m: geometric_mean(
-                    flatten([a.prices for a in m.agents])
-                ),
-            },
-            agent_reporters={"Trade Network": "trade_partners"},
-        )
 
-        # read in landscape file from supplementary material
-        self.sugar_distribution = np.genfromtxt(Path(__file__).parent / "sugar-map.txt")
-        self.spice_distribution = np.flip(self.sugar_distribution, 1)
+        # landscape supplied by the environment (sugar-map.txt and its mirror)
+        self.sugar_distribution = np.array(landscape[0], dtype=float)
+        self.spice_distribution = np.array(landscape[1], dtype=float)
 
         self.grid.add_property_layer("sugar", self.sugar_distribution.copy())
         self.grid.add_property_layer("spice", self.spice_distribution.copy())
@@ -450,78 +430,44 @@ class SugarscapeG1mt(mesa.Model):
         Unique step function that does staged activation of sugar and spice
         and then randomly activates traders
         """
-        self.grid.sugar[:] = np.minimum(self.grid.sugar + 1, self.sugar_distribution)
-        self.grid.spice[:] = np.minimum(self.grid.spice + 1, self.spice_distribution)
+        self.exchanges = []
+        regrowth = self.scenario.regrowth_rate
+        self.grid.sugar[:] = np.minimum(self.grid.sugar + regrowth, self.sugar_distribution)
+        self.grid.spice[:] = np.minimum(self.grid.spice + regrowth, self.spice_distribution)
 
         # step trader agents
         self.agents.shuffle_do("step")
         if self.enable_trade:
             self.agents.shuffle_do("trade_with_neighbors")
-        self.datacollector.collect(self)
 
-    def run_model(self, step_count=1000):
-        for _ in range(step_count):
-            self.step()
 
 # ===========================================================================
-# Project Evaluation Harness Interface (prepare.py / parameter_sweeps.py)
+# Judge contract
 # ===========================================================================
 
-def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
-    """
-    Instantiate SugarscapeG1mt model configured with seed and parameter overrides.
-    Works seamlessly whether the model uses Mesa 4.x Scenario or Mesa 3.x kwargs.
-    """
-    p = dict(params)
-    p.pop("steps", None)
-    init_pop = p.get("initial_population", 200)
-
-    if "SugarScapeScenario" in globals():
-        scenario_kwargs = {k: v for k, v in p.items() if hasattr(SugarScapeScenario, k)}
-        sc = SugarScapeScenario(rng=seed, **scenario_kwargs)
-        model = SugarscapeG1mt(scenario=sc)
-    else:
-        if "rng" not in p and seed is not None:
-            p["rng"] = seed
-        model = SugarscapeG1mt(**p)
-
-    model.initial_population = init_pop
-    return model
+SCENARIO_KEYS = (
+    "initial_population", "endowment_min", "endowment_max", "metabolism_min",
+    "metabolism_max", "vision_min", "vision_max", "enable_trade", "regrowth_rate",
+)
 
 
-def run_model(model: SugarscapeG1mt, steps: int = 200) -> dict[str, Any]:
-    """
-    Execute simulation steps and extract the standardized 9-key metrics dictionary.
-    """
-    try:
-        model.run_model(step_count=steps)
-    except (ValueError, IndexError) as e:
-        return {"error": f"Mesa crash: {e}"}
+def init(env, rng):
+    scenario = SugarScapeScenario(
+        rng=int(rng.integers(2**31)), **{k: env[k] for k in SCENARIO_KEYS}
+    )
+    return SugarscapeG1mt(env["landscape"], scenario=scenario)
 
-    df = model.datacollector.get_model_vars_dataframe()
-    cumul_trade_volume = int(df["Trade Volume"].sum()) if "Trade Volume" in df else 0
 
+def step(model, rng):
+    model.step()
+
+
+def observe(model):
     agents = list(model.agents)
-    agent_wealths = [float(a.sugar + a.spice) for a in agents]
-
-    trade_prices = []
-    for a in agents:
-        if hasattr(a, "prices"):
-            trade_prices.extend(a.prices)
-
-    agent_positions = []
-    for a in agents:
-        if hasattr(a, "cell") and a.cell is not None:
-            agent_positions.append(a.cell.coordinate)
-
     return {
-        "agent_wealths": agent_wealths,
-        "final_population": len(agents),
-        "initial_population": getattr(model, "initial_population", 200),
-        "trade_prices": trade_prices,
-        "trade_volume": cumul_trade_volume,
-        "agent_positions": agent_positions,
-        "grid_width": getattr(model, "width", 50),
-        "grid_height": getattr(model, "height", 50),
-        "steps_run": steps,
+        "ids": [a.unique_id for a in agents],
+        "positions": [a.cell.coordinate for a in agents],
+        "holdings": [(a.sugar, a.spice) for a in agents],
+        "exchanges": model.exchanges,
+        "resources": np.stack([model.grid.sugar.data, model.grid.spice.data]),
     }

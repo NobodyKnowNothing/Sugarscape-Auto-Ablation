@@ -1,0 +1,20 @@
+{
+  "description": "Mechanism ledger for the minimal-viable-model search. Each rule of Sugarscape G1MT, its current status in the working model, and the evidence for that status. The research loop updates status/evidence when it accepts a mechanism-level change; certify.py fills in knockout evidence for surviving rules.",
+  "statuses": ["kept", "removed", "replaced", "merged"],
+  "mechanisms": {
+    "growback":        {"rule": "Resources regrow by regrowth_rate per step up to cell capacity", "status": "kept", "canonical_knockout": "ko_no_growback", "evidence": []},
+    "move_welfare":    {"rule": "Move to the empty cell within vision that maximizes Cobb-Douglas welfare", "status": "kept", "canonical_knockout": "ko_random_move", "evidence": []},
+    "move_tiebreak":   {"rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "welfare":         {"rule": "Cobb-Douglas welfare with exponents from relative metabolism", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "metabolism":      {"rule": "Agents consume metabolism_sugar / metabolism_spice each step", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "death":           {"rule": "Agents die when sugar or spice reaches zero", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "vision":          {"rule": "Heterogeneous vision radius bounds movement and trade neighbourhoods", "status": "kept", "canonical_knockout": "ko_uniform_vision", "evidence": []},
+    "trade":           {"rule": "Bilateral trade with neighbours within vision, repeated while beneficial", "status": "kept", "canonical_knockout": "ko_no_trade", "evidence": []},
+    "mrs_stop":        {"rule": "Trading stops when the post-trade MRSs would cross", "status": "kept", "canonical_knockout": "ko_no_mrs_stop", "evidence": []},
+    "price_rule":      {"rule": "Price is the geometric mean of the two MRSs; integer bundle sizes", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "heterogeneity":   {"rule": "Endowments, metabolisms and vision drawn per agent from uniform ranges", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "two_goods":       {"rule": "Two complementary goods (sugar and spice) with mirrored landscapes", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "random_activation": {"rule": "Agents act in a freshly shuffled order each phase", "status": "kept", "canonical_knockout": null, "evidence": []},
+    "mesa_framework":  {"rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)", "status": "kept", "canonical_knockout": null, "evidence": []}
+  }
+}
