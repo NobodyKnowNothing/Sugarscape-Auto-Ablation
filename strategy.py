@@ -363,17 +363,8 @@ def run_model(model: SugarscapeG1mt, steps: int = 200) -> dict[str, Any]:
 
     agents = list(model.agents)
     agent_wealths = [float(a.sugar + a.spice) for a in agents]
-
-    trade_prices = []
-    for a in agents:
-        if hasattr(a, "prices"):
-            trade_prices.extend(a.prices)
-
-    agent_positions = []
-    for a in agents:
-        if hasattr(a, "cell") and a.cell is not None:
-            agent_positions.append(a.cell.coordinate)
-
+    trade_prices = [p for a in agents for p in getattr(a, "prices", [])]
+    agent_positions = [a.cell.coordinate for a in agents if getattr(a, "cell", None)]
     return {
         "agent_wealths": agent_wealths,
         "final_population": len(agents),
