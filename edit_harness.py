@@ -28,6 +28,7 @@ import ast
 import difflib
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -94,10 +95,71 @@ def is_resource_exhausted_error(exc: Exception) -> bool:
     return any(keyword in msg for keyword in exhaustion_keywords)
 
 
+def is_transient_error(exc: Exception) -> bool:
+    """
+    Check if exception represents a transient/recoverable server or network error.
+    Covers HTTP 503 UNAVAILABLE, 500 INTERNAL, 502 BAD GATEWAY, 504 GATEWAY TIMEOUT,
+    DEADLINE_EXCEEDED, and temporary network connection resets.
+    """
+    if exc is None:
+        return False
+
+    code = getattr(exc, "code", None)
+    if code in (400, 401, 403, 404):
+        return False
+    if code in (500, 502, 503, 504):
+        return True
+
+    status = getattr(exc, "status", None)
+    if status:
+        st_upper = str(status).upper()
+        if any(s in st_upper for s in ["UNAVAILABLE", "INTERNAL", "DEADLINE_EXCEEDED", "503", "500"]):
+            return True
+        if any(s in st_upper for s in ["INVALID_ARGUMENT", "NOT_FOUND", "PERMISSION_DENIED"]):
+            return False
+
+    details = getattr(exc, "details", None)
+    if isinstance(details, dict):
+        d_code = details.get("code") or details.get("error", {}).get("code")
+        d_status = details.get("status") or details.get("error", {}).get("status")
+        if d_code in (400, 401, 403, 404):
+            return False
+        if d_code in (500, 502, 503, 504):
+            return True
+        if d_status and any(s in str(d_status).upper() for s in ["UNAVAILABLE", "INTERNAL", "DEADLINE_EXCEEDED"]):
+            return True
+
+    msg = str(exc).upper()
+    non_transient_keywords = ["INVALID_ARGUMENT", "400 BAD REQUEST", "NOT_FOUND", "PERMISSION_DENIED"]
+    if any(kw in msg for kw in non_transient_keywords):
+        return False
+
+    transient_keywords = [
+        "503",
+        "UNAVAILABLE",
+        "HIGH DEMAND",
+        "TEMPORARY",
+        "500",
+        "INTERNAL ERROR",
+        "502",
+        "BAD GATEWAY",
+        "504",
+        "GATEWAY TIMEOUT",
+        "DEADLINE_EXCEEDED",
+        "TIMED OUT",
+        "CONNECTION RESET",
+        "CONNECTION REFUSED",
+        "REMOTEDISCONNECTED",
+    ]
+    return any(kw in msg for kw in transient_keywords)
+
+
 class ModelFailoverManager:
     """
     Manages primary model calls with automatic failover to a fallback model
-    ONLY when request quotas or rate limits are exhausted.
+    when request quotas or rate limits are exhausted, or when sustained 503
+    high-demand saturation occurs. All transient server errors are retried with
+    exponential backoff and full jitter.
     """
 
     def __init__(
@@ -105,10 +167,16 @@ class ModelFailoverManager:
         primary_model: str = DEFAULT_MODEL,
         fallback_model: str = FALLBACK_MODEL,
         cooldown_seconds: float = 60.0,
+        max_retries: int = 3,
+        backoff_base: float = 2.0,
+        backoff_max: float = 30.0,
     ):
         self.primary_model = primary_model
         self.fallback_model = fallback_model
         self.cooldown_seconds = cooldown_seconds
+        self.max_retries = max_retries
+        self.backoff_base = backoff_base
+        self.backoff_max = backoff_max
         self.primary_exhausted_until: float = 0.0
         self.last_model_used: str = primary_model
 
@@ -122,6 +190,41 @@ class ModelFailoverManager:
     def clear_primary_exhaustion(self) -> None:
         self.primary_exhausted_until = 0.0
 
+    def _execute_with_retry(
+        self,
+        call_fn: Callable[[], Any],
+        model_name: str,
+        log_fn: Callable[[str], None],
+    ) -> Any:
+        """Execute model call with exponential backoff and jitter on transient errors."""
+        last_exc = None
+        for attempt in range(self.max_retries):
+            try:
+                return call_fn()
+            except Exception as exc:
+                last_exc = exc
+                if is_resource_exhausted_error(exc):
+                    # Quota exhaustion triggers failover, not backoff retry
+                    raise exc
+                if not is_transient_error(exc):
+                    # Deterministic/client error (e.g. 400 Bad Request) — re-raise immediately
+                    raise exc
+
+                if attempt == self.max_retries - 1:
+                    log_fn(
+                        f"Transient error persisted on model '{model_name}' "
+                        f"after {self.max_retries} attempts: {exc}"
+                    )
+                    raise exc
+
+                delay = min(self.backoff_max, self.backoff_base * (2 ** attempt)) + random.uniform(0.2, 1.0)
+                log_fn(
+                    f"Transient error ({type(exc).__name__}) on model '{model_name}'. "
+                    f"Backing off for {delay:.1f}s (retry {attempt + 1}/{self.max_retries})..."
+                )
+                time.sleep(delay)
+        raise last_exc
+
     def generate_content(
         self,
         client: Any,
@@ -131,14 +234,22 @@ class ModelFailoverManager:
         override_model: Optional[str] = None,
     ) -> Tuple[Any, str]:
         """
-        Execute client.models.generate_content with strict failover on resource exhaustion.
+        Execute client.models.generate_content with exponential backoff for transient errors
+        and failover on resource exhaustion (429) or persistent model saturation (503).
         Returns: (response, model_name_used)
         """
         _log = log_fn or (lambda m: print(f"[ModelFailover] {m}", file=sys.stderr))
         primary = override_model or self.primary_model
 
+        def _call_model(target_model: str) -> Any:
+            return self._execute_with_retry(
+                lambda: client.models.generate_content(model=target_model, contents=contents, config=config),
+                target_model,
+                _log,
+            )
+
         if override_model and override_model != self.primary_model:
-            resp = client.models.generate_content(model=override_model, contents=contents, config=config)
+            resp = _call_model(override_model)
             self.last_model_used = override_model
             return resp, override_model
 
@@ -148,44 +259,37 @@ class ModelFailoverManager:
                 f"Primary model '{primary}' is in quota cooldown ({remaining}s remaining). "
                 f"Routing to fallback model '{self.fallback_model}'."
             )
-            try:
-                resp = client.models.generate_content(
-                    model=self.fallback_model,
-                    contents=contents,
-                    config=config,
-                )
-                self.last_model_used = self.fallback_model
-                return resp, self.fallback_model
-            except Exception as e:
-                raise e
+            resp = _call_model(self.fallback_model)
+            self.last_model_used = self.fallback_model
+            return resp, self.fallback_model
 
         try:
-            resp = client.models.generate_content(
-                model=primary,
-                contents=contents,
-                config=config,
-            )
+            resp = _call_model(primary)
             if self.primary_exhausted_until > 0:
                 _log(f"Primary model '{primary}' quota recovered! Resumed as active default model.")
                 self.clear_primary_exhaustion()
             self.last_model_used = primary
             return resp, primary
         except Exception as exc:
-            if not is_resource_exhausted_error(exc):
-                # ONLY switch when requests/quota are exhausted
+            if is_resource_exhausted_error(exc):
+                self.mark_primary_exhausted()
+                _log(
+                    f"⚠️ Requests for primary model '{primary}' EXHAUSTED "
+                    f"(HTTP 429 / RESOURCE_EXHAUSTED). "
+                    f"Switching to fallback model '{self.fallback_model}'..."
+                )
+            elif is_transient_error(exc):
+                # Persistent 503 / high demand on primary model even after retries
+                self.mark_primary_exhausted(cooldown=min(self.cooldown_seconds, 30.0))
+                _log(
+                    f"⚠️ Primary model '{primary}' saturated (HTTP 503 / UNAVAILABLE) "
+                    f"after {self.max_retries} attempts. Switching to fallback model '{self.fallback_model}'..."
+                )
+            else:
+                # Permanent non-quota error (e.g. 400 Bad Request)
                 raise exc
 
-            self.mark_primary_exhausted()
-            _log(
-                f"⚠️ Requests for primary model '{primary}' EXHAUSTED "
-                f"(HTTP 429 / RESOURCE_EXHAUSTED). "
-                f"Switching to fallback model '{self.fallback_model}'..."
-            )
-            resp = client.models.generate_content(
-                model=self.fallback_model,
-                contents=contents,
-                config=config,
-            )
+            resp = _call_model(self.fallback_model)
             self.last_model_used = self.fallback_model
             return resp, self.fallback_model
 

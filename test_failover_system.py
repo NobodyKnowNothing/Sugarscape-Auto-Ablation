@@ -8,6 +8,7 @@ from edit_harness import (
     DEFAULT_MODEL,
     FALLBACK_MODEL,
     is_resource_exhausted_error,
+    is_transient_error,
     ModelFailoverManager,
     generate_content_with_failover,
 )
@@ -41,12 +42,145 @@ def test_error_classification():
     print("  -> test_error_classification PASSED")
 
 
+def test_transient_error_classification():
+    print("Testing is_transient_error...")
+    # 503 ServerError
+    e503 = errors.ServerError(503, {"error": {"code": 503, "status": "UNAVAILABLE", "message": "This model is currently experiencing high demand."}})
+    assert is_transient_error(e503), "Expected 503 to be classified as transient"
+
+    # 500 ServerError
+    e500 = errors.ServerError(500, {"error": {"code": 500, "status": "INTERNAL", "message": "Internal error encountered"}})
+    assert is_transient_error(e500), "Expected 500 to be classified as transient"
+
+    # 502 and 504
+    e502 = errors.ServerError(502, {"error": {"code": 502, "status": "BAD_GATEWAY", "message": "Bad gateway"}})
+    e504 = errors.ServerError(504, {"error": {"code": 504, "status": "GATEWAY_TIMEOUT", "message": "Gateway timeout"}})
+    assert is_transient_error(e502), "Expected 502 to be classified as transient"
+    assert is_transient_error(e504), "Expected 504 to be classified as transient"
+
+    # Network connection reset string
+    e_conn = ConnectionResetError("Connection reset by peer")
+    assert is_transient_error(e_conn), "Expected ConnectionResetError to be transient"
+
+    # 400 ClientError - MUST NOT BE CLASSIFIED AS TRANSIENT
+    e400 = errors.ClientError(400, {"error": {"code": 400, "status": "INVALID_ARGUMENT", "message": "Bad prompt"}})
+    assert not is_transient_error(e400), "Expected 400 to NOT be transient"
+
+    # 404 ClientError - MUST NOT BE CLASSIFIED AS TRANSIENT
+    e404 = errors.ClientError(404, {"error": {"code": 404, "status": "NOT_FOUND", "message": "Model not found"}})
+    assert not is_transient_error(e404), "Expected 404 to NOT be transient"
+    print("  -> test_transient_error_classification PASSED")
+
+
+def test_exponential_backoff_retry():
+    print("Testing exponential backoff retry on transient 503...")
+    manager = ModelFailoverManager(
+        primary_model="gemma-4-31b-it",
+        fallback_model="gemma-4-26b-a4b-it",
+        max_retries=3,
+        backoff_base=0.01,  # fast backoff for testing
+        backoff_max=0.05,
+    )
+
+    mock_client = MagicMock()
+    mock_resp = MagicMock(text="Success after retry")
+    e503 = errors.ServerError(503, {"error": {"code": 503, "status": "UNAVAILABLE", "message": "High demand"}})
+
+    call_count = 0
+    def side_effect(model, contents, config=None):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise e503
+        return mock_resp
+
+    mock_client.models.generate_content.side_effect = side_effect
+    logs = []
+    resp, model_used = manager.generate_content(mock_client, contents="test", log_fn=logs.append)
+    assert resp.text == "Success after retry"
+    assert model_used == "gemma-4-31b-it"
+    assert call_count == 2
+    assert any("Backing off" in m for m in logs)
+    print("  -> test_exponential_backoff_retry PASSED")
+
+
+def test_failover_on_persistent_503():
+    print("Testing failover on persistent 503 capacity saturation...")
+    manager = ModelFailoverManager(
+        primary_model="gemma-4-31b-it",
+        fallback_model="gemma-4-26b-a4b-it",
+        cooldown_seconds=1.0,
+        max_retries=2,
+        backoff_base=0.01,
+        backoff_max=0.02,
+    )
+
+    mock_client = MagicMock()
+    mock_fallback_resp = MagicMock(text="Response from fallback 26B")
+    e503 = errors.ServerError(503, {"error": {"code": 503, "status": "UNAVAILABLE", "message": "High demand"}})
+
+    def side_effect(model, contents, config=None):
+        if model == "gemma-4-31b-it":
+            raise e503
+        elif model == "gemma-4-26b-a4b-it":
+            return mock_fallback_resp
+        raise ValueError("Unknown model")
+
+    mock_client.models.generate_content.side_effect = side_effect
+    logs = []
+    resp, model_used = manager.generate_content(mock_client, contents="test", log_fn=logs.append)
+    assert resp.text == "Response from fallback 26B"
+    assert model_used == "gemma-4-26b-a4b-it"
+    assert manager.is_primary_exhausted()
+    assert any("saturated" in m.lower() for m in logs)
+    print("  -> test_failover_on_persistent_503 PASSED")
+
+
+def test_fallback_retry_on_503():
+    print("Testing fallback model retry on transient 503...")
+    manager = ModelFailoverManager(
+        primary_model="gemma-4-31b-it",
+        fallback_model="gemma-4-26b-a4b-it",
+        cooldown_seconds=1.0,
+        max_retries=3,
+        backoff_base=0.01,
+        backoff_max=0.02,
+    )
+
+    mock_client = MagicMock()
+    mock_fallback_resp = MagicMock(text="Fallback 26B success after retry")
+    e429 = errors.ClientError(429, {"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "message": "Quota limit"}})
+    e503 = errors.ServerError(503, {"error": {"code": 503, "status": "UNAVAILABLE", "message": "Fallback busy"}})
+
+    fallback_calls = 0
+    def side_effect(model, contents, config=None):
+        nonlocal fallback_calls
+        if model == "gemma-4-31b-it":
+            raise e429
+        elif model == "gemma-4-26b-a4b-it":
+            fallback_calls += 1
+            if fallback_calls == 1:
+                raise e503
+            return mock_fallback_resp
+        raise ValueError("Unknown model")
+
+    mock_client.models.generate_content.side_effect = side_effect
+    logs = []
+    resp, model_used = manager.generate_content(mock_client, contents="test", log_fn=logs.append)
+    assert resp.text == "Fallback 26B success after retry"
+    assert model_used == "gemma-4-26b-a4b-it"
+    assert fallback_calls == 2
+    assert any("EXHAUSTED" in m for m in logs)
+    print("  -> test_fallback_retry_on_503 PASSED")
+
+
 def test_failover_on_429():
     print("Testing failover on 429 Resource Exhausted...")
     manager = ModelFailoverManager(
         primary_model="gemma-4-31b-it",
         fallback_model="gemma-4-26b-a4b-it",
         cooldown_seconds=1.0,
+        backoff_base=0.01,
     )
 
     mock_client = MagicMock()
@@ -84,6 +218,7 @@ def test_no_failover_on_non_quota_error():
         primary_model="gemma-4-31b-it",
         fallback_model="gemma-4-26b-a4b-it",
         cooldown_seconds=1.0,
+        backoff_base=0.01,
     )
 
     mock_client = MagicMock()
@@ -108,6 +243,7 @@ def test_recovery_after_cooldown():
         primary_model="gemma-4-31b-it",
         fallback_model="gemma-4-26b-a4b-it",
         cooldown_seconds=0.2,
+        backoff_base=0.01,
     )
 
     mock_client = MagicMock()
@@ -163,6 +299,10 @@ def test_live_default_model_generation():
 
 if __name__ == "__main__":
     test_error_classification()
+    test_transient_error_classification()
+    test_exponential_backoff_retry()
+    test_failover_on_persistent_503()
+    test_fallback_retry_on_503()
     test_failover_on_429()
     test_no_failover_on_non_quota_error()
     test_recovery_after_cooldown()

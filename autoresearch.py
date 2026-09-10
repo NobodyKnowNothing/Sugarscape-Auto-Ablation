@@ -20,6 +20,7 @@ The loop runs indefinitely — kill with Ctrl+C.
 """
 
 import json
+import math
 import os
 import re
 import shutil
@@ -331,28 +332,41 @@ def init_results():
     sync_logs_to_agent_repo()
 
 
+def _fmt_optional(val, fmt=".4f") -> str:
+    """Safely format an optional numeric value or return empty string."""
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return ""
+    try:
+        return f"{val:{fmt}}"
+    except (ValueError, TypeError):
+        return str(val)
+
+
 def append_result(gen, var, commit, status, complexity, metrics, passes, desc,
                   stage_reached=0, ks_pvalue=None, dtw_distance=None, morans_i=None):
-    with open(RESULTS_FILE, "a") as f:
-        f.write(
-            f"{gen}\t{var}\t{commit}\t{status}\t"
-            f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
-            f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
-            f"{metrics.get('gini_coefficient', 0):.4f}\t"
-            f"{metrics.get('final_population', 0):.0f}\t"
-            f"{metrics.get('mean_trade_price', 0):.4f}\t"
-            f"{metrics.get('trade_volume', 0):.0f}\t"
-            f"{metrics.get('survival_rate', 0):.4f}\t"
-            f"{metrics.get('wealth_cv', 0):.4f}\t"
-            f"{metrics.get('spatial_entropy', 0):.4f}\t"
-            f"{'PASS' if passes else 'FAIL'}\t"
-            f"{stage_reached}\t"
-            f"{ks_pvalue:.4f if ks_pvalue is not None else ''}\t"
-            f"{dtw_distance:.4f if dtw_distance is not None else ''}\t"
-            f"{morans_i:.4f if morans_i is not None else ''}\t"
-            f"{desc}\n"
-        )
-    sync_logs_to_agent_repo()
+    try:
+        with open(RESULTS_FILE, "a") as f:
+            f.write(
+                f"{gen}\t{var}\t{commit}\t{status}\t"
+                f"{complexity.get('lines', 0)}\t{complexity.get('classes', 0)}\t{complexity.get('methods', 0)}\t"
+                f"{complexity.get('ast_nodes', 0)}\t{complexity.get('cyclomatic_total', 0)}\t{complexity.get('combined_score', 0):.2f}\t"
+                f"{metrics.get('gini_coefficient', 0):.4f}\t"
+                f"{metrics.get('final_population', 0):.0f}\t"
+                f"{metrics.get('mean_trade_price', 0):.4f}\t"
+                f"{metrics.get('trade_volume', 0):.0f}\t"
+                f"{metrics.get('survival_rate', 0):.4f}\t"
+                f"{metrics.get('wealth_cv', 0):.4f}\t"
+                f"{metrics.get('spatial_entropy', 0):.4f}\t"
+                f"{'PASS' if passes else 'FAIL'}\t"
+                f"{stage_reached}\t"
+                f"{_fmt_optional(ks_pvalue)}\t"
+                f"{_fmt_optional(dtw_distance)}\t"
+                f"{_fmt_optional(morans_i)}\t"
+                f"{desc}\n"
+            )
+        sync_logs_to_agent_repo()
+    except Exception as e:
+        log(f"⚠️ Warning: Failed to append result row to {RESULTS_FILE}: {e}")
 
 
 def read_results_history(max_lines: int = 50) -> str:
