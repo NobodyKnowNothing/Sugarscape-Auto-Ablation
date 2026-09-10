@@ -126,71 +126,32 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def calculate_sell_spice_amount(self, price):
-        """
-        helper function for self.maybe_sell_spice() which is called from
-        self.trade()
-        """
-
-        if price >= 1:
-            sugar = 1
-            spice = int(price)
-        else:
-            sugar = int(1 / price)
-            spice = 1
-        return sugar, spice
-
-    def sell_spice(self, other, sugar, spice):
-        """
-        used in self.maybe_sell_spice()
-
-        exchanges sugar and spice between traders
-        """
-
-        self.sugar += sugar
-        other.sugar -= sugar
-        self.spice -= spice
-        other.spice += spice
-
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """
-        helper function for self.trade()
-        """
+        """helper function for self.trade()"""
+        # Calculate amount to exchange
+        if price >= 1:
+            s_ex, sp_ex = 1, int(price)
+        else:
+            s_ex, sp_ex = int(1 / price), 1
 
-        sugar_exchanged, spice_exchanged = self.calculate_sell_spice_amount(price)
+        # Assess new resource levels
+        s_sugar, o_sugar = self.sugar + s_ex, other.sugar - s_ex
+        s_spice, o_spice = self.spice - sp_ex, other.spice + sp_ex
 
-        # Assess new sugar and spice amount - what if change did occur
-        self_sugar = self.sugar + sugar_exchanged
-        other_sugar = other.sugar - sugar_exchanged
-        self_spice = self.spice - spice_exchanged
-        other_spice = other.spice + spice_exchanged
-
-        # double check to ensure agents have resources
-
-        if (
-            (self_sugar <= 0)
-            or (other_sugar <= 0)
-            or (self_spice <= 0)
-            or (other_spice <= 0)
-        ):
+        # Check resources and welfare/MRS criteria
+        if (s_sugar <= 0 or o_sugar <= 0 or s_spice <= 0 or o_spice <= 0):
+            return False
+        
+        if not (welfare_self < self.calculate_welfare(s_sugar, s_spice) and
+                welfare_other < other.calculate_welfare(o_sugar, o_spice)):
             return False
 
-        # trade criteria #1 - are both agents better off?
-        both_agents_better_off = (
-            welfare_self < self.calculate_welfare(self_sugar, self_spice)
-        ) and (welfare_other < other.calculate_welfare(other_sugar, other_spice))
-
-        # trade criteria #2 is their mrs crossing with potential trade
-        mrs_not_crossing = self.calculate_MRS(
-            self_sugar, self_spice
-        ) > other.calculate_MRS(other_sugar, other_spice)
-
-        if not (both_agents_better_off and mrs_not_crossing):
+        if self.calculate_MRS(s_sugar, s_spice) <= other.calculate_MRS(o_sugar, o_spice):
             return False
 
-        # criteria met, execute trade
-        self.sell_spice(other, sugar_exchanged, spice_exchanged)
-
+        # Execute trade
+        self.sugar, other.sugar = s_sugar, o_sugar
+        self.spice, other.spice = s_spice, o_spice
         return True
 
     def trade(self, other):
@@ -247,58 +208,17 @@ class Trader(CellAgent):
     ######################################################################
 
     def move(self):
-        """
-        Function for trader agent to identify optimal move for each step in 4 parts
-        1 - identify all possible moves
-        2 - determine which move maximizes welfare
-        3 - find closest best option
-        4 - move
-        """
-
-        # 1. identify all possible moves
-
-        neighboring_cells = [
-            cell
-            for cell in self.cell.get_neighborhood(self.vision, include_center=True)
-            if cell.is_empty
-        ]
-
+        neighboring_cells = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if not neighboring_cells:
-            # all neighboring cells are occupied
             return
 
-        # 2. determine which move maximizes welfare
-
-        welfares = [
-            self.calculate_welfare(
-                self.sugar + cell.sugar,
-                self.spice + cell.spice,
-            )
-            for cell in neighboring_cells
-        ]
-
-        # 3. Find closest best option
-
-        # find the highest welfare in welfares
-        max_welfare = max(welfares)
-        # Get cells with the highest welfare
-        candidates = [
-            cell
-            for cell, welfare in zip(neighboring_cells, welfares)
-            if math.isclose(welfare, max_welfare)
-        ]
-
-        min_dist = min(get_distance(self.cell, cell) for cell in candidates)
-
-        final_candidates = [
-            cell
-            for cell in candidates
-            if math.isclose(get_distance(self.cell, cell), min_dist, rel_tol=1e-02)
-        ]
-
-        # 4. Move Agent
-        self.cell = self.random.choice(final_candidates)
-
+        welfares = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in neighboring_cells]
+        max_w = max(welfares)
+        candidates = [c for c, w in zip(neighboring_cells, welfares) if math.isclose(w, max_w)]
+        
+        min_d = min(get_distance(self.cell, c) for c in candidates)
+        final = [c for c in candidates if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-02)]
+        self.cell = self.random.choice(final)
     def eat(self):
         self.sugar += self.cell.sugar
         self.cell.sugar = 0

@@ -1,1 +1,3 @@
 generation	variant	commit	status	lines	classes	methods	ast_nodes	cyclomatic	combined_score	gini	population	trade_price	trade_volume	survival	wealth_cv	entropy	passes	stage_reached	ks_pvalue	dtw_distance	morans_i	description
+1	1	22fb681	pass	353	3	26	2134	74	898.00	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Inline `calculate_sell_spice_amount` and `sell_spice` into `maybe_sell_spice` to reduce method overhead.
+2	1	22fb681	pass	328	3	26	2132	74	897.20	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Simplify the `move` method by replacing verbose step-by-step filtering with concise list comprehensions, reducing lines 
