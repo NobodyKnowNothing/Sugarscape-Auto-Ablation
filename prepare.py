@@ -103,6 +103,8 @@ def run_mesa_canonical(params: dict, seed: int) -> dict:
     # Collect metrics from Mesa's datacollector (cumulative across all steps)
     df = model.datacollector.get_model_vars_dataframe()
     cumul_trade_volume = int(df['Trade Volume'].sum())
+    pop_series = [float(x) for x in df['#Traders'].tolist()] if '#Traders' in df.columns else []
+    price_series = [float(x) for x in df['Price'].tolist()] if 'Price' in df.columns else []
     
     # Agent-level data from final state
     agents = list(model.agents)
@@ -131,6 +133,8 @@ def run_mesa_canonical(params: dict, seed: int) -> dict:
         "grid_width": params["width"],
         "grid_height": params["height"],
         "steps_run": steps,
+        "_population_series": pop_series,
+        "_price_series": price_series,
     }
 
 
@@ -173,6 +177,9 @@ def evaluate_mesa_baseline(n_runs: int = N_RUNS, params: dict | None = None) -> 
     
     params = params or DEFAULT_PARAMS
     all_metrics = []
+    all_wealths = []
+    all_pop_series = []
+    all_price_series = []
     seed = SEED_BASE
     attempts = 0
     max_attempts = n_runs * 3  # allow retries for Mesa edge-case crashes
@@ -191,6 +198,11 @@ def evaluate_mesa_baseline(n_runs: int = N_RUNS, params: dict | None = None) -> 
         
         metrics = compute_all_metrics(data)
         all_metrics.append(metrics)
+        all_wealths.append(data.get("agent_wealths", []))
+        if data.get("_population_series"):
+            all_pop_series.append(data["_population_series"])
+        if data.get("_price_series"):
+            all_price_series.append(data["_price_series"])
         dt = time.time() - t0
         print(f"done ({dt:.1f}s) pop={data['final_population']}")
     
@@ -199,7 +211,24 @@ def evaluate_mesa_baseline(n_runs: int = N_RUNS, params: dict | None = None) -> 
         sys.exit(1)
     
     metric_names = list(all_metrics[0].keys())
-    result = {"runs": all_metrics}
+    result = {
+        "runs": all_metrics,
+        "wealths": all_wealths,
+    }
+    
+    if all_pop_series:
+        max_len = max(len(s) for s in all_pop_series)
+        padded = [list(s) + [s[-1]] * (max_len - len(s)) for s in all_pop_series]
+        result["mean_population_series"] = np.mean(padded, axis=0).tolist()
+    else:
+        result["mean_population_series"] = []
+        
+    if all_price_series:
+        max_len = max(len(s) for s in all_price_series)
+        padded = [list(s) + [s[-1]] * (max_len - len(s)) for s in all_price_series]
+        result["mean_price_series"] = np.mean(padded, axis=0).tolist()
+    else:
+        result["mean_price_series"] = []
     
     for name in metric_names:
         values = [m[name] for m in all_metrics]

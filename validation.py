@@ -20,6 +20,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import math
+import os
 import sys
 import tempfile
 import time
@@ -85,6 +86,7 @@ class ValidationResult:
     ks_pvalue: float = 1.0
     stage2_scalar_pass: bool = False
     stage2_mean_metrics: Dict[str, float] = field(default_factory=dict)
+    stage2_wealths: List[List[float]] = field(default_factory=list)
 
     # Stage 3 data
     bonferroni_results: Dict[str, dict] = field(default_factory=dict)
@@ -118,11 +120,12 @@ def _run_strategy_once(
     Returns dict with keys from run_model(), plus optional time-series data.
     On failure returns {"error": "..."}.
     """
-    tmp_path = Path(tempfile.gettempdir()) / f"_val_strategy_{seed}.py"
+    pid = os.getpid()
+    tmp_path = Path(__file__).parent / f"_val_strategy_{seed}_{pid}.py"
     tmp_path.write_text(strategy_code, encoding="utf-8")
 
     try:
-        mod_name = f"_val_strategy_{seed}"
+        mod_name = f"_val_strategy_{seed}_{pid}"
         if mod_name in sys.modules:
             del sys.modules[mod_name]
 
@@ -157,7 +160,7 @@ def _run_strategy_once(
         if collect_timeseries and hasattr(model, "datacollector"):
             dc = model.datacollector
             mv = getattr(dc, "model_vars", {})
-            data["_population_series"] = mv.get("Population", [])
+            data["_population_series"] = mv.get("#Traders", mv.get("Population", []))
             data["_price_series"] = mv.get("Price", [])
             # Gini time series can also be useful
             data["_gini_series"] = mv.get("Gini", [])
@@ -169,8 +172,10 @@ def _run_strategy_once(
 
     finally:
         if tmp_path.exists():
-            tmp_path.unlink()
-        mod_name = f"_val_strategy_{seed}"
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
         if mod_name in sys.modules:
             del sys.modules[mod_name]
 
@@ -321,6 +326,7 @@ def stage2_lightweight_filter(
 
     # Stage 2 passed
     result.all_run_metrics = all_metrics
+    result.stage2_wealths = all_wealths
     result.stage2_time = time.time() - t0
     result.total_time = result.stage1_time + result.stage2_time
     return result
@@ -790,17 +796,10 @@ def validate_ablation(
         return s2_result
 
     # ── Stage 3: Heavy Gauntlet ──
-    # Collect wealth arrays from Stage 2 runs (re-run to get them if needed)
-    stage2_wealths = []
-    for seed in STAGE2_SEEDS:
-        data = _run_strategy_once(strategy_code, seed=seed, steps=STAGE2_STEPS)
-        if "error" not in data:
-            stage2_wealths.append(data.get("agent_wealths", []))
-
     s3_result = stage3_heavy_gauntlet(
         strategy_code=strategy_code,
         prior_run_metrics=s2_result.all_run_metrics,
-        prior_run_wealths=stage2_wealths,
+        prior_run_wealths=s2_result.stage2_wealths,
         baseline=baseline,
     )
     # Carry forward earlier timing

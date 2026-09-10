@@ -413,32 +413,14 @@ class CodeEditor:
 
 def compute_complexity_info(code: str) -> dict:
     """Calculate AST nodes, cyclomatic complexity, lines, and combined score."""
-    try:
-        from complexity import combined_complexity_score
-        return combined_complexity_score(code)
-    except Exception:
-        lines = len([line for line in code.splitlines() if line.strip() and not line.strip().startswith("#")])
-        try:
-            tree = ast.parse(code)
-            ast_nodes = sum(1 for _ in ast.walk(tree))
-            classes = sum(1 for node in ast.walk(tree) if isinstance(node, ast.ClassDef))
-            methods = sum(1 for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)))
-        except SyntaxError:
-            ast_nodes, classes, methods = -1, -1, -1
-
-        return {
-            "lines": lines,
-            "classes": classes,
-            "methods": methods,
-            "ast_nodes": ast_nodes,
-            "cyclomatic_total": 0,
-            "combined_score": float(ast_nodes if ast_nodes > 0 else lines),
-        }
+    from complexity import combined_complexity_score
+    return combined_complexity_score(code)
 
 
 def quick_evaluate(strategy_path: Path | str, steps: int = 50) -> dict:
     """
     Fast simulation test to verify strategy.py compiles and runs without crashing.
+    Uses Stage 1 of the validation waterfall for exact pipeline alignment.
     """
     path = Path(strategy_path)
     if not path.exists():
@@ -446,39 +428,19 @@ def quick_evaluate(strategy_path: Path | str, steps: int = 50) -> dict:
 
     code = path.read_text(encoding="utf-8")
     try:
-        ast.parse(code)
-    except SyntaxError as e:
-        return {"success": False, "error": f"SyntaxError line {e.lineno}: {e.msg}"}
-
-    try:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("_eval_tmp", str(path))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-
-        if not hasattr(mod, "create_model") or not hasattr(mod, "run_model"):
-            return {"success": False, "error": "Missing create_model() or run_model()"}
-
-        model = mod.create_model(
-            seed=42, steps=steps, initial_population=100,
-            endowment_min=25, endowment_max=50,
-            metabolism_min=1, metabolism_max=5,
-            vision_min=1, vision_max=5,
-            enable_trade=True, width=30, height=30
-        )
-        mod.run_model(model, steps)
-
-        gini = None
-        if hasattr(model, "datacollector") and "Gini" in model.datacollector.model_vars:
-            ginis = model.datacollector.model_vars["Gini"]
-            gini = float(ginis[-1]) if ginis else None
-
-        return {
-            "success": True,
-            "steps_run": steps,
-            "final_gini": gini,
-            "message": f"Successfully simulated {steps} steps without errors."
-        }
+        from validation import stage1_fast_filter
+        vr = stage1_fast_filter(code, steps=steps)
+        if vr.stage1_ok:
+            return {
+                "success": True,
+                "steps_run": steps,
+                "message": f"Stage 1 Fast Filter passed ({steps} steps in {vr.stage1_time:.2f}s).",
+            }
+        else:
+            return {
+                "success": False,
+                "error": vr.reject_reason or "Stage 1 Fast Filter rejected variant.",
+            }
     except Exception as e:
         return {"success": False, "error": f"{type(e).__name__}: {e}"}
 

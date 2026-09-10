@@ -58,8 +58,6 @@ BASELINE_METRICS_FILE = Path(__file__).parent / "baseline_metrics.json"
 # Edit harness configuration ('batch' for fast single-turn surgical edits, 'agent' for interactive multi-turn)
 HARNESS_MODE = os.environ.get("HARNESS_MODE", "batch")
 
-# Simulation config
-SIM_STEPS = 200
 
 API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
 
@@ -526,13 +524,7 @@ def calibrate_baseline():
     
     # Extract per-seed data from mesa_result for waterfall validation
     per_seed_metrics = mesa_result.get("runs", [])
-    per_seed_wealths = []
-    for run in mesa_result.get("runs", []):
-        # The runs list may contain metric dicts; wealths need special extraction
-        # Since evaluate_mesa_baseline returns compute_all_metrics() dicts,
-        # we don't have raw wealths here — store empty and let validation
-        # gracefully degrade on KS tests if unavailable
-        per_seed_wealths.append([])
+    per_seed_wealths = mesa_result.get("wealths", [])
     
     baseline = {
         "source": "mesa.examples.advanced.sugarscape_g1mt (Mesa 3.5.1 canonical)",
@@ -543,8 +535,8 @@ def calibrate_baseline():
         # Per-seed data for 3-stage validation waterfall
         "per_seed_metrics": per_seed_metrics,
         "per_seed_wealths": per_seed_wealths,
-        "mean_population_series": [],  # filled if datacollector available
-        "mean_price_series": [],       # filled if datacollector available
+        "mean_population_series": mesa_result.get("mean_population_series", []),
+        "mean_price_series": mesa_result.get("mean_price_series", []),
     }
     
     for name in mesa_result["mean_metrics"]:
