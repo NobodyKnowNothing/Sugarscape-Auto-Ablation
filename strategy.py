@@ -157,23 +157,21 @@ class Trader(CellAgent):
         min_d = min(get_distance(self.cell, c) for c in candidates)
         final = [c for c in candidates if math.isclose(get_distance(self.cell, c), min_d, rel_tol=1e-02)]
         self.cell = self.random.choice(final)
-    def eat(self):
-        self.sugar += self.cell.sugar
-        self.cell.sugar = 0
-        self.sugar -= self.metabolism_sugar
-
-        self.spice += self.cell.spice
-        self.cell.spice = 0
-        self.spice -= self.metabolism_spice
-
     def step(self):
         """Agent step method."""
         self.prices, self.trade_partners = [], []
         self.move()
-        self.eat()
+        
+        # Harvest resources and apply metabolism
+        self.sugar += self.cell.sugar
+        self.cell.sugar = 0
+        self.sugar -= self.metabolism_sugar
+        self.spice += self.cell.spice
+        self.cell.spice = 0
+        self.spice -= self.metabolism_spice
+        
         if self.is_starved():
             self.remove()
-
     def trade_with_neighbors(self):
         """Function for trader agents to decide who to trade with."""
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
