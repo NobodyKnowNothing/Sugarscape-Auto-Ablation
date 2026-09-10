@@ -23,6 +23,7 @@ import json
 import math
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -155,13 +156,47 @@ def git(cmd: str, cwd: str | None = None, timeout: int = 30) -> str:
         return ""
 
 
+def merge_results_tsv(file_a: Path, file_b: Path):
+    """
+    Ensure both file_a and file_b contain a unified superset of results rows,
+    preserving row order and avoiding duplicate entries.
+    """
+    if not file_a.exists() and not file_b.exists():
+        return
+    if not file_a.exists():
+        file_a.write_text(file_b.read_text(encoding="utf-8"), encoding="utf-8")
+        return
+    if not file_b.exists():
+        file_b.write_text(file_a.read_text(encoding="utf-8"), encoding="utf-8")
+        return
+
+    lines_a = [l.strip() for l in file_a.read_text(encoding="utf-8").splitlines() if l.strip()]
+    lines_b = [l.strip() for l in file_b.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+    if not lines_a and not lines_b:
+        return
+
+    seen = set(lines_a)
+    combined = list(lines_a)
+    for line in lines_b[1:]:
+        if line not in seen:
+            seen.add(line)
+            combined.append(line)
+
+    content = "\n".join(combined) + "\n"
+    if content != file_a.read_text(encoding="utf-8"):
+        file_a.write_text(content, encoding="utf-8")
+    if content != file_b.read_text(encoding="utf-8"):
+        file_b.write_text(content, encoding="utf-8")
+
+
 def sync_logs_to_agent_repo():
     """Ensure results.tsv, sweep_results.json, and .gitignore are mirrored into agent_repo."""
     if not AGENT_REPO.exists():
         return
     try:
-        if RESULTS_FILE.exists():
-            shutil.copy2(RESULTS_FILE, AGENT_RESULTS)
+        if RESULTS_FILE.exists() or AGENT_RESULTS.exists():
+            merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
         if SWEEPS_FILE.exists():
             shutil.copy2(SWEEPS_FILE, AGENT_SWEEPS)
         parent_gitignore = Path(__file__).parent / ".gitignore"
@@ -178,7 +213,7 @@ def git_commit(message: str):
         git("add results.tsv")
     if AGENT_SWEEPS.exists():
         git("add sweep_results.json")
-    git(f'commit -m "{message}"')
+    git(f"commit -m {shlex.quote(message)}")
 
 
 def git_revert_to(commit_hash: str):
@@ -288,8 +323,8 @@ def init_agent_repo():
                 remote_synced = True
                 if not AGENT_STRATEGY.exists():
                     shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-                if AGENT_RESULTS.exists() and not RESULTS_FILE.exists():
-                    shutil.copy2(AGENT_RESULTS, RESULTS_FILE)
+                if AGENT_RESULTS.exists() or RESULTS_FILE.exists():
+                    merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
                 sync_logs_to_agent_repo()
 
         if not remote_synced:
@@ -333,11 +368,17 @@ def init_agent_repo():
                 cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30
             )
         git_create_branch(branch)
-        if not AGENT_STRATEGY.exists():
+        if token:
+            subprocess.run(
+                ["git", "merge", "--ff-only", f"origin/{branch}"],
+                cwd=str(AGENT_REPO), capture_output=True, text=True, stdin=subprocess.DEVNULL
+            )
+        if AGENT_STRATEGY.exists():
+            shutil.copy2(AGENT_STRATEGY, STRATEGY_FILE)
+        elif not AGENT_STRATEGY.exists():
             shutil.copy2(STRATEGY_FILE, AGENT_STRATEGY)
-        # If remote branch already had results.tsv but parent doesn't, recover it
-        if AGENT_RESULTS.exists() and not RESULTS_FILE.exists():
-            shutil.copy2(AGENT_RESULTS, RESULTS_FILE)
+        if AGENT_RESULTS.exists() or RESULTS_FILE.exists():
+            merge_results_tsv(RESULTS_FILE, AGENT_RESULTS)
         sync_logs_to_agent_repo()
 
     log(f"Subrepo ready on branch '{branch}' -> {safe_remote_url}")
