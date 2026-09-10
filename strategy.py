@@ -118,73 +118,28 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """helper function for self.trade()"""
-        s_ex, sp_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        s_sugar, o_sugar = self.sugar + s_ex, other.sugar - s_ex
-        s_spice, o_spice = self.spice - sp_ex, other.spice + sp_ex
-
-        if any(v <= 0 for v in (s_sugar, o_sugar, s_spice, o_spice)):
-            return False
-        
-        if not (self.calculate_welfare(s_sugar, s_spice) > welfare_self and 
-                other.calculate_welfare(o_sugar, o_spice) > welfare_other):
-            return False
-
-        if self.calculate_MRS(s_sugar, s_spice) <= other.calculate_MRS(o_sugar, o_spice):
-            return False
-
-        self.sugar, other.sugar, self.spice, other.spice = s_sugar, o_sugar, s_spice, o_spice
-        return True
-
     def trade(self, other):
-        """
-        helper function used in trade_with_neighbors()
-
-        other is a trader agent object
-        """
-
-        # sanity check to verify code is working as expected
-        assert self.sugar > 0
-        assert self.spice > 0
-        assert other.sugar > 0
-        assert other.spice > 0
-
-        # calculate marginal rate of substitution in Growing Artificial Societies p. 101
-        mrs_self = self.calculate_MRS(self.sugar, self.spice)
-        mrs_other = other.calculate_MRS(other.sugar, other.spice)
-
-        # calculate each agents welfare
-        welfare_self = self.calculate_welfare(self.sugar, self.spice)
-        welfare_other = other.calculate_welfare(other.sugar, other.spice)
-
-        if math.isclose(mrs_self, mrs_other):
-            return
-
-        # calculate price
-        price = math.sqrt(mrs_self * mrs_other)
-
-        if mrs_self > mrs_other:
-            # self is a sugar buyer, spice seller
-            sold = self.maybe_sell_spice(other, price, welfare_self, welfare_other)
-            # no trade - criteria not met
-            if not sold:
-                return
-        else:
-            # self is a spice buyer, sugar seller
-            sold = other.maybe_sell_spice(self, price, welfare_other, welfare_self)
-            # no trade - criteria not met
-            if not sold:
-                return
-
-        # Capture data
-        self.prices.append(price)
-        self.trade_partners.append(other.unique_id)
-
-        # continue trading
-        self.trade(other)
-
-    ######################################################################
+        """Bilateral trade loop between two agents."""
+        while True:
+            mrs_s, mrs_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
+            w_s, w_o = self.calculate_welfare(self.sugar, self.spice), other.calculate_welfare(other.sugar, other.spice)
+            if math.isclose(mrs_s, mrs_o): break
+            
+            price = math.sqrt(mrs_s * mrs_o)
+            sel, buy = (self, other) if mrs_s > mrs_o else (other, self)
+            w_sel, w_buy = (w_s, w_o) if mrs_s > mrs_o else (w_o, w_s)
+            
+            s_ex, sp_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+            ns_s, nb_s, ns_p, nb_p = sel.sugar + s_ex, buy.sugar - s_ex, sel.spice - sp_ex, buy.spice + sp_ex
+            
+            if any(v <= 0 for v in (ns_s, nb_s, ns_p, nb_p)) or \
+               not (sel.calculate_welfare(ns_s, ns_p) > w_sel and buy.calculate_welfare(nb_s, nb_p) > w_buy) or \
+               sel.calculate_MRS(ns_s, ns_p) <= buy.calculate_MRS(nb_s, nb_p):
+                break
+                
+            sel.sugar, buy.sugar, sel.spice, buy.spice = ns_s, nb_s, ns_p, nb_p
+            self.prices.append(price)
+            self.trade_partners.append(other.unique_id)
     #                                                                    #
     #                      MAIN TRADE FUNCTIONS                          #
     #                                                                    #
