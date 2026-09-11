@@ -34,16 +34,13 @@ class Trader(CellAgent):
         price = math.sqrt(m_s * m_o)
         s, o = (self, other) if m_s > m_o else (other, self)
         s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        s_s, o_s, s_p, o_p = s.sugar + s_ex, o.sugar - s_ex, s.spice - p_ex, o.spice + p_ex
-        if min(s_s, o_s, s_p, o_p) > 0 and \
-           s.welfare(s_s, s_p) > s.welfare(s.sugar, s.spice) and \
-           o.welfare(o_s, o_p) > o.welfare(o.sugar, o.spice) and \
-           s.mrs(s_s, s_p) > o.mrs(o_s, o_p):
-            s.sugar, o.sugar, s.spice, o.spice = s_s, o_s, s_p, o_p
-            s.prices.append(price)
-            s.trade_partners.append(o.unique_id)
-            s.trade(o)
-
+        if o.sugar >= s_ex and s.spice >= p_ex:
+            s_s, o_s, s_p, o_p = s.sugar + s_ex, o.sugar - s_ex, s.spice - p_ex, o.spice + p_ex
+            if s.welfare(s_s, s_p) > s.welfare(s.sugar, s.spice) and o.welfare(o_s, o_p) > o.welfare(o.sugar, o.spice):
+                s.sugar, o.sugar, s.spice, o.spice = s_s, o_s, s_p, o_p
+                s.prices.append(price)
+                s.trade_partners.append(o.unique_id)
+                s.trade(o)
     def step(self):
         self.prices, self.trade_partners = [], []
         ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
