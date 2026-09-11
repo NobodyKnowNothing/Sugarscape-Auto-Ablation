@@ -230,23 +230,11 @@ class SugarscapeG1mt(mesa.Model):
 # ===========================================================================
 
 def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
-    """
-    Instantiate SugarscapeG1mt model configured with seed and parameter overrides.
-    Works seamlessly whether the model uses Mesa 4.x Scenario or Mesa 3.x kwargs.
-    """
-    p = dict(params)
-    p.pop("steps", None)
-    init_pop = p.get("initial_population", 200)
-
-    if "SugarScapeScenario" in globals():
-        scenario_kwargs = {k: v for k, v in p.items() if hasattr(SugarScapeScenario, k)}
-        sc = SugarScapeScenario(rng=seed, **scenario_kwargs)
-        model = SugarscapeG1mt(scenario=sc)
-    else:
-        if "rng" not in p and seed is not None:
-            p["rng"] = seed
-        model = SugarscapeG1mt(**p)
-
+    """Instantiate SugarscapeG1mt model with seed and parameter overrides."""
+    init_pop = params.pop("initial_population", 200)
+    params.pop("steps", None)
+    sc = SugarScapeScenario(rng=seed, **{k: v for k, v in params.items() if hasattr(SugarScapeScenario, k)})
+    model = SugarscapeG1mt(scenario=sc)
     model.initial_population = init_pop
     return model
 
