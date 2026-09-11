@@ -133,12 +133,11 @@ class SugarscapeG1mt(mesa.Model):
 
 def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
     """Instantiate SugarscapeG1mt model with seed and parameter overrides."""
-    init_pop = params.pop("initial_population", 200)
-    params.pop("steps", None)
     sc = SugarScapeScenario(rng=seed, **{k: v for k, v in params.items() if hasattr(SugarScapeScenario, k)})
     model = SugarscapeG1mt(scenario=sc)
-    model.initial_population = init_pop
+    model.initial_population = params.get("initial_population", 200)
     return model
+
 
 def run_model(model: SugarscapeG1mt, steps: int = 200) -> dict[str, Any]:
     """
