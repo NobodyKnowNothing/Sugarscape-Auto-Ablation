@@ -43,18 +43,8 @@ except ImportError:
 # Agent Helper Functions & Trader Class (from agents.py)
 # ===========================================================================
 
-def get_distance(cell_1, cell_2):
-    """
-    Calculate the Euclidean distance between two positions
-
-    used in trade.move()
-    """
-
-    x1, y1 = cell_1.coordinate
-    x2, y2 = cell_2.coordinate
-    dx = x1 - x2
-    dy = y1 - y2
-    return math.sqrt(dx**2 + dy**2)
+def get_distance(c1, c2):
+    return math.sqrt((c1.coordinate[0]-c2.coordinate[0])**2 + (c1.coordinate[1]-c2.coordinate[1])**2)
 
 class Trader(CellAgent):
     """
