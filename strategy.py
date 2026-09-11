@@ -71,15 +71,12 @@ class Trader(CellAgent):
             s.trade_partners.append(o.unique_id)
             s.trade(o)
 
-    def move(self):
-        ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
-        if not ns: return
-        self.random.shuffle(ns)
-        self.cell = max(ns, key=lambda c: (self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
-
     def step(self):
         self.prices, self.trade_partners = [], []
-        self.move()
+        ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
+        if ns:
+            self.random.shuffle(ns)
+            self.cell = max(ns, key=lambda c: (self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
         self.sugar += self.cell.sugar - self.metabolism_sugar
         self.spice += self.cell.spice - self.metabolism_spice
         self.cell.sugar = self.cell.spice = 0
