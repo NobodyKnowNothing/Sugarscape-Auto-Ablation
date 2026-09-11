@@ -44,231 +44,64 @@ except ImportError:
 # ===========================================================================
 
 def get_distance(c1, c2):
-    return math.sqrt((c1.coordinate[0]-c2.coordinate[0])**2 + (c1.coordinate[1]-c2.coordinate[1])**2)
+    return math.dist(c1.coordinate, c2.coordinate)
 
 class Trader(CellAgent):
-    """
-    Trader:
-    - has a metabolism of sugar and spice
-    - harvest and trade sugar and spice to survive
-    """
-
-    def __init__(
-        self,
-        model,
-        cell,
-        sugar=0,
-        spice=0,
-        metabolism_sugar=0,
-        metabolism_spice=0,
-        vision=0,
-    ):
+    def __init__(self, model, cell, sugar=0, spice=0, metabolism_sugar=0, metabolism_spice=0, vision=0):
         super().__init__(model)
-        self.cell = cell
-        self.sugar = sugar
-        self.spice = spice
-        self.metabolism_sugar = metabolism_sugar
-        self.metabolism_spice = metabolism_spice
-        self.vision = vision
-        self.prices = []
-        self.trade_partners = []
+        self.cell, self.sugar, self.spice = cell, sugar, spice
+        self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
+        self.prices, self.trade_partners = [], []
 
-    pass # Removed unused get_trader method
     def calculate_welfare(self, sugar, spice):
-        """
-        helper function
-
-        part 2 self.move()
-        self.trade()
-        """
-
-        # calculate total resources
         m_total = self.metabolism_sugar + self.metabolism_spice
-        # Cobb-Douglas functional form; starting on p. 97
-        # on Growing Artificial Societies
-        return sugar ** (self.metabolism_sugar / m_total) * spice ** (
-            self.metabolism_spice / m_total
-        )
-
-    def is_starved(self):
-        """
-        Helper function for self.maybe_die()
-        """
-
-        return (self.sugar <= 0) or (self.spice <= 0)
+        return sugar ** (self.metabolism_sugar / m_total) * spice ** (self.metabolism_spice / m_total)
 
     def calculate_MRS(self, sugar, spice):
-        """
-        Helper function for
-          - self.trade()
-          - self.maybe_self_spice()
-
-        Determines what trader agent needs and can give up
-        """
-
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """
-        Simplified trade execution: calculates exchange amounts and validates 
-        welfare and MRS conditions before updating agent resources.
-        """
-        s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        s_s, o_s = self.sugar + s_ex, other.sugar - s_ex
-        s_p, o_p = self.spice - p_ex, other.spice + p_ex
-
-        if all(v > 0 for v in (s_s, o_s, s_p, o_p)):
-            if (welfare_self < self.calculate_welfare(s_s, s_p) and 
-                welfare_other < other.calculate_welfare(o_s, o_p) and 
-                self.calculate_MRS(s_s, s_p) > other.calculate_MRS(o_s, o_p)):
-                self.sugar, other.sugar, self.spice, other.spice = s_s, o_s, s_p, o_p
-                return True
-        return False
     def trade(self, other):
-        """
-        helper function used in trade_with_neighbors()
-
-        other is a trader agent object
-        """
-
-        # sanity check to verify code is working as expected
-        assert self.sugar > 0
-        assert self.spice > 0
-        assert other.sugar > 0
-        assert other.spice > 0
-
-        # calculate marginal rate of substitution in Growing Artificial Societies p. 101
-        mrs_self = self.calculate_MRS(self.sugar, self.spice)
-        mrs_other = other.calculate_MRS(other.sugar, other.spice)
-
-        # calculate each agents welfare
-        welfare_self = self.calculate_welfare(self.sugar, self.spice)
-        welfare_other = other.calculate_welfare(other.sugar, other.spice)
-
-        if math.isclose(mrs_self, mrs_other):
-            return
-
-        # calculate price
-        price = math.sqrt(mrs_self * mrs_other)
-
-        if mrs_self > mrs_other:
-            # self is a sugar buyer, spice seller
-            sold = self.maybe_sell_spice(other, price, welfare_self, welfare_other)
-            # no trade - criteria not met
-            if not sold:
-                return
-        else:
-            # self is a spice buyer, sugar seller
-            sold = other.maybe_sell_spice(self, price, welfare_other, welfare_self)
-            # no trade - criteria not met
-            if not sold:
-                return
-
-        # Capture data
-        self.prices.append(price)
-        self.trade_partners.append(other.unique_id)
-
-        # continue trading
-        self.trade(other)
-
-    ######################################################################
-    #                                                                    #
-    #                      MAIN TRADE FUNCTIONS                          #
-    #                                                                    #
-    ######################################################################
+        m_s, m_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
+        if math.isclose(m_s, m_o): return
+        price = math.sqrt(m_s * m_o)
+        s, o = (self, other) if m_s > m_o else (other, self)
+        s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+        s_s, o_s, s_p, o_p = s.sugar + s_ex, o.sugar - s_ex, s.spice - p_ex, o.spice + p_ex
+        if all(v > 0 for v in (s_s, o_s, s_p, o_p)) and \
+           s.calculate_welfare(s_s, s_p) > s.calculate_welfare(s.sugar, s.spice) and \
+           o.calculate_welfare(o_s, o_p) > o.calculate_welfare(o.sugar, o.spice) and \
+           s.calculate_MRS(s_s, s_p) > o.calculate_MRS(o_s, o_p):
+            s.sugar, o.sugar, s.spice, o.spice = s_s, o_s, s_p, o_p
+            s.prices.append(price)
+            s.trade_partners.append(o.unique_id)
+            s.trade(o)
 
     def move(self):
-        """
-        Function for trader agent to identify optimal move for each step in 4 parts
-        1 - identify all possible moves
-        2 - determine which move maximizes welfare
-        3 - find closest best option
-        4 - move
-        """
-
-        # 1. identify all possible moves
-
-        neighboring_cells = [
-            cell
-            for cell in self.cell.get_neighborhood(self.vision, include_center=True)
-            if cell.is_empty
-        ]
-
-        if not neighboring_cells:
-            # all neighboring cells are occupied
-            return
-
-        # 2. determine which move maximizes welfare
-
-        welfares = [
-            self.calculate_welfare(
-                self.sugar + cell.sugar,
-                self.spice + cell.spice,
-            )
-            for cell in neighboring_cells
-        ]
-
-        # 3. Find closest best option
-
-        # find the highest welfare in welfares
-        max_welfare = max(welfares)
-        # Get cells with the highest welfare
-        candidates = [
-            cell
-            for cell, welfare in zip(neighboring_cells, welfares)
-            if math.isclose(welfare, max_welfare)
-        ]
-
-        min_dist = min(get_distance(self.cell, cell) for cell in candidates)
-
-        final_candidates = [
-            cell
-            for cell in candidates
-            if math.isclose(get_distance(self.cell, cell), min_dist, rel_tol=1e-02)
-        ]
-
-        # 4. Move Agent
-        self.cell = self.random.choice(final_candidates)
+        ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
+        if not ns: return
+        ws = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in ns]
+        max_w = max(ws)
+        cands = [c for c, w in zip(ns, ws) if math.isclose(w, max_w)]
+        min_d = min(math.dist(self.cell.coordinate, c.coordinate) for c in cands)
+        self.cell = self.random.choice([c for c in cands if math.isclose(math.dist(self.cell.coordinate, c.coordinate), min_d, rel_tol=1e-2)])
 
     def eat(self):
         self.sugar += self.cell.sugar
         self.cell.sugar = 0
         self.sugar -= self.metabolism_sugar
-
         self.spice += self.cell.spice
         self.cell.spice = 0
         self.spice -= self.metabolism_spice
 
-    def maybe_die(self):
-        """
-        Function to remove Traders who have consumed all their sugar or spice
-        """
-
-        if self.is_starved():
-            self.remove()
-
     def step(self):
-        """Agent step method."""
-        self.prices = []
-        self.trade_partners = []
+        self.prices, self.trade_partners = [], []
         self.move()
         self.eat()
-        self.maybe_die()
+        if self.sugar <= 0 or self.spice <= 0: self.remove()
 
     def trade_with_neighbors(self):
-        """
-        Function for trader agents to decide who to trade with in three parts
-
-        1- identify neighbors who can trade
-        2- trade (2 sessions)
-        3- collect data
-        """
-        # iterate through traders in neighboring cells and trade
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
             self.trade(a)
-
-        return
-
 # ===========================================================================
 # Model Helper Functions & Sugarscape Model (from model.py)
 # ===========================================================================

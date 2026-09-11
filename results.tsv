@@ -3,3 +3,4 @@ generation	variant	commit	status	lines	classes	methods	ast_nodes	cyclomatic	comb
 1	1	e0b0706	pass	350	3	26	2115	72	889.20	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Inlining the `calculate_sell_spice_amount` and `sell_spice` helper methods into `maybe_sell_spice` to reduce class compl
 2	1	4dddab9	pass	342	3	26	2101	72	883.60	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Simplify the `get_distance` helper function to reduce lines and complexity.
 3	1	c0dee09	pass	336	3	25	2078	69	872.60	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Remove the unused `get_trader` helper method to reduce class complexity.
+4	1	fd9314f	pass	229	3	22	1942	58	811.60	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Inlining `is_starved`, `maybe_die`, and `maybe_sell_spice` into `Trader` methods, and simplifying `move` and `trade` log
