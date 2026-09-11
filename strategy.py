@@ -148,41 +148,9 @@ class SugarscapeG1mt(mesa.Model):
         self.grid.add_property_layer("spice", self.spice_distribution.copy())
 
         n = self.scenario.initial_population
-        Trader.create_agents(
-            self,
-            self.scenario.initial_population,
-            self.random.choices(self.grid.all_cells.cells, k=n),
-            sugar=self.rng.integers(
-                self.scenario.endowment_min,
-                self.scenario.endowment_max,
-                (n,),
-                endpoint=True,
-            ),
-            spice=self.rng.integers(
-                self.scenario.endowment_min,
-                self.scenario.endowment_max,
-                (n,),
-                endpoint=True,
-            ),
-            metabolism_sugar=self.rng.integers(
-                self.scenario.metabolism_min,
-                self.scenario.metabolism_max,
-                (n,),
-                endpoint=True,
-            ),
-            metabolism_spice=self.rng.integers(
-                self.scenario.metabolism_min,
-                self.scenario.metabolism_max,
-                (n,),
-                endpoint=True,
-            ),
-            vision=self.rng.integers(
-                self.scenario.vision_min,
-                self.scenario.vision_max,
-                (n,),
-                endpoint=True,
-            ),
-        )
+        agent_args = {k: self.rng.integers(getattr(self.scenario, f"{v}_min"), getattr(self.scenario, f"{v}_max"), (n,), endpoint=True) 
+                      for k, v in [("sugar", "endowment"), ("spice", "endowment"), ("metabolism_sugar", "metabolism"), ("metabolism_spice", "metabolism"), ("vision", "vision")]}
+        Trader.create_agents(self, n, self.random.choices(self.grid.all_cells.cells, k=n), **agent_args)
 
     def step(self):
         """
