@@ -43,8 +43,6 @@ except ImportError:
 # Agent Helper Functions & Trader Class (from agents.py)
 # ===========================================================================
 
-def get_distance(c1, c2):
-    return math.dist(c1.coordinate, c2.coordinate)
 
 class Trader(CellAgent):
     def __init__(self, model, cell, sugar=0, spice=0, metabolism_sugar=0, metabolism_spice=0, vision=0):
