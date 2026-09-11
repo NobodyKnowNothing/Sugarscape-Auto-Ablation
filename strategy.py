@@ -77,20 +77,13 @@ class Trader(CellAgent):
         self.random.shuffle(ns)
         self.cell = max(ns, key=lambda c: (self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
 
-    def eat(self):
-        self.sugar += self.cell.sugar
-        self.cell.sugar = 0
-        self.sugar -= self.metabolism_sugar
-        self.spice += self.cell.spice
-        self.cell.spice = 0
-        self.spice -= self.metabolism_spice
-
     def step(self):
         self.prices, self.trade_partners = [], []
         self.move()
-        self.eat()
+        self.sugar += self.cell.sugar - self.metabolism_sugar
+        self.spice += self.cell.spice - self.metabolism_spice
+        self.cell.sugar = self.cell.spice = 0
         if self.sugar <= 0 or self.spice <= 0: self.remove()
-
     def trade_with_neighbors(self):
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
             self.trade(a)
