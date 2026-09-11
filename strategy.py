@@ -31,7 +31,6 @@ class Trader(CellAgent):
 
     def trade(self, other):
         m_s, m_o = self.mrs(self.sugar, self.spice), other.mrs(other.sugar, other.spice)
-        if math.isclose(m_s, m_o): return
         price = math.sqrt(m_s * m_o)
         s, o = (self, other) if m_s > m_o else (other, self)
         s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
