@@ -7,3 +7,4 @@ generation	variant	commit	status	lines	classes	methods	ast_nodes	cyclomatic	comb
 5	1	5a149a7	pass	227	3	20	1924	57	803.80	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Remove the unused `get_distance` helper function to reduce AST nodes and line count.
 6	1	5a97f4b	pass	217	3	20	1874	54	782.00	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Simplify `create_model` by removing redundant conditional checks for `SugarScapeScenario` and streamlining parameter ext
 7	1	6cae901	pass	211	3	20	1853	53	773.00	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0650	0.0599	Simplify data gathering in `run_model` using list comprehensions to reduce line count and cyclomatic complexity.
+8	1	41bda6a	pass	204	3	20	1816	52	757.60	0.3572	66	0.9953	5894	0.3281	0.6322	3.0234	PASS	3	0.5666	0.0000	0.0599	Simplify the `datacollector` by removing unused reporters (`#Traders`, `Price`, and `Trade Network`), which also elimina

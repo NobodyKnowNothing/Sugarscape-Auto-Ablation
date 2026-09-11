@@ -153,14 +153,7 @@ class SugarscapeG1mt(mesa.Model):
         )
         # initiate datacollector
         self.datacollector = mesa.DataCollector(
-            model_reporters={
-                "#Traders": lambda m: len(m.agents),
-                "Trade Volume": lambda m: sum(len(a.trade_partners) for a in m.agents),
-                "Price": lambda m: geometric_mean(
-                    flatten([a.prices for a in m.agents])
-                ),
-            },
-            agent_reporters={"Trade Network": "trade_partners"},
+            model_reporters={"Trade Volume": lambda m: sum(len(a.trade_partners) for a in m.agents)}
         )
 
         # read in landscape file from supplementary material
