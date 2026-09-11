@@ -74,11 +74,8 @@ class Trader(CellAgent):
     def move(self):
         ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if not ns: return
-        ws = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in ns]
-        max_w = max(ws)
-        cands = [c for c, w in zip(ns, ws) if math.isclose(w, max_w)]
-        min_d = min(math.dist(self.cell.coordinate, c.coordinate) for c in cands)
-        self.cell = self.random.choice([c for c in cands if math.isclose(math.dist(self.cell.coordinate, c.coordinate), min_d, rel_tol=1e-2)])
+        self.random.shuffle(ns)
+        self.cell = max(ns, key=lambda c: (self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
 
     def eat(self):
         self.sugar += self.cell.sugar
