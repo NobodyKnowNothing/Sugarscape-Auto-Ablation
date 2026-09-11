@@ -11,10 +11,7 @@ from mesa.discrete_space import CellAgent, OrthogonalVonNeumannGrid
 from mesa.experimental.scenarios import Scenario
 import mesa
 import numpy as np
-
-from mesa.discrete_space import CellAgent
-from mesa.discrete_space import OrthogonalVonNeumannGrid
-
+# No redundant imports needed here
 # ===========================================================================
 # Mesa Compatibility Bridge (supports both Mesa 3.x and Mesa 4.x)
 # ===========================================================================
