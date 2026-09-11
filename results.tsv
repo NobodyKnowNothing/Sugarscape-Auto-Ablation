@@ -21,3 +21,4 @@ generation	variant	commit	status	lines	classes	methods	ast_nodes	cyclomatic	comb
 14	1	fa5759e	pass	147	3	14	1619	40	671.60	0.3583	66	1.0275	5914	0.3277	0.6345	3.0445	PASS	3	0.9615	0.0000	0.0578	Inline the `calculate_MRS` method into the `trade` logic to reduce class complexity and method count.
 14	1	fa5759e	pass	148	3	14	1609	40	667.60	0.3583	65	1.0847	5917	0.3270	0.6337	3.0803	PASS	3	0.8006	0.0000	0.0578	Inline the `calculate_MRS` method into the `trade` logic using a local lambda to reduce class complexity and method coun
 14	1	fa5759e	pass	147	3	14	1595	37	660.20	0.3583	65	1.0847	5917	0.3270	0.6337	3.0803	PASS	3	0.8006	0.0000	0.0578	Inline the `move` method into the `step` method to reduce class complexity and method count.
+15	1	c0fd4a6	pass	131	3	13	1454	30	599.60	0.3583	65	1.0847	5917	0.3270	0.6337	3.0803	PASS	3	0.8006	0.0000	0.0578	Remove the Mesa Compatibility Bridge, as modern Mesa versions handle property layers natively, eliminating significant b

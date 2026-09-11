@@ -15,26 +15,6 @@ import numpy as np
 # ===========================================================================
 # Mesa Compatibility Bridge (supports both Mesa 3.x and Mesa 4.x)
 # ===========================================================================
-try:
-    from mesa.discrete_space.property_layer import PropertyLayer
-
-    if hasattr(PropertyLayer, "data"):
-        if not hasattr(PropertyLayer, "__setitem__"):
-            PropertyLayer.__setitem__ = lambda self, idx, val: setattr(self, "data", val)
-        if not hasattr(PropertyLayer, "__add__"):
-            PropertyLayer.__add__ = lambda self, other: self.data + other
-            PropertyLayer.__radd__ = lambda self, other: other + self.data
-
-    _orig_add_prop = OrthogonalVonNeumannGrid.add_property_layer
-
-    def _compat_add_property_layer(self, name_or_layer, data=None):
-        if data is not None and hasattr(PropertyLayer, "from_data"):
-            return _orig_add_prop(self, PropertyLayer.from_data(name_or_layer, data))
-        return _orig_add_prop(self, name_or_layer)
-
-    OrthogonalVonNeumannGrid.add_property_layer = _compat_add_property_layer
-except ImportError:
-    pass
 
 # ===========================================================================
 # Agent Helper Functions & Trader Class (from agents.py)
