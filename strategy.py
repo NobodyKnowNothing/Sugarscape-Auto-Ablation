@@ -26,8 +26,7 @@ class Trader(CellAgent):
         super().__init__(model)
         self.cell, self.sugar, self.spice = cell, sugar, spice
         self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
-        m_tot = metabolism_sugar + metabolism_spice
-        self.welfare = lambda s, p: s**(metabolism_sugar/m_tot) * p**(metabolism_spice/m_tot)
+        self.welfare = lambda s, p: s**metabolism_sugar * p**metabolism_spice
         self.mrs = lambda s, p: (p * metabolism_sugar) / (s * metabolism_spice)
 
     def trade(self, other):
