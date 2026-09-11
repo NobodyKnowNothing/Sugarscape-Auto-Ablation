@@ -27,25 +27,21 @@ class Trader(CellAgent):
         self.cell, self.sugar, self.spice = cell, sugar, spice
         self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
         self.prices, self.trade_partners = [], []
-
-    def calculate_welfare(self, sugar, spice):
-        m_total = self.metabolism_sugar + self.metabolism_spice
-        return sugar ** (self.metabolism_sugar / m_total) * spice ** (self.metabolism_spice / m_total)
-
-    def calculate_MRS(self, sugar, spice):
-        return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
+        m_tot = metabolism_sugar + metabolism_spice
+        self.welfare = lambda s, p: s**(metabolism_sugar/m_tot) * p**(metabolism_spice/m_tot)
+        self.mrs = lambda s, p: (p/metabolism_spice) / (s/metabolism_sugar)
 
     def trade(self, other):
-        m_s, m_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
+        m_s, m_o = self.mrs(self.sugar, self.spice), other.mrs(other.sugar, other.spice)
         if math.isclose(m_s, m_o): return
         price = math.sqrt(m_s * m_o)
         s, o = (self, other) if m_s > m_o else (other, self)
         s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
         s_s, o_s, s_p, o_p = s.sugar + s_ex, o.sugar - s_ex, s.spice - p_ex, o.spice + p_ex
-        if all(v > 0 for v in (s_s, o_s, s_p, o_p)) and \
-           s.calculate_welfare(s_s, s_p) > s.calculate_welfare(s.sugar, s.spice) and \
-           o.calculate_welfare(o_s, o_p) > o.calculate_welfare(o.sugar, o.spice) and \
-           s.calculate_MRS(s_s, s_p) > o.calculate_MRS(o_s, o_p):
+        if min(s_s, o_s, s_p, o_p) > 0 and \
+           s.welfare(s_s, s_p) > s.welfare(s.sugar, s.spice) and \
+           o.welfare(o_s, o_p) > o.welfare(o.sugar, o.spice) and \
+           s.mrs(s_s, s_p) > o.mrs(o_s, o_p):
             s.sugar, o.sugar, s.spice, o.spice = s_s, o_s, s_p, o_p
             s.prices.append(price)
             s.trade_partners.append(o.unique_id)
@@ -56,11 +52,12 @@ class Trader(CellAgent):
         ns = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if ns:
             self.random.shuffle(ns)
-            self.cell = max(ns, key=lambda c: (self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
+            self.cell = max(ns, key=lambda c: (self.welfare(self.sugar + c.sugar, self.spice + c.spice), -math.dist(self.cell.coordinate, c.coordinate)))
         self.sugar += self.cell.sugar - self.metabolism_sugar
         self.spice += self.cell.spice - self.metabolism_spice
         self.cell.sugar = self.cell.spice = 0
         if self.sugar <= 0 or self.spice <= 0: self.remove()
+
     def trade_with_neighbors(self):
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
             self.trade(a)
