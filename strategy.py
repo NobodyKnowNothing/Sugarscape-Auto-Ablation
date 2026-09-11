@@ -127,10 +127,6 @@ class SugarscapeG1mt(mesa.Model):
             self.agents.shuffle_do("trade_with_neighbors")
         self.datacollector.collect(self)
 
-    def run_model(self, step_count=1000):
-        for _ in range(step_count):
-            self.step()
-
 # ===========================================================================
 # Project Evaluation Harness Interface (prepare.py / parameter_sweeps.py)
 # ===========================================================================
@@ -144,13 +140,12 @@ def create_model(seed: int = 42, **params) -> SugarscapeG1mt:
     model.initial_population = init_pop
     return model
 
-
 def run_model(model: SugarscapeG1mt, steps: int = 200) -> dict[str, Any]:
     """
     Execute simulation steps and extract the standardized 9-key metrics dictionary.
     """
     try:
-        model.run_model(step_count=steps)
+        for _ in range(steps): model.step()
     except (ValueError, IndexError) as e:
         return {"error": f"Mesa crash: {e}"}
 
