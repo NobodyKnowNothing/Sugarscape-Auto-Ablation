@@ -104,22 +104,6 @@ class Trader(CellAgent):
 # Model Helper Functions & Sugarscape Model (from model.py)
 # ===========================================================================
 
-def flatten(list_of_lists):
-    """
-    helper function for model datacollector for trade price
-    collapses agent price list into one list
-    """
-    return [item for sublist in list_of_lists for item in sublist]
-
-def geometric_mean(list_of_prices):
-    """
-    find the geometric mean of a list of prices
-    """
-    # protects against an invalid value if no prices
-    if len(list_of_prices) == 0:
-        return -1
-    return np.exp(np.log(list_of_prices).mean())
-
 class SugarScapeScenario(Scenario):
     """Sugarscape scenario class."""
 
