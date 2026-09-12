@@ -297,19 +297,14 @@ def run_model(model: SugarscapeG1mt, steps: int = 200) -> dict[str, Any]:
         return {"error": f"Mesa crash: {e}"}
 
     df = model.datacollector.get_model_vars_dataframe()
-    cumul_trade_volume = int(df["Trade Volume"].sum()) if "Trade Volume" in df else 0
-
     agents = list(model.agents)
-    agent_wealths = [float(a.sugar + a.spice) for a in agents]
-    trade_prices = [p for a in agents for p in getattr(a, "prices", [])]
-    agent_positions = [a.cell.coordinate for a in agents if getattr(a, "cell", None)]
     return {
-        "agent_wealths": agent_wealths,
+        "agent_wealths": [float(a.sugar + a.spice) for a in agents],
         "final_population": len(agents),
         "initial_population": getattr(model, "initial_population", 200),
-        "trade_prices": trade_prices,
-        "trade_volume": cumul_trade_volume,
-        "agent_positions": agent_positions,
+        "trade_prices": [p for a in agents for p in getattr(a, "prices", [])],
+        "trade_volume": int(df["Trade Volume"].sum()) if "Trade Volume" in df else 0,
+        "agent_positions": [a.cell.coordinate for a in agents if getattr(a, "cell", None)],
         "grid_width": getattr(model, "width", 50),
         "grid_height": getattr(model, "height", 50),
         "steps_run": steps,
