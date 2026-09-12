@@ -43,78 +43,21 @@ except ImportError:
 # Agent Helper Functions & Trader Class (from agents.py)
 # ===========================================================================
 
-def get_distance(cell_1, cell_2):
-    """
-    Calculate the Euclidean distance between two positions
-
-    used in trade.move()
-    """
-
-    x1, y1 = cell_1.coordinate
-    x2, y2 = cell_2.coordinate
-    dx = x1 - x2
-    dy = y1 - y2
-    return math.sqrt(dx**2 + dy**2)
+def get_distance(c1, c2): return math.dist(c1.coordinate, c2.coordinate)
 
 class Trader(CellAgent):
-    """
-    Trader:
-    - has a metabolism of sugar and spice
-    - harvest and trade sugar and spice to survive
-    """
-
-    def __init__(
-        self,
-        model,
-        cell,
-        sugar=0,
-        spice=0,
-        metabolism_sugar=0,
-        metabolism_spice=0,
-        vision=0,
-    ):
+    """Trader: harvests and trades sugar and spice to survive."""
+    def __init__(self, model, cell, sugar=0, spice=0, metabolism_sugar=0, metabolism_spice=0, vision=0):
         super().__init__(model)
-        self.cell = cell
-        self.sugar = sugar
-        self.spice = spice
-        self.metabolism_sugar = metabolism_sugar
-        self.metabolism_spice = metabolism_spice
-        self.vision = vision
-        self.prices = []
-        self.trade_partners = []
+        self.cell, self.sugar, self.spice = cell, sugar, spice
+        self.metabolism_sugar, self.metabolism_spice, self.vision = metabolism_sugar, metabolism_spice, vision
+        self.prices, self.trade_partners = [], []
 
     def calculate_welfare(self, sugar, spice):
-        """
-        helper function
-
-        part 2 self.move()
-        self.trade()
-        """
-
-        # calculate total resources
         m_total = self.metabolism_sugar + self.metabolism_spice
-        # Cobb-Douglas functional form; starting on p. 97
-        # on Growing Artificial Societies
-        return sugar ** (self.metabolism_sugar / m_total) * spice ** (
-            self.metabolism_spice / m_total
-        )
-
-    def is_starved(self):
-        """
-        Helper function for self.maybe_die()
-        """
-
-        return (self.sugar <= 0) or (self.spice <= 0)
+        return sugar ** (self.metabolism_sugar / m_total) * spice ** (self.metabolism_spice / m_total)
 
     def calculate_MRS(self, sugar, spice):
-        """
-        Helper function for
-          - self.trade()
-          - self.maybe_self_spice()
-
-        Determines what trader agent needs and can give up
-        """
-
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
     def trade(self, other):
