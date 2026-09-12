@@ -77,12 +77,9 @@ class Trader(CellAgent):
         cells = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if not cells: return
         m = self.metabolism_sugar + self.metabolism_spice
-        ws = [(self.sugar + c.sugar)**(self.metabolism_sugar/m) * (self.spice + c.spice)**(self.metabolism_spice/m) for c in cells]
-        max_w = max(ws)
-        cands = [cells[i] for i, w in enumerate(ws) if math.isclose(w, max_w)]
-        min_d = min(math.dist(self.cell.coordinate, c.coordinate) for c in cands)
-        self.cell = self.random.choice([c for c in cands if math.isclose(math.dist(self.cell.coordinate, c.coordinate), min_d, rel_tol=1e-2)])
-
+        vals = [((self.sugar + c.sugar)**(self.metabolism_sugar/m) * (self.spice + c.spice)**(self.metabolism_spice/m), -math.dist(self.cell.coordinate, c.coordinate)) for c in cells]
+        max_v = max(vals)
+        self.cell = self.random.choice([c for c, v in zip(cells, vals) if math.isclose(v[0], max_v[0]) and math.isclose(v[1], max_v[1], rel_tol=1e-2)])
     def step(self):
         self.prices, self.trade_partners = [], []
         self.move()
