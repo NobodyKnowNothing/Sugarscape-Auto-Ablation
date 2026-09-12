@@ -117,21 +117,6 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """Helper function for self.trade()"""
-        sugar_ex, spice_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        s_s, o_s = self.sugar + sugar_ex, other.sugar - sugar_ex
-        s_p, o_p = self.spice - spice_ex, other.spice + spice_ex
-
-        if s_s > 0 and o_s > 0 and s_p > 0 and o_p > 0:
-            if (welfare_self < self.calculate_welfare(s_s, s_p) and 
-                welfare_other < other.calculate_welfare(o_s, o_p) and 
-                self.calculate_MRS(s_s, s_p) > other.calculate_MRS(o_s, o_p)):
-                self.sugar, other.sugar = s_s, o_s
-                self.spice, other.spice = s_p, o_p
-                return True
-        return False
-
     def trade(self, other):
         """Helper function used in trade_with_neighbors()"""
         assert all(v > 0 for v in (self.sugar, self.spice, other.sugar, other.spice))
@@ -141,13 +126,22 @@ class Trader(CellAgent):
         price = math.sqrt(mrs_s * mrs_o)
         w_s, w_o = self.calculate_welfare(self.sugar, self.spice), other.calculate_welfare(other.sugar, other.spice)
         
-        if mrs_s > mrs_o:
-            if not self.maybe_sell_spice(other, price, w_s, w_o): return
-        elif not other.maybe_sell_spice(self, price, w_o, w_s): return
+        seller, buyer = (self, other) if mrs_s > mrs_o else (other, self)
+        ws, wb = (w_s, w_o) if mrs_s > mrs_o else (w_o, w_s)
         
-        self.prices.append(price)
-        self.trade_partners.append(other.unique_id)
-        self.trade(other)
+        sugar_ex, spice_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+        s_s, b_s = seller.sugar + sugar_ex, buyer.sugar - sugar_ex
+        s_p, b_p = seller.spice - spice_ex, buyer.spice + spice_ex
+
+        if s_s > 0 and b_s > 0 and s_p > 0 and b_p > 0:
+            if (ws < seller.calculate_welfare(s_s, s_p) and 
+                wb < buyer.calculate_welfare(b_s, b_p) and 
+                seller.calculate_MRS(s_s, s_p) > buyer.calculate_MRS(b_s, b_p)):
+                seller.sugar, buyer.sugar = s_s, b_s
+                seller.spice, buyer.spice = s_p, b_p
+                self.prices.append(price)
+                self.trade_partners.append(other.unique_id)
+                self.trade(other)
     ######################################################################
     #                                                                    #
     #                      MAIN TRADE FUNCTIONS                          #
