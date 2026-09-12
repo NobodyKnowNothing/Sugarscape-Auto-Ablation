@@ -126,72 +126,20 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def calculate_sell_spice_amount(self, price):
-        """
-        helper function for self.maybe_sell_spice() which is called from
-        self.trade()
-        """
-
-        if price >= 1:
-            sugar = 1
-            spice = int(price)
-        else:
-            sugar = int(1 / price)
-            spice = 1
-        return sugar, spice
-
-    def sell_spice(self, other, sugar, spice):
-        """
-        used in self.maybe_sell_spice()
-
-        exchanges sugar and spice between traders
-        """
-
-        self.sugar += sugar
-        other.sugar -= sugar
-        self.spice -= spice
-        other.spice += spice
-
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """
-        helper function for self.trade()
-        """
+        """Helper function for self.trade()"""
+        sugar_ex, spice_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+        s_s, o_s = self.sugar + sugar_ex, other.sugar - sugar_ex
+        s_p, o_p = self.spice - spice_ex, other.spice + spice_ex
 
-        sugar_exchanged, spice_exchanged = self.calculate_sell_spice_amount(price)
-
-        # Assess new sugar and spice amount - what if change did occur
-        self_sugar = self.sugar + sugar_exchanged
-        other_sugar = other.sugar - sugar_exchanged
-        self_spice = self.spice - spice_exchanged
-        other_spice = other.spice + spice_exchanged
-
-        # double check to ensure agents have resources
-
-        if (
-            (self_sugar <= 0)
-            or (other_sugar <= 0)
-            or (self_spice <= 0)
-            or (other_spice <= 0)
-        ):
-            return False
-
-        # trade criteria #1 - are both agents better off?
-        both_agents_better_off = (
-            welfare_self < self.calculate_welfare(self_sugar, self_spice)
-        ) and (welfare_other < other.calculate_welfare(other_sugar, other_spice))
-
-        # trade criteria #2 is their mrs crossing with potential trade
-        mrs_not_crossing = self.calculate_MRS(
-            self_sugar, self_spice
-        ) > other.calculate_MRS(other_sugar, other_spice)
-
-        if not (both_agents_better_off and mrs_not_crossing):
-            return False
-
-        # criteria met, execute trade
-        self.sell_spice(other, sugar_exchanged, spice_exchanged)
-
-        return True
+        if s_s > 0 and o_s > 0 and s_p > 0 and o_p > 0:
+            if (welfare_self < self.calculate_welfare(s_s, s_p) and 
+                welfare_other < other.calculate_welfare(o_s, o_p) and 
+                self.calculate_MRS(s_s, s_p) > other.calculate_MRS(o_s, o_p)):
+                self.sugar, other.sugar = s_s, o_s
+                self.spice, other.spice = s_p, o_p
+                return True
+        return False
 
     def trade(self, other):
         """

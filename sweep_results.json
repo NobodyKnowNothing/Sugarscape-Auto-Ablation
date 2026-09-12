@@ -1,0 +1,119 @@
+{
+  "sweep_a_trade": {
+    "name": "Sweep A: Trade vs No-Trade",
+    "all_valid": true,
+    "validations": {
+      "trade_volume_differential": true,
+      "inequality_persists_with_trade": true,
+      "price_converges": true,
+      "population_viable": true
+    },
+    "comparisons": {
+      "gini_coefficient": {
+        "metric": "gini_coefficient",
+        "cohens_d": 1.6485256828069248,
+        "welch_t_p": 0.035257467781891046,
+        "significant": true
+      },
+      "final_population": {
+        "metric": "final_population",
+        "cohens_d": 1.653011741590728,
+        "welch_t_p": 0.03476021578149799,
+        "significant": true
+      },
+      "survival_rate": {
+        "metric": "survival_rate",
+        "cohens_d": 1.6530117415907266,
+        "welch_t_p": 0.03476021578149817,
+        "significant": true
+      },
+      "trade_volume": {
+        "metric": "trade_volume",
+        "cohens_d": 12.247845649292731,
+        "welch_t_p": 4.191324709958964e-05,
+        "significant": true
+      },
+      "wealth_cv": {
+        "metric": "wealth_cv",
+        "cohens_d": 1.5200828526463697,
+        "welch_t_p": 0.049109614161710745,
+        "significant": true
+      },
+      "spatial_entropy": {
+        "metric": "spatial_entropy",
+        "cohens_d": -0.6859843010887179,
+        "welch_t_p": 0.32348845247498387,
+        "significant": false
+      }
+    }
+  },
+  "sweep_b_vision": {
+    "name": "Sweep B: Vision Sensitivity",
+    "all_valid": true,
+    "validations": {
+      "population_viable": true,
+      "population_monotone": true,
+      "inequality_persists": true
+    },
+    "comparisons": {
+      "high_vs_low_pop": {
+        "metric": "final_population",
+        "cohens_d": 3.4413944855238197,
+        "welch_t_p": 0.0007642585956887563,
+        "significant": true
+      },
+      "high_vs_low_gini": {
+        "metric": "gini_coefficient",
+        "cohens_d": 2.1528862557663593,
+        "welch_t_p": 0.025790920134090248,
+        "significant": true
+      },
+      "high_vs_low_entropy": {
+        "metric": "spatial_entropy",
+        "cohens_d": -0.771192936949678,
+        "welch_t_p": 0.26607509378911903,
+        "significant": false
+      }
+    }
+  },
+  "sweep_c_density": {
+    "name": "Sweep C: Carrying Capacity & Density",
+    "all_valid": true,
+    "validations": {
+      "overpopulation_die_off": true,
+      "population_viable": true,
+      "trade_volume_density_scaling": true,
+      "survival_rate_bounded": true,
+      "matches_mesa_canonical": true
+    }
+  },
+  "sweep_d_scarcity": {
+    "name": "Sweep D: Resource Scarcity",
+    "all_valid": true,
+    "validations": {
+      "survival_drops_with_scarcity": true,
+      "population_drops_with_scarcity": true,
+      "statistically_significant": true
+    },
+    "comparisons": {
+      "survival": {
+        "metric": "survival_rate",
+        "cohens_d": 10.657169831489236,
+        "welch_t_p": 5.251483227670908e-05,
+        "significant": true
+      },
+      "population": {
+        "metric": "final_population",
+        "cohens_d": 10.657169831489234,
+        "welch_t_p": 5.251483227670908e-05,
+        "significant": true
+      },
+      "gini": {
+        "metric": "gini_coefficient",
+        "cohens_d": 3.2753532514073522,
+        "welch_t_p": 0.005358040084157832,
+        "significant": true
+      }
+    }
+  }
+}
