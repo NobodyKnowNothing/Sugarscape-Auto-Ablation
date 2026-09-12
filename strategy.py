@@ -205,47 +205,15 @@ class Trader(CellAgent):
 
         # 1. identify all possible moves
 
-        neighboring_cells = [
-            cell
-            for cell in self.cell.get_neighborhood(self.vision, include_center=True)
-            if cell.is_empty
-        ]
-
+        neighboring_cells = [c for c in self.cell.get_neighborhood(self.vision, include_center=True) if c.is_empty]
         if not neighboring_cells:
-            # all neighboring cells are occupied
             return
 
-        # 2. determine which move maximizes welfare
-
-        welfares = [
-            self.calculate_welfare(
-                self.sugar + cell.sugar,
-                self.spice + cell.spice,
-            )
-            for cell in neighboring_cells
-        ]
-
-        # 3. Find closest best option
-
-        # find the highest welfare in welfares
-        max_welfare = max(welfares)
-        # Get cells with the highest welfare
-        candidates = [
-            cell
-            for cell, welfare in zip(neighboring_cells, welfares)
-            if math.isclose(welfare, max_welfare)
-        ]
-
-        min_dist = min(get_distance(self.cell, cell) for cell in candidates)
-
-        final_candidates = [
-            cell
-            for cell in candidates
-            if math.isclose(get_distance(self.cell, cell), min_dist, rel_tol=1e-02)
-        ]
-
-        # 4. Move Agent
-        self.cell = self.random.choice(final_candidates)
+        welfares = [self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice) for c in neighboring_cells]
+        max_w = max(welfares)
+        candidates = [c for c, w in zip(neighboring_cells, welfares) if math.isclose(w, max_w)]
+        min_dist = min(get_distance(self.cell, c) for c in candidates)
+        self.cell = self.random.choice([c for c in candidates if math.isclose(get_distance(self.cell, c), min_dist, rel_tol=1e-02)])
 
     def eat(self):
         self.sugar += self.cell.sugar
