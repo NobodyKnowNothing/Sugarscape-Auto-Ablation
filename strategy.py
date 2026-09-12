@@ -133,52 +133,21 @@ class Trader(CellAgent):
         return False
 
     def trade(self, other):
-        """
-        helper function used in trade_with_neighbors()
-
-        other is a trader agent object
-        """
-
-        # sanity check to verify code is working as expected
-        assert self.sugar > 0
-        assert self.spice > 0
-        assert other.sugar > 0
-        assert other.spice > 0
-
-        # calculate marginal rate of substitution in Growing Artificial Societies p. 101
-        mrs_self = self.calculate_MRS(self.sugar, self.spice)
-        mrs_other = other.calculate_MRS(other.sugar, other.spice)
-
-        # calculate each agents welfare
-        welfare_self = self.calculate_welfare(self.sugar, self.spice)
-        welfare_other = other.calculate_welfare(other.sugar, other.spice)
-
-        if math.isclose(mrs_self, mrs_other):
-            return
-
-        # calculate price
-        price = math.sqrt(mrs_self * mrs_other)
-
-        if mrs_self > mrs_other:
-            # self is a sugar buyer, spice seller
-            sold = self.maybe_sell_spice(other, price, welfare_self, welfare_other)
-            # no trade - criteria not met
-            if not sold:
-                return
-        else:
-            # self is a spice buyer, sugar seller
-            sold = other.maybe_sell_spice(self, price, welfare_other, welfare_self)
-            # no trade - criteria not met
-            if not sold:
-                return
-
-        # Capture data
+        """Helper function used in trade_with_neighbors()"""
+        assert all(v > 0 for v in (self.sugar, self.spice, other.sugar, other.spice))
+        mrs_s, mrs_o = self.calculate_MRS(self.sugar, self.spice), other.calculate_MRS(other.sugar, other.spice)
+        if math.isclose(mrs_s, mrs_o): return
+        
+        price = math.sqrt(mrs_s * mrs_o)
+        w_s, w_o = self.calculate_welfare(self.sugar, self.spice), other.calculate_welfare(other.sugar, other.spice)
+        
+        if mrs_s > mrs_o:
+            if not self.maybe_sell_spice(other, price, w_s, w_o): return
+        elif not other.maybe_sell_spice(self, price, w_o, w_s): return
+        
         self.prices.append(price)
         self.trade_partners.append(other.unique_id)
-
-        # continue trading
         self.trade(other)
-
     ######################################################################
     #                                                                    #
     #                      MAIN TRADE FUNCTIONS                          #
