@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import multiprocessing as mp
 import sqlite3
 import time
 from contextlib import closing
@@ -35,7 +36,7 @@ from judge.contract import CACHE_DIR, code_hash, materialize
 from judge.design import Profile, design_hash, seeds
 from judge.domain import Point, subset_order
 from judge.features import FEATURE_NAMES, FEATURES, SCALAR_STATS, TRADE_ONLY, presence
-from judge.parallel import job, run_jobs
+from judge.parallel import _run, _workers, job, pool, run_jobs, shutdown
 from judge.stats import scalar_compare
 
 REFERENCE_ROOT = JUDGE_DIR / "reference"
@@ -49,6 +50,7 @@ class RunError(Exception):
     pass
 
 
+CACHE_CHUNK = 256       # results are committed to the run cache in batches of CACHE_CHUNK // 4
 _MEASURE_HASH = None
 
 
@@ -75,6 +77,44 @@ def _run_key(code_h: str, params: dict, seed: int, steps: int) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
+def _cache_put(items: list[tuple[str, dict]]) -> None:
+    fresh = [(k, json.dumps(r["stats"])) for k, r in items if r["ok"]]
+    if fresh:
+        with closing(_cache_db()) as db, db:
+            db.executemany("INSERT OR REPLACE INTO runs VALUES (?, ?)", fresh)
+
+
+def _indexed_run(item):
+    i, j = item
+    return i, _run(j)
+
+
+def _cost(j) -> float:
+    """Rough relative run time (agents x vision neighbourhood), to submit long runs first."""
+    p = dict(j.params)
+    return p.get("initial_population", 200) * (1 + p.get("vision_max", 5)) ** 2
+
+
+def _stream(jobs: dict, keys: list[str]) -> dict:
+    """Run jobs unordered on the pool, longest first, committing results to the cache as they arrive."""
+    order = sorted(jobs, key=lambda i: -_cost(jobs[i]))
+    results, pending = {}, []
+    it = pool().imap_unordered(_indexed_run, [(i, jobs[i]) for i in order], chunksize=1)
+    for _ in order:
+        try:
+            i, r = it.next(timeout=1200)
+        except mp.TimeoutError:
+            shutdown()
+            raise RunError("a run produced no result within 1200 s")
+        results[i] = r
+        pending.append((keys[i], r))
+        if len(pending) >= CACHE_CHUNK // 4:
+            _cache_put(pending)
+            pending = []
+    _cache_put(pending)
+    return results
+
+
 def _run_all(code: str, profile: Profile, specs: list[tuple[str, dict, int]], digest: bool = False) -> list[dict]:
     """
     specs: (label, params, seed). Raises RunError on any failed run.
@@ -94,26 +134,27 @@ def _run_all(code: str, profile: Profile, specs: list[tuple[str, dict, int]], di
                 q = f"SELECT k, stats FROM runs WHERE k IN ({','.join('?' * len(chunk))})"
                 cached.update({k: json.loads(v) for k, v in db.execute(q, chunk)})
     todo = [i for i, k in enumerate(keys) if k not in cached]
-    jobs = [job(path, specs[i][0], specs[i][1], specs[i][2], profile.steps, digest) for i in todo]
-    results = dict(zip(todo, run_jobs(jobs, timeout=max(900, 60 * len(jobs)))))
-    out, fresh = [], []
+    jobs = {i: job(path, specs[i][0], specs[i][1], specs[i][2], profile.steps, digest) for i in todo}
+    if digest or len(todo) <= 1 or _workers() == 1:
+        results = dict(zip(todo, run_jobs([jobs[i] for i in todo], timeout=max(900, 60 * len(todo)))))
+        if not digest:
+            _cache_put([(keys[i], r) for i, r in results.items()])
+    else:
+        results = _stream(jobs, keys)
+    bad = next(((i, results[i]) for i in todo if not results[i]["ok"]), None)
+    if bad:
+        label, _, s = specs[bad[0]]
+        raise RunError(f"run failed at {label} (seed {s}): {bad[1]['error']}")
+    out = []
     for i, ((label, _, s), k) in enumerate(zip(specs, keys)):
         if i in results:
-            r = results[i]
-            if not r["ok"]:
-                raise RunError(f"run failed at {label} (seed {s}): {r['error']}")
-            stats = r["stats"]
+            stats = results[i]["stats"]
             if digest:
-                stats["_digest"] = r["digest"]
-            else:
-                fresh.append((k, json.dumps(stats)))
+                stats["_digest"] = results[i]["digest"]
         else:
             stats = cached[k]
         stats["_seed"] = s
         out.append(stats)
-    if fresh:
-        with closing(_cache_db()) as db, db:
-            db.executemany("INSERT OR REPLACE INTO runs VALUES (?, ?)", fresh)
     return out
 
 
