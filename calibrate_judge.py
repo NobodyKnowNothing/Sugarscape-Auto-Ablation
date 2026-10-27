@@ -156,18 +156,29 @@ def run_control(profile, name, pts, rep):
 def oc_pass_probability(a: surface.Assessment, alpha: float) -> tuple[float, float]:
     """
     Plug-in operating characteristic: estimated probability that a fresh replication
-    passes every test (independence approximation), and the smallest slack in SE units.
+    passes every test, and the smallest slack in SE units.
+
+    Each test's true distance is estimated without the upward bias of noise: l2-type
+    tests on the squared scale on which their intervals are computed (negative
+    noise-corrected estimates count as 0), two-sided tests by sqrt(max(0, est^2 - se^2)).
+    Tests are treated as independent; they are positively correlated, so the product
+    understates the joint pass probability.
     """
     z = sps.norm.ppf(1 - alpha)
     logp, slack_min = 0.0, math.inf
     for t in a.tests:
-        if t.kind == "named" or not (t.margin > 0):
+        if t.kind == "named" or not (t.margin > 0) or not (math.isfinite(t.lo) and math.isfinite(t.hi)):
             continue
-        se = t.se(alpha)
+        if t.kind in ("l2", "defined"):
+            sq = lambda x: math.copysign(x * x, x)
+            se = (sq(t.hi) - sq(t.lo)) / (2 * z)
+            theta, m = max(sq(t.est), 0.0), t.margin ** 2
+        else:
+            se = t.se(alpha)
+            theta, m = math.sqrt(max(t.est ** 2 - se ** 2, 0.0)), t.margin
         if not (se > 0 and math.isfinite(se)):
             continue
-        theta = t.est if t.kind in ("l2", "defined") else abs(t.est)
-        slack = (t.margin - theta) / se - z
+        slack = (m - theta) / se - z
         slack_min = min(slack_min, slack)
         logp += math.log(max(sps.norm.cdf(slack), 1e-300))
     return math.exp(logp), slack_min
