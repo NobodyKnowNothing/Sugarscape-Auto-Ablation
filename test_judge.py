@@ -216,3 +216,136 @@ def test_pipeline_stage0_rejections():
     r = evaluate_candidate(renamed, profile, parent={"C": c}, ref={}, margins={}, log=lambda *a: None)
 
     assert not r.accepted and r.stage == 0 and "not simpler" in r.reason
+
+
+# ---------------------------------------------------------------------------
+# Input domain and response-surface equivalence
+# ---------------------------------------------------------------------------
+
+def test_domain_samples_valid_and_deterministic():
+    profile = load_profile("full")
+    dom = profile.domain
+    pts = dom.sample(64, "t", "sobol")
+    assert [p.params for p in pts] == [p.params for p in dom.sample(64, "t", "sobol")]
+    assert [p.params for p in pts] != [p.params for p in dom.sample(64, "u", "sobol")]
+    f = dom.factors
+    for p in pts:
+        q = p.params
+        assert f["initial_population"]["low"] <= q["initial_population"] <= f["initial_population"]["high"]
+        for t in ("vision", "metabolism", "endowment"):
+            assert q[f"{t}_min"] <= q[f"{t}_max"]
+        assert all(-0.5 - 1e-9 <= z <= 0.5 + 1e-9 for z in p.z)
+        assert len(p.z) == len(dom.regressor_names)
+    iid = dom.sample(32, "t", "iid")
+    assert len({p.id for p in iid}) == 32
+    # homogeneous populations (span 0) are part of the domain
+    assert any(p.params["vision_min"] == p.params["vision_max"] for p in pts)
+
+
+def _synthetic(pts, rng, n, effect=None, shift=0.0, noise=1.0):
+    """Panel with stat 'plateau_frac' = 2*vision_mean + effect(z) + shift + noise, both worlds."""
+    from judge.surface import key
+    out = {}
+    for p in pts:
+        for w in ("trade", "notrade"):
+            mu = 2.0 * p.z[2] + (0.5 if w == "trade" else 0.0) + shift + (effect(p.z) if effect else 0.0)
+            out[key(p.id, w)] = [{"plateau_frac": float(mu + noise * rng.normal())} for _ in range(n)]
+    return out
+
+
+def _margins(profile, pts, ref):
+    from judge.surface import scales
+    terms = profile.domain.regressor_names
+    sc = {w: {"plateau_frac": scales(ref, [p.id for p in pts], ["trade"])["trade"]["plateau_frac"]}
+          for w in ("trade", "notrade")}
+    return sc, terms
+
+
+def test_surface_l2_and_slopes_identical_vs_different():
+    from judge import surface
+    profile = load_profile("full")
+    rng = np.random.default_rng(0)
+    pts = profile.domain.sample(192, "syn", "sobol")
+    pids, Z = [p.id for p in pts], {p.id: p.z for p in pts}
+    ref = _synthetic(pts, rng, 4)
+    sc, terms = _margins(profile, pts, ref)
+    s = sc["trade"]["plateau_frac"]
+    same = _synthetic(pts, rng, 2)
+    t = surface.l2_test(same, ref, pids, "trade", "plateau_frac", "scalar", s, 1.0, 0.05, rng, 0.2)
+    assert t.status == "pass", t
+    slopes = surface.slope_tests(same, ref, pids, Z, "trade", "plateau_frac", s, {k: 2.0 for k in terms}, terms, 0.05)
+    assert all(x.status == "pass" for x in slopes), [x for x in slopes if x.status != "pass"]
+    shifted = _synthetic(pts, rng, 2, shift=3.0)
+    assert surface.l2_test(shifted, ref, pids, "trade", "plateau_frac", "scalar", s, 1.0, 0.05, rng, 0.2).status == "fail"
+    # a candidate whose vision response is reversed fails the vision slope but not the others
+    rev = _synthetic(pts, rng, 2, effect=lambda z: -4.0 * z[2])
+    sl = {x.term: x for x in surface.slope_tests(rev, ref, pids, Z, "trade", "plateau_frac", s,
+                                                 {k: 2.0 for k in terms}, terms, 0.05)}
+    assert sl["vision_mean"].status == "fail"
+    assert sl["metabolism_mean"].status == "pass"
+    # a spurious response to an input canonical ignores is also a failure
+    spur = _synthetic(pts, rng, 2, effect=lambda z: 6.0 * z[6])
+    sl = {x.term: x for x in surface.slope_tests(spur, ref, pids, Z, "trade", "plateau_frac", s,
+                                                 {k: 2.0 for k in terms}, terms, 0.05)}
+    assert sl["endowment_mean"].status == "fail"
+
+
+def test_surface_contrast_spread_named():
+    from judge import surface
+    profile = load_profile("full")
+    rng = np.random.default_rng(1)
+    pts = profile.domain.sample(192, "syn2", "sobol")
+    pids, Z = [p.id for p in pts], {p.id: p.z for p in pts}
+    ref = _synthetic(pts, rng, 4)
+    s = surface.scales(ref, pids, ["trade"])["trade"]["plateau_frac"]
+    same = _synthetic(pts, rng, 2)
+    assert surface.contrast_test(same, ref, pids, "plateau_frac", s, 0.5, 0.05).status == "pass"
+    # candidate in which trade has no effect
+    no_trade_effect = _synthetic(pts, rng, 2, effect=lambda z: 0.0)
+    for k in list(no_trade_effect):
+        if k.endswith("|trade"):
+            for r in no_trade_effect[k]:
+                r["plateau_frac"] -= 0.5
+    assert surface.contrast_test(no_trade_effect, ref, pids, "plateau_frac", s, 0.25, 0.05).status == "fail"
+    noisy = _synthetic(pts, rng, 2, noise=3.0)
+    assert surface.spread_test(noisy, ref, pids, "trade", "plateau_frac", 2.0, 0.05, rng).status == "fail"
+    assert surface.spread_test(same, ref, pids, "trade", "plateau_frac", 2.0, 0.05, rng).status == "pass"
+    terms = profile.domain.regressor_names
+    nr = {"id": "x", "claim": "rises with vision", "stat": "plateau_frac", "world": "trade", "term": "vision_mean", "sign": 1}
+    scs = {"trade": {"plateau_frac": s}, "notrade": {"plateau_frac": s}}
+    assert surface.named_test(nr, same, pids, Z, terms, scs, 0.05).status == "pass"
+    reversed_ = _synthetic(pts, rng, 2, effect=lambda z: -4.0 * z[2])
+    assert surface.named_test(nr, reversed_, pids, Z, terms, scs, 0.05).status == "fail"
+
+
+def test_recorder_indicators_on_canonical():
+    path = materialize(CANON)
+    rec = Recorder(make_env({}), 100, 3)
+    run_model(path, {}, 3, 100, rec)
+    s = rec.stats()
+    for k in ("ineq_up", "plateaued", "trading", "disp_down", "clustered", "loghill_T"):
+        assert k in s
+    assert s["trading"] == 1.0
+    rec = Recorder(make_env({"enable_trade": False}), 50, 3)
+    run_model(path, {"enable_trade": False}, 3, 50, rec)
+    s = rec.stats()
+    assert s["trading"] == 0.0 and math.isnan(s["disp_down"])
+
+
+def test_coverage_bound_from_l2():
+    from judge.pipeline import coverage_bounds
+    from judge.surface import Assessment, STest
+    a = Assessment([STest("E2", "trade", "plateau_frac", "l2", "", 1.0, "pass", 0.1, 0.0, 0.5, 100)])
+    cov = coverage_bounds(a, 2.5)
+    assert cov["per_statistic"]["plateau_frac|trade"] == pytest.approx(0.25 / 6.25)
+
+
+def test_run_cache_serves_repeats_but_not_digest_runs():
+    from judge.pipeline import _run_all
+    profile = load_profile("smoke")
+    spec = [("t", {"initial_population": 60}, 424242)]
+    a = _run_all(CANON, profile, spec)[0]
+    b = _run_all(CANON, profile, spec)[0]
+    assert a["gini_T"] == b["gini_T"] and b["_seed"] == 424242
+    d = _run_all(CANON, profile, spec, digest=True)[0]
+    assert "_digest" in d and d["gini_T"] == a["gini_T"]

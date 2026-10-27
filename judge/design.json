@@ -1,247 +1,82 @@
 {
-  "description": "Pre-registered test design: input-space design points, seed pools, sample sizes and margin floors. Frozen and hashed into judge_hash(); changing it invalidates calibration.",
+  "description": "Pre-registered test design: the input domain and how it is sampled, the trade worlds, the literature-backed trait responses, margin floors, seed pools and sample sizes. Frozen and hashed into judge_hash(); changing it invalidates calibration. Rationale and sources: DESIGN_DECISIONS.md.",
   "alpha": 0.05,
+  "domain": {
+    "comment": "Every input of Mesa's sugarscape_g1mt, sampled jointly at random (random-search style: each point has a distinct value of every input). Traits are sampled as (min, span) so span 0 (a homogeneous population) is included. Ranges contain the book's settings (vision 1-6, metabolism 1-4, endowment 5-25, N0 400; Epstein & Axtell 1996 ch. II), Mesa's defaults (vision 1-5, metabolism 1-5, endowment 25-50, N0 200) and the vision sweep of Mesa's G1MT tests (vision_max 1-9), and were widened until the pilot map showed both phase boundaries inside the domain: ~10% of the domain collapses (high metabolism, slow regrowth) and ~11% never loses an agent (metabolism fixed at 1). Regrowth >= 4 equals instant growback (cell capacity <= 4). Population and regrowth are log-uniform.",
+    "factors": {
+      "initial_population": {"type": "int", "dist": "loguniform", "low": 50, "high": 800},
+      "regrowth_rate": {"type": "float", "dist": "loguniform", "low": 0.25, "high": 4.0},
+      "vision_min": {"type": "int", "dist": "uniform", "low": 1, "high": 5},
+      "vision_span": {"type": "int", "dist": "uniform", "low": 0, "high": 7},
+      "metabolism_min": {"type": "int", "dist": "uniform", "low": 1, "high": 3},
+      "metabolism_span": {"type": "int", "dist": "uniform", "low": 0, "high": 4},
+      "endowment_min": {"type": "int", "dist": "uniform", "low": 5, "high": 50},
+      "endowment_span": {"type": "int", "dist": "uniform", "low": 0, "high": 50}
+    },
+    "scales": {"initial_population": "initial_population", "regrowth_rate": "regrowth_rate"},
+    "traits": {
+      "vision": ["vision_min", "vision_span"],
+      "metabolism": ["metabolism_min", "metabolism_span"],
+      "endowment": ["endowment_min", "endowment_span"]
+    }
+  },
+  "worlds": {
+    "comment": "Every sampled point is run in both worlds (paired), so the trade contrast is estimated within points.",
+    "trade": {"enable_trade": true},
+    "notrade": {"enable_trade": false}
+  },
+  "named_points": {
+    "comment": "Fixed points used only for the cheap presence gate (stage 2) and for complexity tracing.",
+    "default": {},
+    "default_notrade": {"enable_trade": false}
+  },
+  "named_responses": [
+    {"id": "IV-6a", "claim": "carrying capacity rises with mean vision (with trade)", "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py", "stat": "plateau_frac", "world": "trade", "term": "vision_mean", "sign": 1},
+    {"id": "IV-6b", "claim": "carrying capacity rises with mean vision (without trade)", "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py", "stat": "plateau_frac", "world": "notrade", "term": "vision_mean", "sign": 1},
+    {"id": "IV-6c", "claim": "carrying capacity is higher with trade", "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py", "stat": "plateau_frac", "world": "both", "term": "trade", "sign": 1},
+    {"id": "IV-13a", "claim": "inequality falls with mean vision", "source": "Epstein & Axtell 1996, Fig. IV-13 (listed as a target in Mesa's tests.py)", "stat": "gini_T", "world": "trade", "term": "vision_mean", "sign": -1},
+    {"id": "IV-13b", "claim": "inequality is higher with trade", "source": "Epstein & Axtell 1996, Fig. IV-13 (listed as a target in Mesa's tests.py)", "stat": "gini_T", "world": "both", "term": "trade", "sign": 1},
+    {"id": "IV-3", "claim": "price dispersion falls over time", "source": "Epstein & Axtell 1996, Fig. IV-3 (p. 109); Mesa sugarscape_g1mt tests.py", "stat": "disp_decay", "world": "trade", "term": "level", "sign": -1},
+    {"id": "II-met", "claim": "carrying capacity falls with mean metabolism", "source": "Epstein & Axtell 1996, ch. II (carrying capacity)", "stat": "plateau_frac", "world": "notrade", "term": "metabolism_mean", "sign": -1},
+    {"id": "II-growback", "claim": "carrying capacity rises with the regrowth rate", "source": "Epstein & Axtell 1996, ch. II (growback rule G)", "stat": "plateau_frac", "world": "notrade", "term": "log_regrowth_rate", "sign": 1}
+  ],
   "margin_floor": {
-    "scalar_sigma": 1.0,
-    "vector_sigma": 1.25,
-    "effect_sigma": 1.4,
-    "comment": "Smallest margin (in reference between-seed SDs). Margins are max(floor, largest innocuous-perturbation shift UCB). A shift under one seed-to-seed SD is treated as scientifically indistinguishable. Power: every test must pass (intersection-union), so the margin must exceed the CI half-width by ~3 SE; with 60 reference and 60 candidate seeds (SE ~0.18 SD) that requires margins of ~1 SD. Vector (sup over components) and effect (difference of differences) floors are scaled for their extra noise."
+    "comment": "Smallest margins, in units of canonical's typical within-point (seed-to-seed) SD of the statistic over the domain, or in probability units for 0/1 indicators. Margins are max(floor, relative floor x canonical's own response, largest upper confidence bound produced by an innocuous perturbation). l2: root-mean-square discrepancy over the domain. slope: difference in the response to one input across its whole range. contrast: difference in the trade on/off effect. spread: ratio of seed-to-seed variances. point: per-point shift that counts as a located failure in audits.",
+    "l2_sigma": 1.0,
+    "indicator_rms": 0.25,
+    "defined_rms": 0.25,
+    "slope_sigma": 2.0,
+    "slope_rel": 0.2,
+    "contrast_sigma": 0.5,
+    "contrast_rel": 0.2,
+    "spread_ratio": 2.0,
+    "point_sigma": 2.5,
+    "missing_max": 0.2
   },
   "complexity": {
     "delta_abs_bytes": 8,
     "delta_rel": 0.001,
     "comment": "A candidate must reduce canonical compressed size by at least max(delta_abs_bytes, delta_rel * parent C)."
   },
-  "points": {
-    "default": {},
-    "A_notrade": {
-      "enable_trade": false
-    },
-    "B_lowvision": {
-      "vision_min": 1,
-      "vision_max": 2
-    },
-    "B_highvision": {
-      "vision_min": 4,
-      "vision_max": 8
-    },
-    "C_lowpop": {
-      "initial_population": 50
-    },
-    "C_highpop": {
-      "initial_population": 400
-    },
-    "D_harshmetab": {
-      "metabolism_min": 3,
-      "metabolism_max": 7
-    },
-    "D_lowregrowth": {
-      "regrowth_rate": 0.5
-    },
-    "L01": {
-      "initial_population": 395,
-      "vision_max": 3,
-      "metabolism_max": 3,
-      "regrowth_rate": 0.92
-    },
-    "L02": {
-      "initial_population": 328,
-      "vision_max": 5,
-      "metabolism_max": 7,
-      "regrowth_rate": 1.95
-    },
-    "L03": {
-      "initial_population": 197,
-      "vision_max": 2,
-      "metabolism_max": 6,
-      "regrowth_rate": 1.73
-    },
-    "L04": {
-      "initial_population": 80,
-      "vision_max": 8,
-      "metabolism_max": 4,
-      "regrowth_rate": 1.2
-    },
-    "L05": {
-      "initial_population": 357,
-      "vision_max": 8,
-      "metabolism_max": 4,
-      "regrowth_rate": 0.57
-    },
-    "L06": {
-      "initial_population": 309,
-      "vision_max": 5,
-      "metabolism_max": 6,
-      "regrowth_rate": 1.29
-    },
-    "L07": {
-      "initial_population": 138,
-      "vision_max": 6,
-      "metabolism_max": 5,
-      "regrowth_rate": 1.0
-    },
-    "L08": {
-      "initial_population": 283,
-      "vision_max": 4,
-      "metabolism_max": 5,
-      "regrowth_rate": 0.98
-    },
-    "L09": {
-      "initial_population": 195,
-      "vision_max": 2,
-      "metabolism_max": 7,
-      "regrowth_rate": 1.39
-    },
-    "L10": {
-      "initial_population": 291,
-      "vision_max": 6,
-      "metabolism_max": 5,
-      "regrowth_rate": 0.87
-    },
-    "L11": {
-      "initial_population": 237,
-      "vision_max": 3,
-      "metabolism_max": 6,
-      "regrowth_rate": 0.51
-    },
-    "L12": {
-      "initial_population": 178,
-      "vision_max": 5,
-      "metabolism_max": 3,
-      "regrowth_rate": 1.58
-    },
-    "L13": {
-      "initial_population": 345,
-      "vision_max": 3,
-      "metabolism_max": 7,
-      "regrowth_rate": 0.8
-    },
-    "L14": {
-      "initial_population": 262,
-      "vision_max": 5,
-      "metabolism_max": 5,
-      "regrowth_rate": 1.11
-    },
-    "L15": {
-      "initial_population": 162,
-      "vision_max": 4,
-      "metabolism_max": 4,
-      "regrowth_rate": 1.92
-    },
-    "L16": {
-      "initial_population": 216,
-      "vision_max": 7,
-      "metabolism_max": 3,
-      "regrowth_rate": 1.45
-    },
-    "L17": {
-      "initial_population": 252,
-      "vision_max": 4,
-      "metabolism_max": 6,
-      "regrowth_rate": 1.85
-    },
-    "L18": {
-      "initial_population": 114,
-      "vision_max": 7,
-      "metabolism_max": 5,
-      "regrowth_rate": 0.65
-    },
-    "L19": {
-      "initial_population": 51,
-      "vision_max": 6,
-      "metabolism_max": 5,
-      "regrowth_rate": 1.79
-    },
-    "L20": {
-      "initial_population": 137,
-      "vision_max": 6,
-      "metabolism_max": 6,
-      "regrowth_rate": 0.7
-    },
-    "L21": {
-      "initial_population": 72,
-      "vision_max": 3,
-      "metabolism_max": 4,
-      "regrowth_rate": 1.13
-    },
-    "L22": {
-      "initial_population": 101,
-      "vision_max": 7,
-      "metabolism_max": 6,
-      "regrowth_rate": 1.31
-    },
-    "L23": {
-      "initial_population": 381,
-      "vision_max": 4,
-      "metabolism_max": 4,
-      "regrowth_rate": 1.52
-    },
-    "L24": {
-      "initial_population": 321,
-      "vision_max": 7,
-      "metabolism_max": 4,
-      "regrowth_rate": 1.68
-    }
-  },
-  "lhs_note": "L01-L24: Latin hypercube (scipy qmc, seed 20261023) over initial_population [50,400], vision_max [2,8], metabolism_max [3,7], regrowth_rate [0.5,2.0]; other inputs at defaults.",
   "profiles": {
     "full": {
       "steps": 200,
-      "screening_points": [
-        "default",
-        "A_notrade",
-        "B_lowvision",
-        "B_highvision",
-        "C_lowpop",
-        "C_highpop",
-        "D_harshmetab",
-        "D_lowregrowth"
-      ],
-      "audit_points": [
-        "default",
-        "A_notrade",
-        "B_lowvision",
-        "B_highvision",
-        "C_lowpop",
-        "C_highpop",
-        "D_harshmetab",
-        "D_lowregrowth",
-        "L01",
-        "L02",
-        "L03",
-        "L04",
-        "L05",
-        "L06",
-        "L07",
-        "L08",
-        "L09",
-        "L10",
-        "L11",
-        "L12",
-        "L13",
-        "L14",
-        "L15",
-        "L16",
-        "L17",
-        "L18",
-        "L19",
-        "L20",
-        "L21",
-        "L22",
-        "L23",
-        "L24"
-      ],
-      "n_reference": 60,
-      "n_perturbation": 30,
+      "bank_points": 384,
+      "bank_seeds": 4,
+      "holdout_points": 192,
+      "holdout_seeds": 4,
+      "anchor_seeds": 40,
       "n_presence": 10,
-      "candidate_schedule": [
-        20,
-        40,
-        60
-      ],
-      "n_holdout": 40,
-      "control_block": 20,
-      "control_replications": 10,
+      "candidate_seeds": 2,
+      "look_points": [32, 96, 192],
+      "look_alpha": [0.0025, 0.0075, 0.04],
+      "perturbation_points": 192,
+      "positive_points": 192,
+      "positive_replications": 2,
+      "negative_points": 64,
+      "audit_points": 128,
+      "refine_points": 4,
+      "refine_seeds": 8,
       "trace_steps": 40,
       "trace_seeds": 2,
       "audit_every": 5,
@@ -251,39 +86,34 @@
     "smoke": {
       "comment": "Pipeline smoke test only: short runs, small samples and wide margin floors so every code path (including acceptance) is exercised quickly. Not valid for scientific conclusions.",
       "steps": 100,
-      "screening_points": [
-        "default",
-        "A_notrade",
-        "B_highvision",
-        "C_highpop"
-      ],
-      "audit_points": [
-        "default",
-        "A_notrade",
-        "B_highvision",
-        "C_highpop",
-        "L03",
-        "L08"
-      ],
-      "n_reference": 20,
-      "n_perturbation": 10,
-      "n_presence": 8,
-      "candidate_schedule": [
-        10,
-        20
-      ],
-      "n_holdout": 12,
-      "control_block": 12,
-      "control_replications": 1,
+      "bank_points": 48,
+      "bank_seeds": 2,
+      "holdout_points": 24,
+      "holdout_seeds": 2,
+      "anchor_seeds": 10,
+      "n_presence": 6,
+      "candidate_seeds": 2,
+      "look_points": [12, 24],
+      "look_alpha": [0.01, 0.04],
+      "perturbation_points": 24,
+      "positive_points": 24,
+      "positive_replications": 1,
+      "negative_points": 12,
+      "audit_points": 16,
+      "refine_points": 2,
+      "refine_seeds": 4,
       "trace_steps": 20,
       "trace_seeds": 1,
       "audit_every": 2,
       "required_positive_pass_rate": 0.95,
       "required_negative_fail_rate": 0.95,
       "margin_floor": {
-        "scalar_sigma": 2.0,
-        "vector_sigma": 2.5,
-        "effect_sigma": 2.8
+        "l2_sigma": 2.0,
+        "indicator_rms": 0.45,
+        "defined_rms": 0.45,
+        "slope_sigma": 4.0,
+        "contrast_sigma": 2.0,
+        "spread_ratio": 4.0
       }
     }
   }

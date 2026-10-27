@@ -1,14 +1,16 @@
-"""Design loading and deterministic, disjoint seed pools."""
+"""Design loading, the input domain, and deterministic, disjoint seed pools."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 
 from judge import JUDGE_DIR
+from judge.domain import Domain, Point
 
 DESIGN_FILE = JUDGE_DIR / "design.json"
 
@@ -38,16 +40,29 @@ class Profile:
     def margin_floor(self) -> dict:
         return {**self.design["margin_floor"], **self.cfg.get("margin_floor", {})}
 
+    @cached_property
+    def domain(self) -> Domain:
+        return Domain(self.design["domain"])
+
+    @property
+    def worlds(self) -> dict[str, dict]:
+        return {k: v for k, v in self.design["worlds"].items() if k != "comment"}
+
+    @property
+    def named_responses(self) -> list[dict]:
+        return list(self.design["named_responses"])
+
     def params(self, point: str) -> dict:
-        return dict(self.design["points"][point])
+        """Inputs of a named point (stage-2 presence gate, complexity tracing)."""
+        return dict(self.design["named_points"][point])
 
-    @property
-    def screening(self) -> list[str]:
-        return list(self.cfg["screening_points"])
+    def bank(self) -> list[Point]:
+        """Screening reference bank: scrambled Sobol' sample of the domain."""
+        return self.domain.sample(self.cfg["bank_points"], f"bank:{self.name}", "sobol")
 
-    @property
-    def audit_points(self) -> list[str]:
-        return list(self.cfg["audit_points"])
+    def holdout(self) -> list[Point]:
+        """Holdout reference bank: i.i.d. uniform sample of the domain (audits, coverage bound)."""
+        return self.domain.sample(self.cfg["holdout_points"], f"holdout:{self.name}", "iid")
 
 
 def load_design() -> dict:

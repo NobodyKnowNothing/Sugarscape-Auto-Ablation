@@ -11,10 +11,13 @@ the run length T, so the same definitions work for any model and any profile.
                                 equilibrium price level, exchange rate per agent
   E4 Spatial self-organization  density-resource rank correlation over time, Moran's I of
                                 density, correlation relative to a uniform-placement null
-  E5 Environmental response     (pipeline) effects of input parameters on E1-E4
+  E5 Trait responses            (judge/surface.py) how E1-E4 respond to every input across
+                                the input domain, including the trade on/off contrast
 
-Each feature has a qualitative presence check (group level) and a set of
-statistics that must be equivalent to canonical Sugarscape within margin.
+Each feature has a qualitative presence check (group level), per-run presence
+indicators (whose means are presence probabilities, compared across the domain)
+and a set of statistics that must be equivalent to canonical Sugarscape within
+margin.
 """
 
 from __future__ import annotations
@@ -31,10 +34,13 @@ LORENZ_Q = np.linspace(0.1, 0.9, 9)
 TRAJ_POINTS = 21              # samples of N(t)/N0 between t=0 and t=T
 DISP_BINS = 8                 # time bins for the price-dispersion trajectory
 NULL_DRAWS = 200
+DISP_EPS = 0.01               # log-price dispersion below this counts as converged (keeps the decay finite)
+PLATEAU_TOL = 0.1             # |relative population drift over the late window| counted as a plateau
+CLUSTER_Z = 1.645             # density-resource correlation this many null SDs above chance counts as clustering
 
 # Statistics that enter the equivalence test, by feature.
 SCALAR_STATS = {
-    "E1": ["gini_T", "gini_c1", "top10_T", "cv_T", "hill_T"],
+    "E1": ["gini_T", "gini_c1", "top10_T", "cv_T", "loghill_T"],
     "E2": ["plateau_frac", "tau_frac", "fluct_cv"],
     "E3": ["disp_late", "disp_decay", "price_level", "exch_rate"],
     "E4": ["drc_c1", "drc_T", "moran_T"],
@@ -45,21 +51,41 @@ VECTOR_STATS = {
     "E3": ["disp_traj"],
     "E4": [],
 }
+# Per-run 0/1 indicators of each qualitative feature; their means are presence probabilities.
+INDICATOR_STATS = {
+    "E1": ["ineq_up"],
+    "E2": ["plateaued"],
+    "E3": ["trading", "disp_down"],
+    "E4": ["clustered"],
+}
+# Statistics that only exist when trade is enabled (E3 except the 'trading' indicator,
+# which must be 0 when trade is disabled).
+TRADE_ONLY = {"disp_late", "disp_decay", "price_level", "exch_rate", "disp_traj", "disp_down"}
 FEATURES = ["E1", "E2", "E3", "E4"]
 FEATURE_NAMES = {
     "E1": "wealth inequality",
     "E2": "carrying capacity",
     "E3": "price discovery",
     "E4": "spatial self-organization",
-    "E5": "environmental response",
+    "E5": "trait responses",
 }
 
 
 def stat_feature(name: str) -> str:
     for f in FEATURES:
-        if name in SCALAR_STATS[f] or name in VECTOR_STATS[f]:
+        if name in SCALAR_STATS[f] or name in VECTOR_STATS[f] or name in INDICATOR_STATS[f]:
             return f
     raise KeyError(name)
+
+
+def world_stats(trade: bool) -> dict[str, list[tuple[str, str]]]:
+    """(stat, kind) pairs tested in a world, by feature; kind is scalar | vector | indicator."""
+    out = {}
+    for f in FEATURES:
+        items = [(s, "scalar") for s in SCALAR_STATS[f]] + [(s, "vector") for s in VECTOR_STATS[f]] \
+            + [(s, "indicator") for s in INDICATOR_STATS[f]]
+        out[f] = [(s, k) for s, k in items if trade or s not in TRADE_ONLY]
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +244,7 @@ class Recorder:
         s["top10_T"] = top_share(wT)
         s["cv_T"] = cv(wT)
         s["hill_T"] = hill_index(wT)
+        s["loghill_T"] = math.log(s["hill_T"]) if s["hill_T"] > 0 else math.nan
         s["skew_T"] = float(sps.skew(wT)) if len(wT) > 2 and np.ptp(wT) > 0 else math.nan
         s["lorenz_T"] = lorenz(wT).tolist()
 
@@ -246,7 +273,7 @@ class Recorder:
             dl = float(np.mean(late_d)) if late_d else math.nan
             s["disp_early"] = de
             s["disp_late"] = dl
-            s["disp_decay"] = math.log(dl / de) if de > 0 and dl > 0 else math.nan
+            s["disp_decay"] = math.log((dl + DISP_EPS) / (de + DISP_EPS)) if de >= 0 and dl >= 0 else math.nan
             s["price_level"] = float(np.mean(self.late_logp)) if self.late_logp else math.nan
             pl = self.pop[self.late_start:]
             s["exch_rate"] = float(np.mean(self.n_ex[self.late_start:] / np.maximum(pl, 1)))
@@ -261,6 +288,7 @@ class Recorder:
             for k in ("disp_early", "disp_late", "disp_decay", "price_level", "exch_rate"):
                 s[k] = math.nan
             s["disp_traj"] = [math.nan] * DISP_BINS
+        s["n_exchanges"] = float(self.n_ex.sum())
 
         # E4 spatial self-organization
         s["drc_c1"] = self.drc.get(self.c1, math.nan)
@@ -273,6 +301,13 @@ class Recorder:
             s["moran_T"] = morans_i(self.final_counts)
             s["z_drc"] = self._null_z(int(len(wT)), s["drc_T"])
         s["extinct"] = float(extinct)
+
+        # presence indicators (0 where the feature is absent, including after extinction)
+        s["ineq_up"] = float(not extinct and s["gini_T"] > s["gini_0"] and s["skew_T"] > 0)
+        s["plateaued"] = float(not extinct and abs(s["plateau_slope_rel"]) < PLATEAU_TOL)
+        s["trading"] = float(s["n_exchanges"] > 0)
+        s["disp_down"] = float(s["disp_decay"] < 0) if self.trade_enabled else math.nan
+        s["clustered"] = float(s["z_drc"] > CLUSTER_Z)
         return s
 
     def _null_z(self, n: int, observed: float) -> float:
@@ -309,7 +344,6 @@ def _one_sided_p(x: np.ndarray, greater: bool) -> float:
     return float(sps.ttest_1samp(x, 0.0, alternative=alt).pvalue)
 
 
-PLATEAU_TOL = 0.1          # |relative population drift over the late window| counted as a plateau
 STRICT_FACTOR = 0.5        # the reference must show a feature with this much buffer (tolerance x0.5, alpha /10)
 
 
@@ -318,7 +352,7 @@ def presence(feature: str, runs: list[dict], alpha: float = 0.05, strict: bool =
     Does the qualitative emergent feature appear in this group of runs?
 
     `strict=True` is used for the reference: a feature is only demanded of
-    candidates at design points where canonical Sugarscape shows it with a
+    candidates where canonical Sugarscape shows it with a
     buffer, so borderline points do not turn sampling noise into rejections.
     """
     if strict:

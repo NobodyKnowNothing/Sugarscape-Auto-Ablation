@@ -711,7 +711,7 @@ INSTANCE_TEMPLATE = """\
 Current Baseline & Constraints:
 - Strategy-only canonical size: {{ current_complexity.canonical_bytes if current_complexity else 'N/A' }} bytes
   (the judge also counts every Mesa function the model executes)
-- Target: remove, merge or substitute mechanisms while keeping the emergent features (inequality, carrying capacity, price discovery, spatial self-organization, environmental response).
+- Target: remove, merge or substitute mechanisms while keeping the emergent features (inequality, carrying capacity, price discovery, spatial self-organization) and how every one of them responds to every input, with trade on and off.
 
 Ablation History / Lessons Learned:
 ```

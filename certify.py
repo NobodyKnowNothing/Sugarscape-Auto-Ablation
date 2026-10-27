@@ -35,43 +35,32 @@ from judge import judge_hash
 from judge.controls import variant_code
 from judge.contract import code_hash
 from judge.design import load_profile
-from judge.features import FEATURE_NAMES, FEATURES, SCALAR_STATS, VECTOR_STATS
+from judge.domain import subset_order
+from judge.features import FEATURE_NAMES
 from judge.parallel import shutdown
-from judge.pipeline import RunError, collect, load_reference
-from judge.stats import (applicable, holm, nonequivalence_p, scalar_compare,
-                         vector_applicable, vector_compare)
+from judge.pipeline import RunError, bank_points, collect_points, load_reference, screen
+from judge.stats import holm
 
 ROOT = Path(__file__).resolve().parent
 LEDGER = ROOT / "mechanisms.json"
 
 
 def knockout_evidence(code: str, profile, ref, margins) -> dict:
-    """Holm-corrected evidence that `code` differs from canonical beyond margin somewhere."""
-    points = profile.screening
+    """Holm-corrected evidence that `code` departs from canonical beyond some margin, on holdout points."""
+    h = code_hash(code)
+    pts_all = bank_points(ref, "holdout")
+    order = subset_order(len(pts_all), "ko:" + h)
+    pts = [pts_all[i] for i in order[:min(profile["audit_points"], len(pts_all))]]
     try:
-        runs = collect(code, profile, "holdout", "ko-" + code_hash(code), points, profile["n_holdout"])
+        runs = collect_points(code, profile, "holdout", "ko-" + h, pts, profile["candidate_seeds"])
     except RunError as e:
-        return {"breaks": True, "why": f"model fails to run: {e}", "hits": []}
-    tests = []
-    for p in points:
-        rr = ref["points"][p]["runs"]
-        for f in FEATURES:
-            for s in SCALAR_STATS[f]:
-                rv = [r[s] for r in rr]
-                if not margins["active"].get(s, True) or not applicable(rv) or s not in margins["scalar"][p]:
-                    continue
-                c = scalar_compare([r[s] for r in runs[p]], rv, profile.alpha)
-                tests.append((f, p, s, nonequivalence_p(c, margins["scalar"][p][s]), c.direction()))
-            for s in VECTOR_STATS[f]:
-                rv = [r[s] for r in rr]
-                if s not in margins["vector"][p] or not vector_applicable(rv):
-                    continue
-                c = vector_compare([r[s] for r in runs[p]], rv, profile.alpha)
-                tests.append((f, p, s, nonequivalence_p(c, margins["vector"][p][s]), c.direction()))
-    rejects = holm([t[3] for t in tests], profile.alpha)
-    hits = [{"feature": f, "point": p, "stat": s, "p": round(pv, 6), "direction": d}
-            for (f, p, s, pv, d), rej in zip(tests, rejects) if rej]
-    broken = sorted({h["feature"] for h in hits})
+        return {"breaks": True, "features_broken": [], "why": f"model fails to run: {e}", "hits": []}
+    a = screen(runs, ref, margins, pts, profile.alpha, profile, which="holdout", seed=7)
+    tests = [t for t in a.tests if t.kind != "named"]
+    rejects = holm([t.p_exceeds(profile.alpha) for t in tests], profile.alpha)
+    hits = [{"feature": t.feature, "world": t.world, "stat": t.stat, "kind": t.kind, "term": t.term,
+             "p": round(t.p_exceeds(profile.alpha), 6)} for t, rej in zip(tests, rejects) if rej]
+    broken = sorted({x["feature"] for x in hits})
     return {"breaks": bool(hits), "features_broken": broken,
             "why": ", ".join(f"{f} ({FEATURE_NAMES[f]})" for f in broken) or "no feature shown to break",
             "hits": hits[:25], "n_tests": len(tests)}

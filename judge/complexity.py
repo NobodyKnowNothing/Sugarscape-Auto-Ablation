@@ -321,7 +321,7 @@ def _short(filename: str) -> str:
 def trace_runs(profile) -> list[tuple[dict, int, int]]:
     from judge.design import seeds
     runs = []
-    for point in ("default", "A_notrade"):
+    for point in ("default", "default_notrade"):
         for s in seeds("trace", "complexity", point, profile["trace_seeds"]):
             runs.append((profile.params(point), s, profile["trace_steps"]))
     return runs

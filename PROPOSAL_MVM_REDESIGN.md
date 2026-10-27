@@ -224,6 +224,11 @@ Phase 3 is the scientific core and the critical path. Phases 0–2 can proceed i
 ---
 
 ## 6. Decisions needed from the project owner
+
+> **Resolved (Oct 2026):** points 1 and 2 are settled in [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
+> - **Trait responses.** All of them are required, quantitatively, over a wide random-sampled input domain.
+> - **Trade.** It is a required switch, tested as a paired on/off contrast with price discovery required, but the bargaining rule itself is not required.
+> - **Fixed design points.** §3.4b's fixed design points are replaced by fresh random samples of the domain.
 1. **The feature list is the definition of "Sugarscape society".** Are E1–E5 the right set? Should the trade-on/off results (trade raises carrying capacity and inequality) be included? Including them means exchange is never removable.
 2. **Input-space scope.** What are the ranges for each input in the design (§3.4b)? Which agent-trait responses, such as the effect of vision on population, are required emergent features, and which may be dropped along with their rule?
 3. **The innocuous perturbation set.** Which changes count as "the same society"? This sets every margin, so it should be reviewed before Phase 3 and then frozen.

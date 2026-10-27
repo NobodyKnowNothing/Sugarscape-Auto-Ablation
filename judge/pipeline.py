@@ -4,19 +4,25 @@ Acceptance pipeline.
 Stage 0  static guard + traced canonical complexity (must drop by >= delta)
 Stage 1  smoke + determinism (judge-owned loop, contract validation); identity
          digests label pure refactors (label only, never a reason to accept)
-Stage 2  presence of E1-E4 at the default point on fresh seeds
-Stage 3  sequential TOST of E1-E4 statistics at every screening design point
-Stage 4  E5 response-surface equivalence across the screening design
-Audit    full design (screening + Latin hypercube) on holdout seeds
+Stage 2  presence of E1-E4 at the default point on fresh seeds (cheap gate)
+Stage 3  E1-E4 response-surface equivalence over a fresh random sample of the
+         input domain, in both trade worlds, in sequential looks of growing size
+Stage 4  E5 trait responses on the same sample: the effect of every input, the
+         trade contrast and the literature-backed responses
+Audit    a fresh sample of the i.i.d. holdout bank on holdout seeds, Markov
+         coverage bounds, and adversarial re-testing of the worst points
 
 Every comparison is against canonical Sugarscape (judge/reference), never the parent.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import sqlite3
 import time
+from contextlib import closing
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
@@ -24,11 +30,13 @@ import numpy as np
 from judge import JUDGE_DIR, judge_hash
 from judge import complexity as cx
 from judge import guard
-from judge.contract import code_hash, materialize
+from judge import surface
+from judge.contract import CACHE_DIR, code_hash, materialize
 from judge.design import Profile, design_hash, seeds
-from judge.features import FEATURE_NAMES, FEATURES, SCALAR_STATS, VECTOR_STATS, presence
+from judge.domain import Point, subset_order
+from judge.features import FEATURE_NAMES, FEATURES, SCALAR_STATS, TRADE_ONLY, presence
 from judge.parallel import job, run_jobs
-from judge.stats import Comparison, applicable, effect_compare, scalar_compare, vector_compare
+from judge.stats import scalar_compare
 
 REFERENCE_ROOT = JUDGE_DIR / "reference"
 
@@ -41,25 +49,99 @@ class RunError(Exception):
     pass
 
 
+_MEASURE_HASH = None
+
+
+def _measure_hash() -> str:
+    """Hash of the code that turns a run into statistics (cached runs are keyed by it)."""
+    global _MEASURE_HASH
+    if _MEASURE_HASH is None:
+        h = hashlib.sha256()
+        for f in ("features.py", "contract.py", "parallel.py"):
+            h.update((JUDGE_DIR / f).read_bytes())
+        _MEASURE_HASH = h.hexdigest()[:16]
+    return _MEASURE_HASH
+
+
+def _cache_db():
+    CACHE_DIR.mkdir(exist_ok=True)
+    db = sqlite3.connect(CACHE_DIR / "runs.sqlite")
+    db.execute("CREATE TABLE IF NOT EXISTS runs (k TEXT PRIMARY KEY, stats TEXT)")
+    return db
+
+
+def _run_key(code_h: str, params: dict, seed: int, steps: int) -> str:
+    blob = json.dumps([code_h, _measure_hash(), steps, sorted(params.items()), seed], default=str)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def _run_all(code: str, profile: Profile, specs: list[tuple[str, dict, int]], digest: bool = False) -> list[dict]:
+    """
+    specs: (label, params, seed). Raises RunError on any failed run.
+
+    Successful runs are cached by (model code, measurement code, inputs, seed, steps),
+    so re-analysing a calibration never re-simulates. Digest runs (determinism and
+    identity checks) always execute.
+    """
+    path = materialize(code)
+    ch = code_hash(code)
+    keys = [_run_key(ch, params, s, profile.steps) for _, params, s in specs]
+    cached = {}
+    if not digest:
+        with closing(_cache_db()) as db:
+            for i in range(0, len(keys), 500):
+                chunk = keys[i:i + 500]
+                q = f"SELECT k, stats FROM runs WHERE k IN ({','.join('?' * len(chunk))})"
+                cached.update({k: json.loads(v) for k, v in db.execute(q, chunk)})
+    todo = [i for i, k in enumerate(keys) if k not in cached]
+    jobs = [job(path, specs[i][0], specs[i][1], specs[i][2], profile.steps, digest) for i in todo]
+    results = dict(zip(todo, run_jobs(jobs, timeout=max(900, 60 * len(jobs)))))
+    out, fresh = [], []
+    for i, ((label, _, s), k) in enumerate(zip(specs, keys)):
+        if i in results:
+            r = results[i]
+            if not r["ok"]:
+                raise RunError(f"run failed at {label} (seed {s}): {r['error']}")
+            stats = r["stats"]
+            if digest:
+                stats["_digest"] = r["digest"]
+            else:
+                fresh.append((k, json.dumps(stats)))
+        else:
+            stats = cached[k]
+        stats["_seed"] = s
+        out.append(stats)
+    if fresh:
+        with closing(_cache_db()) as db, db:
+            db.executemany("INSERT OR REPLACE INTO runs VALUES (?, ?)", fresh)
+    return out
+
+
 def collect(code: str, profile: Profile, pool: str, key: str, points: list[str], n: int,
             start: int = 0, digest: bool = False) -> dict[str, list[dict]]:
-    """Run `n` seeds (from `start`) at each point; raise RunError on any failed run."""
-    path = materialize(code)
-    jobs, index = [], []
-    for p in points:
-        for s in seeds(pool, key, p, n, start):
-            jobs.append(job(path, p, profile.params(p), s, profile.steps, digest))
-            index.append(p)
-    results = run_jobs(jobs, timeout=max(600, 30 * len(jobs)))
+    """Run `n` seeds (from `start`) at each *named* point."""
+    specs = [(p, profile.params(p), s) for p in points for s in seeds(pool, key, p, n, start)]
+    res = _run_all(code, profile, specs, digest)
     out: dict[str, list[dict]] = {p: [] for p in points}
-    for p, j, r in zip(index, jobs, results):
-        if not r["ok"]:
-            raise RunError(f"run failed at point {p} (seed {j.seed}): {r['error']}")
-        stats = r["stats"]
-        stats["_seed"] = j.seed
-        if digest:
-            stats["_digest"] = r["digest"]
-        out[p].append(stats)
+    for (p, _, _), r in zip(specs, res):
+        out[p].append(r)
+    return out
+
+
+def collect_points(code: str, profile: Profile, pool: str, key: str, points: list[Point], n: int,
+                   start: int = 0) -> dict[str, list[dict]]:
+    """Run `n` seeds at each sampled domain point in every world -> {'pid|world': runs}."""
+    specs, keys = [], []
+    for pt in points:
+        for w, wp in profile.worlds.items():
+            k = surface.key(pt.id, w)
+            for s in seeds(pool, key, k, n, start):
+                specs.append((k, {**pt.params, **wp}, s))
+                keys.append(k)
+    res = _run_all(code, profile, specs)
+    out: dict[str, list[dict]] = {}
+    for k, r in zip(keys, res):
+        out.setdefault(k, []).append(r)
     return out
 
 
@@ -92,8 +174,12 @@ def calibration_status(profile_name: str) -> tuple[bool, str]:
     return True, "calibration fresh and passing"
 
 
+def bank_points(ref: dict, which: str = "bank") -> list[Point]:
+    return [Point(p["id"], p["params"], tuple(p["z"])) for p in ref[which]["points"]]
+
+
 # ---------------------------------------------------------------------------
-# Assessment (shared by the pipeline, calibration and certificates)
+# Presence gate (stage 2)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -101,116 +187,27 @@ class Test:
     feature: str
     point: str
     stat: str
-    kind: str          # scalar | vector | effect | presence
+    kind: str
     margin: float
-    status: str        # pass | fail | undecided
+    status: str
     comparison: dict | None = None
     note: str = ""
 
-    def ratio(self) -> float:
-        c = self.comparison or {}
-        if self.kind == "presence" or not c:
-            return 0.0
-        hi = c.get("hi")
-        lo = c.get("lo")
-        if hi is None or lo is None:
-            return math.inf
-        ucb = hi if self.kind == "vector" else max(abs(lo), abs(hi))
-        return ucb / self.margin if self.margin > 0 else math.inf
+
+def presence_tests(cand_runs: list[dict], ref: dict, alpha: float) -> list[Test]:
+    out = []
+    for f in FEATURES:
+        if ref["anchor"]["presence"].get(f):
+            ok, why = presence(f, cand_runs, alpha)
+            out.append(Test(f, "default", "presence", "presence", 0.0, "pass" if ok else "fail", None, why))
+    return out
 
 
-@dataclass
-class Assessment:
-    tests: list[Test] = field(default_factory=list)
-
-    def feature_status(self) -> dict[str, str]:
-        out = {}
-        for f in FEATURES + ["E5"]:
-            ts = [t for t in self.tests if t.feature == f]
-            if any(t.status == "fail" for t in ts):
-                out[f] = "fail"
-            elif any(t.status == "undecided" for t in ts):
-                out[f] = "undecided"
-            else:
-                out[f] = "pass"
-        return out
-
-    @property
-    def all_pass(self) -> bool:
-        return all(s == "pass" for s in self.feature_status().values())
-
-    @property
-    def any_clear_fail(self) -> bool:
-        return any(t.status == "fail" for t in self.tests)
-
-    def eq_distance(self) -> float:
-        r = [t.ratio() for t in self.tests if t.kind != "presence"]
-        return float(max(r)) if r else 0.0
-
-    def feedback(self) -> dict[str, list[str]]:
-        """Qualitative per-feature feedback (no numbers, no margins) for the proposer."""
-        fb: dict[str, list[str]] = {}
-        for t in self.tests:
-            if t.status == "pass":
-                continue
-            where = f"at '{t.point}'"
-            if t.kind == "presence":
-                msg = f"{t.note} {where}"
-            else:
-                c = Comparison(**{k: (math.inf if v is None else v) for k, v in t.comparison.items()})
-                verdict = "differs from Sugarscape" if t.status == "fail" else "not shown equivalent"
-                msg = f"{t.stat} {verdict} ({c.direction()}) {where}"
-            fb.setdefault(f"{t.feature} {FEATURE_NAMES[t.feature]}", []).append(msg)
-        return fb
-
-
-def _decide(comp: Comparison, margin: float) -> str:
-    if comp.equivalent(margin):
-        return "pass"
-    if comp.clearly_different(margin):
-        return "fail"
-    return "undecided"
-
-
-def assess(cand: dict[str, list[dict]], ref: dict, margins: dict, points: list[str], alpha: float,
-           features: list[str] | None = None) -> Assessment:
-    feats = features or (FEATURES + ["E5"])
-    a = Assessment()
-    active = margins["active"]
-    for p in points:
-        rruns = ref["points"][p]["runs"]
-        cruns = cand[p]
-        for f in FEATURES:
-            if f not in feats:
-                continue
-            if ref["points"][p]["presence"].get(f):
-                ok, why = presence(f, cruns, alpha)
-                a.tests.append(Test(f, p, "presence", "presence", 0.0, "pass" if ok else "fail", None, why))
-            for s in SCALAR_STATS[f]:
-                rv = [r[s] for r in rruns]
-                if not active.get(s, True) or not applicable(rv) or s not in margins["scalar"][p]:
-                    continue
-                comp = scalar_compare([r[s] for r in cruns], rv, alpha)
-                m = margins["scalar"][p][s]
-                a.tests.append(Test(f, p, s, "scalar", m, _decide(comp, m), comp.to_dict()))
-            for s in VECTOR_STATS[f]:
-                if not active.get(s, True) or s not in margins["vector"][p]:
-                    continue
-                comp = vector_compare([r[s] for r in cruns], [r[s] for r in rruns], alpha)
-                m = margins["vector"][p][s]
-                a.tests.append(Test(f, p, s, "vector", m, _decide(comp, m), comp.to_dict()))
-    if "E5" in feats and "default" in points:
-        for p in points:
-            if p == "default" or p not in margins["effect"]:
-                continue
-            for s, m in margins["effect"][p].items():
-                if not active.get(s, True):
-                    continue
-                comp = effect_compare([r[s] for r in cand[p]], [r[s] for r in cand["default"]],
-                                      [r[s] for r in ref["points"][p]["runs"]],
-                                      [r[s] for r in ref["points"]["default"]["runs"]], alpha)
-                a.tests.append(Test("E5", p, s, "effect", m, _decide(comp, m), comp.to_dict()))
-    return a
+def screen(cand: dict, ref: dict, margins: dict, pts: list[Point], alpha: float, profile: Profile,
+           features=None, which: str = "bank", seed: int = 0) -> surface.Assessment:
+    Z = {p.id: p.z for p in pts}
+    return surface.assess(cand, ref[which]["runs"], [p.id for p in pts], Z, margins, alpha, profile,
+                          features=features, seed=seed)
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +225,7 @@ class JudgeResult:
     features: dict = field(default_factory=dict)
     feedback: dict = field(default_factory=dict)
     eq_distance: float = math.nan
+    points: int = 0                 # domain points per world in the deciding look
     seeds_per_point: int = 0
     n_runs: int = 0
     identity_digests: list = field(default_factory=list)
@@ -299,64 +297,138 @@ def evaluate_candidate(code: str, profile: Profile, parent: dict | None = None,
 
     # Stage 2: presence at the default point ------------------------------------
     key = r.code_hash
-    n_pres = profile["n_presence"]
     try:
-        cand = collect(code, profile, "candidate", key, ["default"], n_pres)
+        pres_runs = collect(code, profile, "candidate", key, ["default"], profile["n_presence"])["default"]
     except RunError as e:
         return done(2, str(e))
-    a = assess(cand, ref, margins, ["default"], profile.alpha, features=FEATURES)
-    pres = [t for t in a.tests if t.kind == "presence" and t.status != "pass"]
+    pres = [t for t in presence_tests(pres_runs, ref, profile.alpha) if t.status != "pass"]
     if pres:
-        r.feedback = Assessment(pres).feedback()
+        r.feedback = {f"{t.feature} {FEATURE_NAMES[t.feature]}": [f"{t.note} at the default inputs"] for t in pres}
         r.features = {t.feature: "fail" for t in pres}
         return done(2, "presence: " + "; ".join(f"{t.feature} {t.note}" for t in pres))
-    log("    stage 2 ok: E1-E4 present")
+    log("    stage 2 ok: E1-E4 present at the default inputs")
 
-    # Stages 3-4: sequential equivalence over the screening design --------------
-    points = profile.screening
-    schedule = profile["candidate_schedule"]
-    alpha_look = profile.alpha / len(schedule)
-    have = {p: (len(cand[p]) if p in cand else 0) for p in points}
-    for p in points:
-        cand.setdefault(p, [])
-    for look, n in enumerate(schedule, 1):
+    # Stages 3-4: sequential looks over a fresh random sample of the domain -----
+    pts_all = bank_points(ref)
+    order = subset_order(len(pts_all), "screen:" + key)
+    schedule = [min(n, len(pts_all)) for n in profile["look_points"]]
+    look_alpha = profile["look_alpha"]       # alpha spending: sums to alpha; early looks mostly reject
+    n_k = profile["candidate_seeds"]
+    cand: dict[str, list[dict]] = {}
+    have = 0
+    a = None
+    for look, n_pts in enumerate(schedule, 1):
+        new = [pts_all[i] for i in order[have:n_pts]]
         try:
-            for p in points:
-                if have[p] < n:
-                    more = collect(code, profile, "candidate", key, [p], n - have[p], start=have[p])
-                    cand[p].extend(more[p])
-                    have[p] = n
+            cand.update(collect_points(code, profile, "candidate", key, new, n_k))
         except RunError as e:
             return done(3, str(e))
-        a = assess(cand, ref, margins, points, alpha_look)
+        have = n_pts
+        pts = [pts_all[i] for i in order[:n_pts]]
+        a = screen(cand, ref, margins, pts, look_alpha[look - 1], profile, seed=look)
         r.features = a.feature_status()
-        r.seeds_per_point = n
-        log(f"    look {look}/{len(schedule)} (n={n}/point): " + " ".join(f"{k}={v}" for k, v in r.features.items()))
+        r.points, r.seeds_per_point = n_pts, n_k
+        r.n_runs = sum(len(v) for v in cand.values())
+        log(f"    look {look}/{len(schedule)} ({n_pts} points x {len(profile.worlds)} worlds x {n_k} seeds): "
+            + " ".join(f"{k}={v}" for k, v in r.features.items()))
         if a.all_pass:
             r.eq_distance = a.eq_distance()
-            r.tests = [asdict(t) for t in a.tests]
-            r.n_runs = sum(have.values())
+            r.tests = [t.to_dict() for t in a.tests]
             return done(4, "", accepted=True)
-        if a.any_clear_fail or look == len(schedule):
+        if a.any_clear_fail:
             break
     r.feedback = a.feedback()
-    r.tests = [asdict(t) for t in a.tests]
-    r.n_runs = sum(have.values())
+    r.tests = [t.to_dict() for t in a.tests if t.status != "pass"]
+    r.eq_distance = a.eq_distance()
     failing = [k for k, v in r.features.items() if v != "pass"]
     stage = 4 if failing == ["E5"] else 3
     verdict = "differs" if a.any_clear_fail else "equivalence not demonstrated"
     return done(stage, f"{verdict}: " + ", ".join(f"{f} ({FEATURE_NAMES[f]})" for f in failing))
 
 
+# ---------------------------------------------------------------------------
+# Audit
+# ---------------------------------------------------------------------------
+
+def coverage_bounds(a: surface.Assessment, c: float) -> dict:
+    """
+    Markov bound from the L2 tests: with E_x[delta^2] <= U (the upper confidence
+    bound), the fraction of the domain where |delta| > c is at most U / c^2.
+    Summed over statistics, it bounds the fraction of the domain where *any*
+    statistic departs by more than c (union bound).
+    """
+    scalars = {s for f in FEATURES for s in SCALAR_STATS[f]}
+    per = {}
+    for t in a.tests:
+        if t.kind == "l2" and t.stat in scalars and t.status == "pass" and math.isfinite(t.hi):
+            per[f"{t.stat}|{t.world}"] = min(1.0, max(t.hi, 0.0) ** 2 / c ** 2)
+    return {"per_statistic": per, "worst": max(per.values(), default=1.0),
+            "any_statistic_union": min(1.0, sum(per.values()))}
+
+
+def worst_points(cand: dict, ref_runs: dict, pts: list[Point], margins: dict, k: int) -> list[tuple[float, Point, str]]:
+    scored = []
+    for pt in pts:
+        for w in margins["scales"]:
+            best = 0.0
+            for f in FEATURES:
+                for s in SCALAR_STATS[f]:
+                    if w == "notrade" and s in TRADE_ONLY:
+                        continue
+                    sc = margins["scales"][w].get(s)
+                    mk = surface._means(cand.get(surface.key(pt.id, w), []), s)
+                    mc = surface._means(ref_runs.get(surface.key(pt.id, w), []), s)
+                    if sc and math.isfinite(mk) and math.isfinite(mc):
+                        best = max(best, abs(mk - mc) / sc)
+            scored.append((best, pt, w))
+    scored.sort(key=lambda x: -x[0])
+    return scored[:k]
+
+
 def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | None = None) -> dict:
-    """Full-design audit on holdout seeds (single look)."""
+    """Holdout audit: fresh i.i.d. points, holdout seeds, single look, then adversarial refinement."""
     if ref is None or margins is None:
         ref, margins, _ = load_reference(profile.name)
-    points = profile.audit_points
+    h = code_hash(code)
+    pts_all = bank_points(ref, "holdout")
+    order = subset_order(len(pts_all), "audit:" + h)
+    pts = [pts_all[i] for i in order[:min(profile["audit_points"], len(pts_all))]]
     try:
-        cand = collect(code, profile, "holdout", code_hash(code), points, profile["n_holdout"])
+        cand = collect_points(code, profile, "holdout", h, pts, profile["candidate_seeds"])
     except RunError as e:
         return {"passed": False, "reason": str(e), "features": {}}
-    a = assess(cand, ref, margins, points, profile.alpha)
-    return {"passed": a.all_pass, "features": a.feature_status(), "feedback": a.feedback(),
-            "eq_distance": a.eq_distance(), "points": points, "n_per_point": profile["n_holdout"]}
+    a = screen(cand, ref, margins, pts, profile.alpha, profile, which="holdout", seed=99)
+    floor = profile.margin_floor
+
+    # Adversarial refinement: re-test the most discrepant points with more seeds.
+    located = []
+    worst = worst_points(cand, ref["holdout"]["runs"], pts, margins, profile["refine_points"])
+    n_ref = profile["refine_seeds"]
+    try:
+        for _, pt, w in worst:
+            label = surface.key(pt.id, w)
+            params = {**pt.params, **profile.worlds[w]}
+            rr = _run_all(canonical_code_text(), profile,
+                          [(label, params, s) for s in seeds("reference", "refine", label, n_ref)])
+            cr = _run_all(code, profile, [(label, params, s) for s in seeds("holdout", "refine:" + h, label, n_ref)])
+            tested = [s for f in FEATURES for s in SCALAR_STATS[f] if not (w == "notrade" and s in TRADE_ONLY)]
+            for s in tested:
+                comp = scalar_compare([x[s] for x in cr], [x[s] for x in rr], profile.alpha / len(tested))
+                if comp.clearly_different(floor["point_sigma"]):
+                    located.append({"point": pt.id, "world": w, "inputs": pt.params, "stat": s,
+                                    "direction": comp.direction()})
+    except RunError as e:
+        return {"passed": False, "reason": str(e), "features": a.feature_status()}
+    cov = coverage_bounds(a, floor["point_sigma"])
+    passed = a.all_pass and not located
+    return {"passed": passed, "features": a.feature_status(), "feedback": a.feedback(),
+            "eq_distance": a.eq_distance(), "points": len(pts), "seeds_per_point": profile["candidate_seeds"],
+            "located_failures": located, "coverage": cov,
+            "reason": "" if passed else ("located failures: " + "; ".join(
+                f"{x['stat']} {x['direction']} at {x['inputs']} ({x['world']})" for x in located[:3])
+                if located else "not all features equivalent on the holdout sample")}
+
+
+def canonical_code_text() -> str:
+    from judge.controls import canonical_code
+    return canonical_code()

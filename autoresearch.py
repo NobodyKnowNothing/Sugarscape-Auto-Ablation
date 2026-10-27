@@ -5,9 +5,11 @@ Sugarscape Minimal-Viable-Model Research Loop
 An LLM (Gemma) proposes mechanism-level changes to strategy.py. Each candidate
 is scored by the judge's canonical compressed complexity (including all executed
 Mesa code) and accepted only if its EMERGENT FEATURES are statistically
-equivalent to canonical Sugarscape across the pre-registered design of seeds and
-input parameters (judge/). Accepted models enter a Pareto archive; periodic
-holdout audits roll back unconfirmed changes.
+equivalent to canonical Sugarscape over the pre-registered seeds and
+input domain (judge/): the same features, and the same response of every
+feature to every input, at a fresh random sample of the domain in both trade
+worlds. Accepted models enter a Pareto archive; periodic holdout audits roll
+back unconfirmed changes.
 
 Architecture:
   - judge/            (FIXED)   contract, features, equivalence tests, complexity, design
@@ -657,12 +659,15 @@ def maybe_audit(archive: Archive, profile, ref, margins, args) -> None:
     if len(pending) < profile["audit_every"]:
         return
     best = archive.best()
-    log(f"\n═══ Audit: best model {best['id']} on holdout seeds over {len(profile.audit_points)} design points ═══")
+    log(f"\n═══ Audit: best model {best['id']} on holdout seeds at {profile['audit_points']} fresh i.i.d. domain points ═══")
     result = audit(archive.code(best["id"]), profile, ref, margins)
     archive.data["audits"].append({"model": best["id"], "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                   **{k: result.get(k) for k in ("passed", "features", "reason", "eq_distance")}})
+                                   **{k: result.get(k) for k in ("passed", "features", "reason", "eq_distance",
+                                                                 "located_failures", "coverage")}})
     if result["passed"]:
-        log("    audit passed: lineage confirmed on holdout seeds and the full design")
+        cov = (result.get("coverage") or {}).get("any_statistic_union")
+        log("    audit passed: lineage confirmed on holdout seeds over a fresh sample of the input domain"
+            + (f" (domain fraction with any gross departure <= {cov:.1%} at 95% confidence)" if cov is not None else ""))
         for e in archive.lineage(best):
             e["audited"] = True
         for e in pending:
