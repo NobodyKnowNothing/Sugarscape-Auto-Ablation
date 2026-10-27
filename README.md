@@ -51,7 +51,7 @@ All are computed by the judge from observed snapshots, time-resolved and dimensi
 | | Feature | Presence | Equivalence statistics |
 |---|---|---|---|
 | E1 | Wealth inequality | Gini grows beyond endowments; right skew | Gini at T/4 and T, top-10% share, CV, log Hill tail index, Lorenz curve |
-| E2 | Carrying capacity | Population plateaus | Plateau N/N₀, relaxation time, fluctuation, N(t)/N₀ trajectory |
+| E2 | Carrying capacity | Population plateaus | Plateau N/N₀, N(t)/N₀ trajectory (relaxation time and late fluctuation are reported as diagnostics) |
 | E3 | Price discovery | Log-price dispersion decreases; no exchange when trade is off | Late dispersion, decay, equilibrium price level, exchange rate, dispersion trajectory |
 | E4 | Spatial self-organization | Density–resource correlation beats a uniform-placement null | Density–resource rank correlation over time, Moran's I of density |
 | E5 | Trait responses | — | The response of every E1–E4 statistic to every input over its whole range (including no response where Sugarscape has none), the trade on/off contrast, and 8 responses from the book by name (Figs. IV-3, IV-6, IV-13; ch. II) |
@@ -83,8 +83,8 @@ Every input of Mesa's model is sampled jointly at random. Each point is run with
 | 0 | The static guard, plus traced canonical complexity. C must drop by at least max(8 B, 0.1%·C). |
 | 1 | Smoke run and determinism. If trajectories are bit-identical to the parent, the change is labelled `refactor` (a label only, never a reason to accept). |
 | 2 | Presence of E1–E4 at the default inputs, on fresh seeds. This is a cheap gate. |
-| 3 | E1–E4 over a fresh random domain sample, in sequential looks of 32 → 96 → 192 points per world (2 seeds each). Each statistic gets three tests: the noise-corrected RMS discrepancy over the domain (`l2`), the ratio of seed-to-seed variance (`spread`), and where the statistic exists at all (`defined`). |
-| 4 | E5 on the same sample. For every statistic × input, the regression of the discrepancy on the inputs (`slope`), the trade contrast, and the named literature responses. |
+| 3 | E1–E4 over a fresh random domain sample, in sequential looks of 32 → 96 → 256 points per world (2 seeds each), with α spent mostly on the last look. Each statistic gets three tests: the noise-corrected RMS discrepancy over the domain (`l2`), the ratio of seed-to-seed spread (`spread`, mean absolute difference between seeds), and where the statistic exists at all (`defined`). |
+| 4 | E5 on the same sample. For every statistic × input, the noise-weighted regression of the discrepancy on the inputs (`slope`), the trade contrast, and the named literature responses. |
 | Audit | Every K accepted mechanism changes: fresh i.i.d. holdout points on holdout seeds. The most discrepant points are re-tested with more seeds, and a Markov coverage bound is reported. On failure, the unaudited changes are rolled back. |
 
 How the tests are combined:
@@ -103,7 +103,8 @@ Margins are measured in canonical's typical seed-to-seed SD of each statistic ov
   - Indicators: 0.25.
   - Slopes: 2 SD across an input's whole range, or 20% of canonical's response.
   - Trade contrast: 0.5 SD, or 20%.
-  - Variance ratio: 2.
+  - Seed-spread ratio: 2.
+- **Diagnostics only:** relaxation time and late fluctuation (E2). These are reported but not tested, after the design-stage power check described in DESIGN_DECISIONS.md.
 - **Innocuous perturbations:** ±5% regrowth, growback after agents act, and ±1 endowment range.
 
 `calibrate_judge.py` checks the judge against controls:
@@ -144,7 +145,7 @@ python certify.py --profile full --knockouts knockouts/ --generate   # certifica
 
 Costs, measured on 4 cores (mean canonical run 3.3 s):
 - A candidate that fails clearly is rejected after the first look: 128 runs, about 2 min.
-- An accepted candidate needs the full 192-point look: 768 runs, about 11 min.
+- An accepted candidate needs the full 256-point look: 1,024 runs, about 15 min.
 
 The `smoke` profile (100 steps, small samples, wide margin floors) exists to exercise every code path quickly:
 
@@ -164,5 +165,5 @@ These are set in `judge/design.json` and justified in [DESIGN_DECISIONS.md](DESI
 - **Reference machine:** CPython + stdlib + numpy.
 - **Compute (full profile):**
   - Reference banks: 384 + 192 points × 2 worlds × 4 seeds.
-  - Candidates: 2 seeds per point at 32 → 96 → 192 points per world.
+  - Candidates: 2 seeds per point at 32 → 96 → 256 points per world.
   - Audits: 128 holdout points, plus 4 re-tested points with 8 + 8 seeds, every 5 accepted mechanism changes.

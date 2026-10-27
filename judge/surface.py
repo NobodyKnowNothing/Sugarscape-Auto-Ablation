@@ -16,7 +16,9 @@ fixed before any candidate is seen:
             test of Robinson, Duursma & Marshall 2005, applied to response
             surfaces; relational equivalence in the sense of Axtell et al. 1996).
   contrast  the trade on/off effect (difference of differences, paired by point).
-  spread    the ratio of seed-to-seed variances, pooled over the domain.
+  spread    the ratio of seed-to-seed spread (mean absolute difference between
+            seeds at the same point, a robust scale that is unbiased whatever the
+            seed count), averaged over the domain.
   defined   where the statistic exists at all (agents survive, trade persists).
   named     literature-backed responses (Epstein & Axtell's figures) must show the
             right sign in the candidate itself.
@@ -43,6 +45,7 @@ from judge.features import (FEATURE_NAMES, FEATURES, SCALAR_STATS, TRADE_ONLY, V
 
 REL_SD_FLOOR = 0.01
 N_BOOT = 1000
+PRIOR_DF = 3          # shrinkage of per-point noise estimates toward the domain-wide level (slope weights)
 
 
 def key(pid: str, world: str) -> str:
@@ -154,6 +157,18 @@ def _ols_hc3(y: np.ndarray, X: np.ndarray):
     wts = e ** 2 / np.maximum(1 - h, 1e-6) ** 2
     cov = XtX_inv @ (X.T * wts) @ X @ XtX_inv
     return b, np.sqrt(np.maximum(np.diag(cov), 0.0)), n - k
+
+
+def _wls_hc3(y: np.ndarray, X: np.ndarray, w: np.ndarray):
+    """Weighted least squares with HC3 standard errors (weights = inverse noise variances)."""
+    r = np.sqrt(w)
+    return _ols_hc3(y * r, X * r[:, None])
+
+
+def _mean_abs_diff(x: np.ndarray) -> float:
+    """Mean absolute difference over all pairs (Gini mean difference): a robust scale, unbiased for any n."""
+    n = len(x)
+    return float(np.abs(x[:, None] - x[None, :]).sum() / (n * (n - 1)))
 
 
 def _means(runs: list[dict], stat: str) -> float:
@@ -298,41 +313,47 @@ def defined_test(cand, ref, pids, w, stat, margin, alpha, rng) -> STest:
 
 
 def spread_test(cand, ref, pids, w, stat, margin_ratio, alpha, rng) -> STest | None:
+    """Log ratio of the domain-averaged mean absolute differences between seeds at the same point."""
     rows = []
     for p in pids:
         xk = _finite(_vals(cand.get(key(p, w), []), stat))
         xc = _finite(_vals(ref.get(key(p, w), []), stat))
         if len(xk) >= 2 and len(xc) >= 2:
-            rows.append(((len(xk) - 1) * xk.var(ddof=1), len(xk) - 1, (len(xc) - 1) * xc.var(ddof=1), len(xc) - 1))
+            rows.append((_mean_abs_diff(xk), _mean_abs_diff(xc)))
     if len(rows) < 5:
         return None
     R = np.array(rows)
-    if R[:, 2].sum() <= 1e-12:
+    if R[:, 1].sum() <= 1e-12:
         return None
-
-    def logratio(A):
-        num, den = A[:, 0].sum() / A[:, 1].sum(), A[:, 2].sum() / A[:, 3].sum()
-        return math.log(max(num, 1e-300) / max(den, 1e-300))
-
-    est = logratio(R)
+    est = math.log(max(R[:, 0].mean(), 1e-300) / R[:, 1].mean())
     idx = rng.integers(0, len(R), (N_BOOT, len(R)))
-    boots = np.array([logratio(R[i]) for i in idx])
+    num, den = R[idx, 0].mean(axis=1), R[idx, 1].mean(axis=1)
+    boots = np.log(np.maximum(num, 1e-300) / np.maximum(den, 1e-300))
     lo, hi = float(np.quantile(boots, alpha)), float(np.quantile(boots, 1 - alpha))
     m = math.log(margin_ratio)
     return STest(stat_feature(stat), w, stat, "spread", "", m, _two_sided(est, lo, hi, m), est, lo, hi, len(R))
 
 
 def slope_tests(cand, ref, pids, Z, w, stat, scale, margins: dict, terms: list[str], alpha) -> list[STest]:
-    y, X = [], []
+    """
+    Regress the per-point discrepancy on the input regressors (weighted by the inverse
+    noise variance of each point's discrepancy, estimated from canonical's seeds and
+    shrunk toward the domain-wide level); every coefficient must be equivalent to 0.
+    """
+    y, X, wts = [], [], []
     for p in pids:
-        mk, mc = _means(cand.get(key(p, w), []), stat), _means(ref.get(key(p, w), []), stat)
-        if math.isfinite(mk) and math.isfinite(mc):
-            y.append((mk - mc) / scale)
+        xk = _finite(_vals(cand.get(key(p, w), []), stat))
+        xc = _finite(_vals(ref.get(key(p, w), []), stat))
+        if len(xk) and len(xc):
+            y.append((xk.mean() - xc.mean()) / scale)
             X.append((1.0,) + tuple(Z[p]))
+            dfc = len(xc) - 1
+            v = ((dfc * xc.var(ddof=1) / scale ** 2 if dfc else 0.0) + PRIOR_DF) / (dfc + PRIOR_DF)
+            wts.append(1.0 / (v * (1.0 / len(xk) + 1.0 / len(xc))))
     if len(y) < len(terms) + 6:
         return [STest("E5", w, stat, "slope", t, margins[t], "undecided", n=len(y), note="too few comparable points")
                 for t in terms]
-    b, se, df = _ols_hc3(np.array(y), np.array(X))
+    b, se, df = _wls_hc3(np.array(y), np.array(X), np.array(wts))
     tq = sps.t.ppf(1 - alpha, df)
     out = []
     for j, t in enumerate(terms, start=1):
@@ -468,6 +489,7 @@ def assess(cand: dict, ref: dict, pids: list[str], Z: dict, margins: dict, alpha
     feats = set(features or (FEATURES + ["E5"]))
     rng = np.random.default_rng(seed)
     floors = profile.margin_floor
+    diagnostic = set(profile.design.get("diagnostic_stats", []))
     terms = margins["terms"]
     a = Assessment(canon=margins.get("canon", {}))
     active = margins.get("active", {})
@@ -478,7 +500,7 @@ def assess(cand: dict, ref: dict, pids: list[str], Z: dict, margins: dict, alpha
                 continue
             for s, kind in items:
                 sc = margins["scales"][w].get(s)
-                if sc is None or (kind != "vector" and not math.isfinite(sc)):
+                if s in diagnostic or sc is None or (kind != "vector" and not math.isfinite(sc)):
                     continue
                 if f in feats and active.get(key(s, w), True):
                     m = margins["l2"][w][s]
@@ -492,6 +514,8 @@ def assess(cand: dict, ref: dict, pids: list[str], Z: dict, margins: dict, alpha
                     a.tests += slope_tests(cand, ref, pids, Z, w, s, sc, margins["slope"][w][s], terms, alpha)
     if "E5" in feats and len(worlds) == 2:
         for s, m in margins["contrast"].items():
+            if s in diagnostic:
+                continue
             sc = math.sqrt((margins["scales"]["trade"][s] ** 2 + margins["scales"]["notrade"][s] ** 2) / 2)
             if not math.isfinite(sc):
                 continue

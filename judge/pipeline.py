@@ -366,20 +366,24 @@ def coverage_bounds(a: surface.Assessment, c: float) -> dict:
             "any_statistic_union": min(1.0, sum(per.values()))}
 
 
-def worst_points(cand: dict, ref_runs: dict, pts: list[Point], margins: dict, k: int) -> list[tuple[float, Point, str]]:
+def tested_scalars(profile: Profile, world: str) -> list[str]:
+    diagnostic = set(profile.design.get("diagnostic_stats", []))
+    return [s for f in FEATURES for s in SCALAR_STATS[f]
+            if s not in diagnostic and not (world == "notrade" and s in TRADE_ONLY)]
+
+
+def worst_points(cand: dict, ref_runs: dict, pts: list[Point], margins: dict, k: int,
+                 profile: Profile) -> list[tuple[float, Point, str]]:
     scored = []
     for pt in pts:
         for w in margins["scales"]:
             best = 0.0
-            for f in FEATURES:
-                for s in SCALAR_STATS[f]:
-                    if w == "notrade" and s in TRADE_ONLY:
-                        continue
-                    sc = margins["scales"][w].get(s)
-                    mk = surface._means(cand.get(surface.key(pt.id, w), []), s)
-                    mc = surface._means(ref_runs.get(surface.key(pt.id, w), []), s)
-                    if sc and math.isfinite(mk) and math.isfinite(mc):
-                        best = max(best, abs(mk - mc) / sc)
+            for s in tested_scalars(profile, w):
+                sc = margins["scales"][w].get(s)
+                mk = surface._means(cand.get(surface.key(pt.id, w), []), s)
+                mc = surface._means(ref_runs.get(surface.key(pt.id, w), []), s)
+                if sc and math.isfinite(mk) and math.isfinite(mc):
+                    best = max(best, abs(mk - mc) / sc)
             scored.append((best, pt, w))
     scored.sort(key=lambda x: -x[0])
     return scored[:k]
@@ -402,7 +406,7 @@ def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | 
 
     # Adversarial refinement: re-test the most discrepant points with more seeds.
     located = []
-    worst = worst_points(cand, ref["holdout"]["runs"], pts, margins, profile["refine_points"])
+    worst = worst_points(cand, ref["holdout"]["runs"], pts, margins, profile["refine_points"], profile)
     n_ref = profile["refine_seeds"]
     try:
         for _, pt, w in worst:
@@ -411,7 +415,7 @@ def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | 
             rr = _run_all(canonical_code_text(), profile,
                           [(label, params, s) for s in seeds("reference", "refine", label, n_ref)])
             cr = _run_all(code, profile, [(label, params, s) for s in seeds("holdout", "refine:" + h, label, n_ref)])
-            tested = [s for f in FEATURES for s in SCALAR_STATS[f] if not (w == "notrade" and s in TRADE_ONLY)]
+            tested = tested_scalars(profile, w)
             for s in tested:
                 comp = scalar_compare([x[s] for x in cr], [x[s] for x in rr], profile.alpha / len(tested))
                 if comp.clearly_different(floor["point_sigma"]):

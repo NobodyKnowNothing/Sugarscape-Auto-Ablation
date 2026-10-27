@@ -42,11 +42,11 @@ Each section gives the precedent, what follows from it, the decision, and what w
 **All trait responses are required, quantitatively, over the whole domain.** For every feature statistic (E1–E4), in each trade world:
 
 1. **Distribution over the domain (E1–E4, `l2` test).** The root-mean-square discrepancy between the candidate's and canonical's mean statistic, taken over the input domain, must be below the margin. This is the "small Lyapunov-like distance" between the two feature maps. It is measured in units of canonical's seed-to-seed SD, and noise-corrected so seed noise does not count as discrepancy.
-2. **Every response (E5, `slope` test).** The per-point discrepancy is regressed on the eight input regressors: log population, log regrowth, and the mean and spread of vision, metabolism and endowment. Each coefficient must be equivalent to zero. That means the candidate's response to each input across its whole range matches canonical's. The margin is max(2 SD, 20% of canonical's own response, the largest shift an innocuous perturbation produces).
+2. **Every response (E5, `slope` test).** The per-point discrepancy is regressed on the eight input regressors: log population, log regrowth, and the mean and spread of vision, metabolism and endowment. The regression is weighted by each point's noise level, estimated from canonical's seeds and shrunk toward the domain-wide level, with HC3 robust errors. Each coefficient must be equivalent to zero. That means the candidate's response to each input across its whole range matches canonical's. The margin is max(2 SD, 20% of canonical's own response, the largest shift an innocuous perturbation produces).
    - A response canonical *lacks* is also required to be absent. A spurious response fails.
    - Responses smaller than the per-point noise are invisible to point-by-point comparison but detectable when pooled over the domain. That is why the responses are tested explicitly instead of being left to the `l2` test.
 3. **Trade contrast (E5, `contrast` test).** The trade on/off effect, paired by point, must match.
-4. **Variability and existence.** The seed-to-seed variance (`spread`) and *where* each statistic exists at all (`defined`) must match. The second covers survival and trade persistence: collapse and no-death regions must coincide.
+4. **Variability and existence.** Seed-to-seed variability (`spread`) must be within a factor of 2. It is measured as the mean absolute difference between seeds at the same point: a robust scale, unbiased for any seed count. This catches deterministic or twice-as-noisy candidates. *Where* each statistic exists at all (`defined`) must also match, which covers survival and trade persistence: collapse and no-death regions must coincide.
 5. **Named responses (E5, `named` test).** Eight responses from the book are additionally checked as signed effects in the candidate itself. They feed the qualitative feedback the LLM sees ("does not reproduce 'carrying capacity rises with mean vision' (IV-6a)"). A response the canonical model does not show over this domain is reported and not required.
 
 | id | claim | source |
@@ -75,7 +75,22 @@ These were estimated from 64 points, so they are indicative. The calibration rep
 - Trade raises the plateau by **+1.08 SD** (SE 0.20).
 - Trade raises the Gini by **+0.83 SD** (SE 0.21).
 
-The book's IV-6 and IV-13 directions hold in canonical G1MT across the whole domain, not just at the defaults. Responses span three orders of magnitude, from about 1 SD to about 50 SD. That is why slope margins combine an absolute floor with a relative one.
+The 384-point screening bank of the full calibration confirms 7 of the 8 named responses across the whole domain, not just at the defaults:
+
+| id | canonical effect over the domain | 95% one-sided bound | holds |
+|---|---|---|---|
+| IV-6a carrying capacity rises with vision (trade) | +7.6 SD | +5.1 | yes |
+| IV-6b same, without trade | +8.1 SD | +5.6 | yes |
+| IV-6c carrying capacity higher with trade | +0.90 SD | +0.79 | yes |
+| IV-13a inequality falls with vision | −0.51 SD (wrong direction) | −1.37 | **no** |
+| IV-13b inequality higher with trade | +0.64 SD | +0.56 | yes |
+| IV-3 price dispersion falls over time | log ratio −1.34 | −1.24 | yes |
+| II-met carrying capacity falls with metabolism | +48 SD | +46 | yes |
+| II-growback carrying capacity rises with regrowth | +4.6 SD | +3.0 | yes |
+
+Fig. IV-13a does not hold robustly in Mesa's G1MT over this domain. Mesa's own test suite never implemented it either; it is listed as a TODO. So it is reported, not required by name. "All trait responses required" still applies to it: the slope test requires a candidate to match canonical's *actual* response of the Gini to vision, whatever its sign. The reference is the model, not the book's claim about it.
+
+Responses span three orders of magnitude, from about 1 SD to about 50 SD. That is why slope margins combine an absolute floor with a relative one.
 
 ### What "required" means when an input does not matter
 
@@ -138,8 +153,16 @@ For each input there is an "ignore this input" knockout: the model behaves as at
 - *Many points, few seeds.* The candidate gets 2 seeds per point. The variance of a domain-level estimate scales as (1 + n_cand/n_ref)/budget, so spreading runs across points beats repeating seeds. Two seeds are kept so seed noise can be removed from the discrepancy estimate.
 
 **Sequential looks.**
-- The candidate is screened at 32, then 96, then 192 points per world, with α split across the looks. Clear failures are rejected at the first look, after 128 runs (about 2 minutes on 4 cores).
-- Acceptance needs every test to pass. In practice that takes the full 192 points (768 runs, about 11 minutes on 4 cores), because demonstrating response equivalence needs the pooled precision.
+- The candidate is screened at 32, then 96, then 256 points per world.
+- α is spent mostly on the last look (0.0025, 0.0075, 0.04), because early looks exist to reject, not to accept. Clear failures are rejected at the first look, after 128 runs (about 2 minutes on 4 cores).
+- Acceptance needs every one of ~300 tests to pass. In practice that takes the full 256 points (1,024 runs, about 15 minutes on 4 cores).
+
+**Power check (design stage).** Before trusting this, canonical Sugarscape was compared against *itself* on disjoint seeds of the screening bank (2 vs 2 seeds, noisier than real use). This changed three things:
+- *The seed-variance test (variance ratio, margin 2) almost never resolved.* Variance ratios of heavy-tailed statistics are too imprecise. It became the robust mean-absolute-difference ratio with a factor-2 margin.
+- *A few slope tests on price statistics stayed undecided.* Their noise is very uneven across the domain. Slopes became noise-weighted.
+- *Two heavy-tailed E2 statistics remained the only unreliable tests.* Relaxation time and late fluctuation are exactly 0 in the no-death regime and erratic near collapse. They were demoted to diagnostics; population dynamics stay tested through the whole N(t)/N₀ trajectory.
+
+After these changes, an equivalent model passed every test in 10 of 12 random 256-point replications even in the noisier 2-vs-2 setup. The held-out positive controls were not used for any of these decisions.
 
 **What a passing model can claim over the domain.** The `l2` upper bound gives an assumption-free coverage bound by Markov's inequality: the fraction of the domain where a statistic departs by more than *c* seed-SDs is at most UCB²/c². Audits report this per statistic and in total (a union bound).
 
@@ -193,9 +216,9 @@ For each input there is an "ignore this input" knockout: the model behaves as at
 |---|---|---|
 | Inputs | 8 one-at-a-time sweep points + 24 fixed LHS points over 4 inputs | the whole domain of all 8 inputs (min/span per trait) × trade on/off |
 | Sampling | fixed points, reused for every candidate | a fresh random subset of a 384-point Sobol' bank per candidate; a separate i.i.d. holdout bank for audits |
-| Seeds | 20 → 40 → 60 per point at 8 points | 2 per point at 32 → 96 → 192 points per world |
-| Feature equivalence | per-point TOST | noise-corrected domain RMS discrepancy (`l2`), seed-variance ratio, definedness |
-| Responses (E5) | difference-of-differences between fixed sweep points | slope equivalence for every statistic × input, trade contrast, named literature responses |
+| Seeds | 20 → 40 → 60 per point at 8 points | 2 per point at 32 → 96 → 256 points per world, α spent mostly on the last look |
+| Feature equivalence | per-point TOST | noise-corrected domain RMS discrepancy (`l2`), robust seed-spread ratio, definedness |
+| Responses (E5) | difference-of-differences between fixed sweep points | noise-weighted slope equivalence for every statistic × input, trade contrast, named literature responses |
 | Statistics | Hill index raw; dispersion decay undefined at perfect convergence | log Hill index; ε-stabilized decay; presence indicators (0/1) whose domain-wide probabilities must match |
 | Controls | 4 knockouts, 3 nulls | + 6 "ignore an input" knockouts, a certain-negative noise-exchange null; MRS-stop removal and ZI-C prices moved to probes |
 | Audit | 32 points on holdout seeds | fresh i.i.d. points, adversarial re-test of the worst points, Markov coverage bound |

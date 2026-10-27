@@ -41,7 +41,7 @@
     {"id": "II-growback", "claim": "carrying capacity rises with the regrowth rate", "source": "Epstein & Axtell 1996, ch. II (growback rule G)", "stat": "plateau_frac", "world": "notrade", "term": "log_regrowth_rate", "sign": 1}
   ],
   "margin_floor": {
-    "comment": "Smallest margins, in units of canonical's typical within-point (seed-to-seed) SD of the statistic over the domain, or in probability units for 0/1 indicators. Margins are max(floor, relative floor x canonical's own response, largest upper confidence bound produced by an innocuous perturbation). l2: root-mean-square discrepancy over the domain. slope: difference in the response to one input across its whole range. contrast: difference in the trade on/off effect. spread: ratio of seed-to-seed variances. point: per-point shift that counts as a located failure in audits.",
+    "comment": "Smallest margins, in units of canonical's typical within-point (seed-to-seed) SD of the statistic over the domain, or in probability units for 0/1 indicators. Margins are max(floor, relative floor x canonical's own response, largest upper confidence bound produced by an innocuous perturbation). l2: root-mean-square discrepancy over the domain. slope: difference in the response to one input across its whole range. contrast: difference in the trade on/off effect. spread: ratio of seed-to-seed spreads (mean absolute difference between seeds). point: per-point shift that counts as a located failure in audits.",
     "l2_sigma": 1.0,
     "indicator_rms": 0.25,
     "defined_rms": 0.25,
@@ -51,8 +51,11 @@
     "contrast_rel": 0.2,
     "spread_ratio": 2.0,
     "point_sigma": 2.5,
-    "missing_max": 0.2
+    "missing_max": 0.2,
+    "spread_comment": "The spread test catches gross departures in stochasticity (a deterministic candidate, or one twice as noisy)."
   },
+  "diagnostic_stats": ["tau_frac", "fluct_cv"],
+  "diagnostic_comment": "Computed and reported but not tested. Design-stage power analysis (canonical against itself on disjoint seeds of the screening bank) showed these heavy-tailed E2 statistics (exactly 0 in the no-death regime, erratic near collapse) were the only ones whose equivalence could not be demonstrated reliably at the affordable sample size. Population relaxation and stability remain tested through the whole trajectory N(t)/N0 (pop_traj) and the plateau.",
   "complexity": {
     "delta_abs_bytes": 8,
     "delta_rel": 0.001,
@@ -68,10 +71,10 @@
       "anchor_seeds": 40,
       "n_presence": 10,
       "candidate_seeds": 2,
-      "look_points": [32, 96, 192],
+      "look_points": [32, 96, 256],
       "look_alpha": [0.0025, 0.0075, 0.04],
       "perturbation_points": 192,
-      "positive_points": 192,
+      "positive_points": 256,
       "positive_replications": 2,
       "negative_points": 64,
       "audit_points": 128,
@@ -113,7 +116,7 @@
         "defined_rms": 0.45,
         "slope_sigma": 4.0,
         "contrast_sigma": 2.0,
-        "spread_ratio": 4.0
+        "spread_ratio": 2.5
       }
     }
   }
