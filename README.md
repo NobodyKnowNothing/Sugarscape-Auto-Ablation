@@ -25,6 +25,7 @@ calibrate_judge.py         builds the reference ensemble and margins and calibra
 autoresearch.py            the LLM research loop (Pareto archive, move portfolio, ledger, audits, git sub-repo)
 edit_harness.py            Gemma prompting/parsing (hypothesis-driven proposals, full rewrites, multi-edit), failover
 certify.py                 knockout certificate: is every surviving rule necessary for some emergent feature?
+power_check.py             power check: canonical against itself on disjoint seeds (does the judge accept a true equivalent?)
 mechanisms.json            mechanism ledger: rule statuses and evidence
 canonical_strategy.py      canonical Mesa G1MT ported to the judge contract (the reference model)
 strategy.py                current best model (the loop's working copy)
@@ -138,6 +139,7 @@ pip install -r requirements.txt pytest
 
 pytest test_judge.py -v                                   # judge tests
 JUDGE_WORKERS=4 python calibrate_judge.py --profile full  # required before a real run (~3-4 h on 4 cores)
+python power_check.py --profile full                      # canonical vs itself; writes judge/reference/full/POWER.md
 python autoresearch.py --profile full                     # research loop (needs GOOGLE_API_KEY; pushes to agent_repo branch)
 python autoresearch.py --profile full --no-push           # commit locally only
 python certify.py --profile full --knockouts knockouts/ --generate   # certificate for the final model
