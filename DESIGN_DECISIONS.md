@@ -13,7 +13,7 @@ Each section gives the precedent, what follows from it, the decision, and what w
 |---|---|
 | Which trait responses are required? | **All of them, quantitatively, over the whole input domain.** Each feature statistic must respond to every input (population, regrowth, the mean and spread of vision, metabolism and endowment) and to trade on/off as Sugarscape does, within pre-registered margins. That includes *not* responding where Sugarscape doesn't. Eight responses reported in Epstein & Axtell's book are additionally checked by name and must show the right sign. |
 | How are the inputs swept? | **A fresh random sample of a wide domain for every evaluation, rather than a grid or fixed points.** The ESN connection holds for the *sampling*. Random sampling of wide, log-scaled ranges with a few seeds per configuration needs a number of points that does not grow with the number of inputs. The connection does not hold for the *goal*: ESN search optimizes, this judge verifies. So the estimators and tests come from computer experiments, ABM sensitivity analysis and statistical model checking. Adaptive search is kept for falsification only. |
-| Is trade required? | **Yes, as a switch, not as a mechanism.** Every point is run with trade on and off. Both societies, and the difference between them, must be reproduced. Price discovery is required when trade is on, and no exchange may happen when it is off. The bargaining rule itself (MRS-crossing stop, geometric-mean price, repeated bargaining) is not required. Whether simpler trading reproduces the same signatures is the empirical question the loop answers. |
+| Is trade required? | **Yes, as a switch, not as a mechanism.** Every point is run with trade on and off. Both societies, and the difference between them, must be reproduced. Price discovery is required when trade is on, and no exchange may happen when it is off. The bargaining rule itself (MRS-crossing stop, geometric-mean price, repeated bargaining) is not required. Whether simpler trading reproduces the same signatures is the empirical question the loop answers. Calibration has already answered two such questions: the MRS-crossing stop can be removed, while MRS-based pricing is needed for price discovery (§5). |
 
 ---
 
@@ -225,7 +225,39 @@ After these changes, an equivalent model passed every test in 10 of 12 random 25
 
 Code: `judge/domain.py` (domain and sampling), `judge/surface.py` (tests), `judge/pipeline.py`, `judge/design.json`, `calibrate_judge.py`, `judge/controls/__init__.py`.
 
-## 5. Limits
+## 5. Calibration results (full profile)
+
+Full report: [judge/reference/full/CALIBRATION.md](judge/reference/full/CALIBRATION.md). Power check: [judge/reference/full/POWER.md](judge/reference/full/POWER.md).
+
+**The judge passes its calibration.**
+
+| check | result |
+|---|---|
+| Positive controls (independent numpy re-implementation; same rules with different random draws) | **4/4 replications pass all 272 tests** at the 256-point final look. Estimated pass probability 0.87–0.97 (bias-corrected, treating tests as independent, which is conservative). |
+| Power check (canonical against itself, 2 vs 2 seeds, conservative) | 10/12 replications pass all tests. Each of the 2 misses is one undecided test; no test ever *fails*. |
+| Knockouts | **11/11 rejected** with their targeted features failing: no trade, no growback, random movement, uniform vision, trading although disabled, and all six input-ignoring knockouts. |
+| Null societies | **3/3 rejected** (random walkers, static agents, noise exchange). |
+| Separation | every tested statistic is moved beyond margin by some knockout or null; none dropped. |
+| Margins | only 2 of ~270 were widened by the innocuous perturbations. All others sit at the pre-registered floors. |
+
+Taken together, true power for an equivalent candidate is roughly 85–97% per evaluation. A truly equivalent model is therefore occasionally left "undecided" and rejected, never accepted wrongly. That costs the search some time but does not compromise validity.
+
+### What the calibration already says about "how much can you throw away"
+
+- **Every input is required.** Canonical responds beyond margin to population, regrowth, vision, metabolism and endowment, and to the trade switch. Every input-ignoring knockout is rejected, so no rule that consumes an input can be dropped without reproducing its response some other way.
+- **The MRS-crossing stop is not needed.** Removing it from the trade rule passes all 272 tests: every feature and every trait response, with estimated pass probability 0.98. It can be thrown away.
+- **MRS-based pricing is needed, but only for price discovery.** Trading at random prices still requires both parties to gain (Gode & Sunder's budget-constrained zero-intelligence traders). It reproduces inequality, carrying capacity and spatial organization (E1, E2, E4 pass). It fails price discovery in two ways:
+  - prices stay too dispersed: late dispersion RMS discrepancy 1.34 SD, interval [1.09, 1.56], against a margin of 1;
+  - the dependence of dispersion on vision is too weak: −3.0 SD [−3.9, −2.2] against a margin of 2.
+
+  This matches the ZI literature as it stands. Structure alone delivers the allocation-level outcomes, and price convergence needs more than zero intelligence.
+- **The book's Fig. IV-13a does not hold in Mesa's G1MT over this domain** (−0.51 SD, bound −1.37). The other seven named responses do. The trade effects over the domain:
+  - carrying capacity +0.90 SD;
+  - Gini +0.64 SD (+0.87 at T/4);
+  - spatial clustering (Moran's I) +0.36 SD;
+  - a heavier wealth tail (log Hill −0.38 SD).
+
+## 6. Limits
 
 - The domain is a modelling choice. Equivalence is claimed over *this* domain under *this* sampling measure, and nowhere else. The ranges are pre-registered in `judge/design.json` and hashed into every result.
 - Slope tests check linear projections of the responses. Nonlinear shape differences are caught only through the `l2` test, which has less power for small effects.

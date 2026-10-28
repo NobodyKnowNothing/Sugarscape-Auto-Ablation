@@ -122,6 +122,15 @@ The loop refuses to start if calibration is missing, stale (the judge or design 
 - which literature responses hold in canonical G1MT;
 - every control's outcome.
 
+## Calibration status (full profile)
+
+**Passed.** See `judge/reference/full/CALIBRATION.md` and `POWER.md`, and §5 of DESIGN_DECISIONS.md.
+- **Positive controls:** both pass all 272 tests in 4/4 replications.
+- **Knockouts and nulls:** all 11 knockouts and all 3 null societies are rejected with their targeted features failing.
+- **Probes, so far:**
+  - the MRS-crossing stop can be removed without changing any feature or trait response;
+  - MRS-based pricing is needed for price discovery, but not for inequality, carrying capacity or spatial organization.
+
 ## Complexity
 
 C = min over gzip/bz2/lzma of the compressed `canon(strategy.py + executed dependency code)`, minus the empty-template size.

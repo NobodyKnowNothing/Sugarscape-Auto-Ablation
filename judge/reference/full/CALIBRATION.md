@@ -1,7 +1,7 @@
 # Judge calibration: profile `full`
 
 - Result: **PASSED** (positive controls min pass rate 1.00, negative/null controls min fail rate 1.00; required 0.95 / 0.95)
-- Judge hash `03b01582d2c82024`, design hash `5bc467c0868721bb`, created 2026-10-28T00:08:23+00:00, 1.29 h
+- Judge hash `03b01582d2c82024`, design hash `5bc467c0868721bb`, created 2026-10-28T00:32:35+00:00, 0.23 h
 - Screening bank: 384 scrambled-Sobol' points x 2 worlds x 4 seeds; holdout bank: 192 i.i.d. points x 2 x 4
 
 ## Literature-backed responses in canonical G1MT over the domain
@@ -79,8 +79,8 @@ Change of each statistic across the full range of each input, in units of its ty
 
 | control | role | expected | outcome | features | est. pass prob. (positives) |
 |---|---|---|---|---|---|
-| numpy_reimplementation | positive | accept | as expected | E1=pass E2=pass E3=pass E4=pass E5=pass | 0.021 (min slack 0.2 SE) |
-| rng_reorder | positive | accept | as expected | E1=pass E2=pass E3=pass E4=pass E5=pass | 0.049 (min slack -0.1 SE) |
+| numpy_reimplementation | positive | accept | as expected | E1=pass E2=pass E3=pass E4=pass E5=pass | 0.865 (min slack 1.2 SE) |
+| rng_reorder | positive | accept | as expected | E1=pass E2=pass E3=pass E4=pass E5=pass | 0.972 (min slack 1.9 SE) |
 | ko_no_trade | negative | reject E3,E5 | as expected | E1=undecided E2=fail E3=fail E4=undecided E5=fail |  |
 | ko_no_growback | negative | reject E2 | as expected | E1=fail E2=fail E3=fail E4=fail E5=fail |  |
 | ko_random_move | negative | reject E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=fail |  |
@@ -94,7 +94,16 @@ Change of each statistic across the full range of each input, in units of its ty
 | null_random_walk | null | reject E3,E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=fail |  |
 | null_static_agents | null | reject E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=fail |  |
 | null_noise_exchange | null | reject E3 | as expected | E1=fail E2=fail E3=fail E4=undecided E5=fail |  |
-| ko_no_mrs_stop | probe | report | as expected | E1=undecided E2=pass E3=undecided E4=pass E5=undecided |  |
-| null_random_price | probe | report | as expected | E1=pass E2=pass E3=undecided E4=pass E5=undecided |  |
+| ko_no_mrs_stop | probe | verdict | would be accepted | E1=pass E2=pass E3=pass E4=pass E5=pass | 0.979 (min slack 2.2 SE) |
+| null_random_price | probe | verdict | rejected (E3, E5) | E1=pass E2=pass E3=fail E4=pass E5=fail |  |
 
 Statistics dropped as non-discriminative: none
+
+## Probes: open mechanism questions
+
+Each probe is judged exactly like a candidate at the final look. 'Would be accepted' means the mechanism it removes is not needed for any required feature or trait response over this domain.
+
+- **ko_no_mrs_stop** (MRS-crossing stop removed from the trade rule): would be accepted.
+- **null_random_price** (random price unrelated to MRS, but trades still need both parties better off (zero-intelligence traders with a budget constraint, Gode & Sunder 1993)): rejected (E3, E5).
+  - E3: l2 disp_late  (trade) estimate +1.34 [+1.09, +1.56], margin 1.00
+  - E5: slope disp_late vision_mean (trade) estimate -3.02 [-3.89, -2.16], margin 2.00

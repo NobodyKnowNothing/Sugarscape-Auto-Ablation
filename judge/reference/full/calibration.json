@@ -14,8 +14,8 @@
    "targets": [],
    "note": "",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 0.0212959,
-   "oc_min_slack": 0.179398,
+   "oc_pass_probability": 0.864758,
+   "oc_min_slack": 1.17945,
    "replications": [
     {
      "features": {
@@ -41,8 +41,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 0.107994,
-     "oc_min_slack": 0.460726,
+     "oc_pass_probability": 0.864758,
+     "oc_min_slack": 1.17945,
      "failing_tests": []
     },
     {
@@ -69,8 +69,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 0.0212959,
-     "oc_min_slack": 0.179398,
+     "oc_pass_probability": 0.970181,
+     "oc_min_slack": 2.11011,
      "failing_tests": []
     }
    ]
@@ -81,8 +81,8 @@
    "targets": [],
    "note": "",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 0.0493281,
-   "oc_min_slack": -0.0568712,
+   "oc_pass_probability": 0.971565,
+   "oc_min_slack": 1.92492,
    "replications": [
     {
      "features": {
@@ -108,8 +108,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 0.0695249,
-     "oc_min_slack": -0.0568712,
+     "oc_pass_probability": 0.971565,
+     "oc_min_slack": 1.92492,
      "failing_tests": []
     },
     {
@@ -136,8 +136,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 0.0493281,
-     "oc_min_slack": 0.561049,
+     "oc_pass_probability": 0.977353,
+     "oc_min_slack": 2.40902,
      "failing_tests": []
     }
    ]
@@ -1356,7 +1356,7 @@
    "note": "",
    "rate_as_expected": 1.0,
    "oc_pass_probability": 0.0,
-   "oc_min_slack": -25.6934,
+   "oc_min_slack": -14.6775,
    "replications": [
     {
      "features": {
@@ -1383,7 +1383,7 @@
      },
      "as_expected": true,
      "oc_pass_probability": 0.0,
-     "oc_min_slack": -25.6934,
+     "oc_min_slack": -14.6775,
      "failing_tests": [
       {
        "feature": "E1",
@@ -1958,7 +1958,7 @@
    "note": "canonical responds: plateau_frac~vision_mean (trade), disp_late~vision_mean (trade), plateau_frac~vision_mean (notrade)",
    "rate_as_expected": 1.0,
    "oc_pass_probability": 0.0,
-   "oc_min_slack": -12.3014,
+   "oc_min_slack": -7.7139,
    "replications": [
     {
      "features": {
@@ -1985,7 +1985,7 @@
      },
      "as_expected": true,
      "oc_pass_probability": 0.0,
-     "oc_min_slack": -12.3014,
+     "oc_min_slack": -7.7139,
      "failing_tests": [
       {
        "feature": "E1",
@@ -2559,8 +2559,8 @@
    ],
    "note": "canonical responds: plateau_frac~log_initial_population (trade), drc_c1~log_initial_population (trade), drc_T~log_initial_population (trade), moran_T~log_initial_population (trade)",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 3.14285e-290,
-   "oc_min_slack": -8.52508,
+   "oc_pass_probability": 2.02832e-203,
+   "oc_min_slack": -5.55279,
    "replications": [
     {
      "features": {
@@ -2586,8 +2586,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 3.14285e-290,
-     "oc_min_slack": -8.52508,
+     "oc_pass_probability": 2.02832e-203,
+     "oc_min_slack": -5.55279,
      "failing_tests": [
       {
        "feature": "E1",
@@ -3161,8 +3161,8 @@
    ],
    "note": "canonical responds: plateau_frac~log_regrowth_rate (trade), drc_c1~log_regrowth_rate (trade), drc_T~log_regrowth_rate (trade), moran_T~log_regrowth_rate (trade)",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 7.86055e-186,
-   "oc_min_slack": -5.6188,
+   "oc_pass_probability": 9.69391e-139,
+   "oc_min_slack": -4.60166,
    "replications": [
     {
      "features": {
@@ -3188,8 +3188,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 7.86055e-186,
-     "oc_min_slack": -5.6188,
+     "oc_pass_probability": 9.69391e-139,
+     "oc_min_slack": -4.60166,
      "failing_tests": [
       {
        "feature": "E1",
@@ -3763,8 +3763,8 @@
    ],
    "note": "canonical responds: plateau_frac~vision_mean (trade), disp_late~vision_mean (trade), plateau_frac~vision_mean (notrade)",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 5.26226e-283,
-   "oc_min_slack": -9.65984,
+   "oc_pass_probability": 1.42339e-198,
+   "oc_min_slack": -7.27081,
    "replications": [
     {
      "features": {
@@ -3790,8 +3790,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 5.26226e-283,
-     "oc_min_slack": -9.65984,
+     "oc_pass_probability": 1.42339e-198,
+     "oc_min_slack": -7.27081,
      "failing_tests": [
       {
        "feature": "E5",
@@ -4366,7 +4366,7 @@
    "note": "canonical responds: gini_T~metabolism_spread (trade), gini_c1~metabolism_spread (trade), top10_T~metabolism_mean (trade), cv_T~metabolism_spread (trade)",
    "rate_as_expected": 1.0,
    "oc_pass_probability": 0.0,
-   "oc_min_slack": -17.9566,
+   "oc_min_slack": -13.0052,
    "replications": [
     {
      "features": {
@@ -4393,7 +4393,7 @@
      },
      "as_expected": true,
      "oc_pass_probability": 0.0,
-     "oc_min_slack": -17.9566,
+     "oc_min_slack": -13.0052,
      "failing_tests": [
       {
        "feature": "E1",
@@ -4965,10 +4965,10 @@
    "targets": [
     "E5"
    ],
-   "note": "canonical responds: tau_frac~endowment_mean (trade), disp_decay~endowment_mean (trade), drc_c1~endowment_mean (trade), tau_frac~endowment_mean (notrade)",
+   "note": "canonical responds: disp_decay~endowment_mean (trade), drc_c1~endowment_mean (trade), drc_c1~endowment_mean (notrade)",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 1.51054e-124,
-   "oc_min_slack": -9.12281,
+   "oc_pass_probability": 2.92332e-83,
+   "oc_min_slack": -6.58484,
    "replications": [
     {
      "features": {
@@ -4994,8 +4994,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 1.51054e-124,
-     "oc_min_slack": -9.12281,
+     "oc_pass_probability": 2.92332e-83,
+     "oc_min_slack": -6.58484,
      "failing_tests": [
       {
        "feature": "E5",
@@ -5570,8 +5570,8 @@
    ],
    "note": "",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 8.62158e-52,
-   "oc_min_slack": -6.56715,
+   "oc_pass_probability": 1.22016e-34,
+   "oc_min_slack": -5.72131,
    "replications": [
     {
      "features": {
@@ -5597,8 +5597,8 @@
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 8.62158e-52,
-     "oc_min_slack": -6.56715,
+     "oc_pass_probability": 1.22016e-34,
+     "oc_min_slack": -5.72131,
      "failing_tests": [
       {
        "feature": "E1",
@@ -6692,7 +6692,7 @@
    "note": "",
    "rate_as_expected": 1.0,
    "oc_pass_probability": 0.0,
-   "oc_min_slack": -20.7537,
+   "oc_min_slack": -14.1307,
    "replications": [
     {
      "features": {
@@ -6719,7 +6719,7 @@
      },
      "as_expected": true,
      "oc_pass_probability": 0.0,
-     "oc_min_slack": -20.7537,
+     "oc_min_slack": -14.1307,
      "failing_tests": [
       {
        "feature": "E1",
@@ -7294,7 +7294,7 @@
    "note": "",
    "rate_as_expected": 1.0,
    "oc_pass_probability": 0.0,
-   "oc_min_slack": -50.4138,
+   "oc_min_slack": -28.0244,
    "replications": [
     {
      "features": {
@@ -7321,7 +7321,7 @@
      },
      "as_expected": true,
      "oc_pass_probability": 0.0,
-     "oc_min_slack": -50.4138,
+     "oc_min_slack": -28.0244,
      "failing_tests": [
       {
        "feature": "E1",
@@ -7894,360 +7894,37 @@
     "E3"
    ],
    "note": "",
-   "rate_as_expected": 1.0,
-   "oc_pass_probability": 2.32501e-28,
-   "oc_min_slack": -1.83445,
+   "rate_as_expected": 0.0,
+   "oc_pass_probability": 0.97905,
+   "oc_min_slack": 2.2423,
    "replications": [
     {
      "features": {
       "E1": [
-       "undecided",
-       3
+       "pass",
+       0
       ],
       "E2": [
        "pass",
        0
       ],
       "E3": [
-       "undecided",
-       3
+       "pass",
+       0
       ],
       "E4": [
        "pass",
        0
       ],
       "E5": [
-       "undecided",
-       17
+       "pass",
+       0
       ]
      },
-     "as_expected": true,
-     "oc_pass_probability": 2.32501e-28,
-     "oc_min_slack": -1.83445,
-     "failing_tests": [
-      {
-       "feature": "E1",
-       "world": "trade",
-       "stat": "gini_c1",
-       "kind": "l2",
-       "term": "",
-       "margin": 1.0,
-       "status": "undecided",
-       "est": 1.02899,
-       "lo": 0.306919,
-       "hi": 1.51854,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "gini_c1",
-       "kind": "slope",
-       "term": "vision_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -1.09103,
-       "lo": -2.10707,
-       "hi": -0.0749829,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "gini_c1",
-       "kind": "slope",
-       "term": "metabolism_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.35788,
-       "lo": 0.212078,
-       "hi": 2.50368,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E1",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "l2",
-       "term": "",
-       "margin": 1.0,
-       "status": "undecided",
-       "est": 0.419239,
-       "lo": -0.836345,
-       "hi": 1.08935,
-       "n": 48,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "slope",
-       "term": "vision_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.925237,
-       "lo": -3.58035,
-       "hi": 1.72988,
-       "n": 48,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "slope",
-       "term": "metabolism_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.20704,
-       "lo": -1.81626,
-       "hi": 4.23034,
-       "n": 48,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "slope",
-       "term": "metabolism_spread",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -1.63599,
-       "lo": -4.1776,
-       "hi": 0.905624,
-       "n": 48,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.663135,
-       "lo": -2.24334,
-       "hi": 0.917074,
-       "n": 48,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_late",
-       "kind": "slope",
-       "term": "metabolism_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.59265,
-       "lo": 0.117914,
-       "hi": 3.06739,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_late",
-       "kind": "slope",
-       "term": "metabolism_spread",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -1.57724,
-       "lo": -2.85513,
-       "hi": -0.299343,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E3",
-       "world": "trade",
-       "stat": "disp_decay",
-       "kind": "defined",
-       "term": "",
-       "margin": 0.25,
-       "status": "undecided",
-       "est": 0.14878,
-       "lo": -0.0883883,
-       "hi": 0.250104,
-       "n": 64,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_decay",
-       "kind": "slope",
-       "term": "metabolism_spread",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.999039,
-       "lo": -2.04675,
-       "hi": 0.0486723,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E3",
-       "world": "trade",
-       "stat": "price_level",
-       "kind": "defined",
-       "term": "",
-       "margin": 0.25,
-       "status": "undecided",
-       "est": 0.173055,
-       "lo": -0.0625,
-       "hi": 0.255257,
-       "n": 64,
-       "note": ""
-      },
-      {
-       "feature": "E3",
-       "world": "trade",
-       "stat": "exch_rate",
-       "kind": "l2",
-       "term": "",
-       "margin": 1.0,
-       "status": "undecided",
-       "est": 0.724588,
-       "lo": -0.573025,
-       "hi": 1.21388,
-       "n": 64,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "drc_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 0.996769,
-       "lo": -0.382425,
-       "hi": 2.37596,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "moran_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.55915,
-       "lo": 0.266926,
-       "hi": 2.85137,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E1",
-       "world": "notrade",
-       "stat": "top10_T",
-       "kind": "spread",
-       "term": "",
-       "margin": 0.693147,
-       "status": "undecided",
-       "est": -0.310901,
-       "lo": -0.725852,
-       "hi": 0.035705,
-       "n": 55,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "notrade",
-       "stat": "moran_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.65833,
-       "lo": 0.682722,
-       "hi": 2.63394,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "gini_c1",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": 0.285074,
-       "lo": -0.0338723,
-       "hi": 0.604021,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "top10_T",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": -0.17111,
-       "lo": -0.555199,
-       "hi": 0.212979,
-       "n": 60,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "plateau_frac",
-       "kind": "named",
-       "term": "IV-6a",
-       "margin": 0.0,
-       "status": "undecided",
-       "est": 3.81889,
-       "lo": -4.07902,
-       "hi": 11.7168,
-       "n": 0,
-       "note": "carrying capacity rises with mean vision (with trade)"
-      },
-      {
-       "feature": "E5",
-       "world": "notrade",
-       "stat": "plateau_frac",
-       "kind": "named",
-       "term": "IV-6b",
-       "margin": 0.0,
-       "status": "undecided",
-       "est": 4.76332,
-       "lo": -3.0034,
-       "hi": 12.53,
-       "n": 0,
-       "note": "carrying capacity rises with mean vision (without trade)"
-      },
-      {
-       "feature": "E5",
-       "world": "notrade",
-       "stat": "plateau_frac",
-       "kind": "named",
-       "term": "II-growback",
-       "margin": 0.0,
-       "status": "undecided",
-       "est": 2.70462,
-       "lo": -1.6211,
-       "hi": 7.03033,
-       "n": 0,
-       "note": "carrying capacity rises with the regrowth rate"
-      }
-     ]
+     "as_expected": false,
+     "oc_pass_probability": 0.97905,
+     "oc_min_slack": 2.2423,
+     "failing_tests": []
     }
    ]
   },
@@ -8259,8 +7936,8 @@
    ],
    "note": "",
    "rate_as_expected": 1.0,
-   "oc_pass_probability": 3.47403e-27,
-   "oc_min_slack": -2.02762,
+   "oc_pass_probability": 4.48683e-13,
+   "oc_min_slack": -3.9646,
    "replications": [
     {
      "features": {
@@ -8273,36 +7950,22 @@
        0
       ],
       "E3": [
-       "undecided",
-       4
+       "fail",
+       3
       ],
       "E4": [
        "pass",
        0
       ],
       "E5": [
-       "undecided",
-       17
+       "fail",
+       2
       ]
      },
      "as_expected": true,
-     "oc_pass_probability": 3.47403e-27,
-     "oc_min_slack": -2.02762,
+     "oc_pass_probability": 4.48683e-13,
+     "oc_min_slack": -3.9646,
      "failing_tests": [
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "loghill_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.249851,
-       "lo": -2.13561,
-       "hi": 1.63591,
-       "n": 48,
-       "note": ""
-      },
       {
        "feature": "E3",
        "world": "trade",
@@ -8310,11 +7973,11 @@
        "kind": "l2",
        "term": "",
        "margin": 1.0,
-       "status": "undecided",
-       "est": 0.893342,
-       "lo": 0.406551,
-       "hi": 1.26006,
-       "n": 43,
+       "status": "fail",
+       "est": 1.33558,
+       "lo": 1.09457,
+       "hi": 1.56129,
+       "n": 196,
        "note": ""
       },
       {
@@ -8324,11 +7987,11 @@
        "kind": "slope",
        "term": "vision_mean",
        "margin": 2.0,
-       "status": "undecided",
-       "est": -2.06408,
-       "lo": -3.23688,
-       "hi": -0.891278,
-       "n": 50,
+       "status": "fail",
+       "est": -3.02476,
+       "lo": -3.88905,
+       "hi": -2.16046,
+       "n": 209,
        "note": ""
       },
       {
@@ -8339,66 +8002,10 @@
        "term": "metabolism_mean",
        "margin": 2.0,
        "status": "undecided",
-       "est": 1.56933,
-       "lo": 0.160252,
-       "hi": 2.9784,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_late",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.622059,
-       "lo": -2.12689,
-       "hi": 0.882774,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_decay",
-       "kind": "slope",
-       "term": "vision_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -2.22905,
-       "lo": -3.677,
-       "hi": -0.781093,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "disp_decay",
-       "kind": "slope",
-       "term": "metabolism_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.39719,
-       "lo": 0.391064,
-       "hi": 2.40331,
-       "n": 50,
-       "note": ""
-      },
-      {
-       "feature": "E3",
-       "world": "trade",
-       "stat": "price_level",
-       "kind": "spread",
-       "term": "",
-       "margin": 0.693147,
-       "status": "undecided",
-       "est": 0.368714,
-       "lo": -0.0402518,
-       "hi": 0.740321,
-       "n": 47,
+       "est": 1.47309,
+       "lo": 0.719955,
+       "hi": 2.22622,
+       "n": 209,
        "note": ""
       },
       {
@@ -8409,10 +8016,10 @@
        "term": "",
        "margin": 1.0,
        "status": "undecided",
-       "est": 0.942117,
-       "lo": 0.384001,
-       "hi": 1.43096,
-       "n": 64,
+       "est": 0.996495,
+       "lo": 0.797904,
+       "hi": 1.19419,
+       "n": 256,
        "note": ""
       },
       {
@@ -8423,165 +8030,11 @@
        "term": "",
        "margin": 1.0,
        "status": "undecided",
-       "est": 0.999645,
-       "lo": 0.77599,
-       "hi": 1.20983,
-       "n": 64,
+       "est": 1.02399,
+       "lo": 0.909919,
+       "hi": 1.13871,
+       "n": 256,
        "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "drc_c1",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 0.888543,
-       "lo": -0.406277,
-       "hi": 2.18336,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "moran_T",
-       "kind": "slope",
-       "term": "vision_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 0.623183,
-       "lo": -1.16523,
-       "hi": 2.41159,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "moran_T",
-       "kind": "slope",
-       "term": "endowment_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": -0.350711,
-       "lo": -2.04923,
-       "hi": 1.34781,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "notrade",
-       "stat": "drc_c1",
-       "kind": "slope",
-       "term": "vision_mean",
-       "margin": 2.0,
-       "status": "undecided",
-       "est": 1.12359,
-       "lo": -0.424838,
-       "hi": 2.67202,
-       "n": 64,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "gini_T",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": -0.179901,
-       "lo": -0.53133,
-       "hi": 0.171527,
-       "n": 58,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "cv_T",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": -0.16316,
-       "lo": -0.507379,
-       "hi": 0.18106,
-       "n": 58,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "loghill_T",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": -0.172163,
-       "lo": -0.511029,
-       "hi": 0.166704,
-       "n": 46,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "plateau_frac",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": -0.326851,
-       "lo": -0.625273,
-       "hi": -0.0284298,
-       "n": 64,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "drc_T",
-       "kind": "contrast",
-       "term": "trade",
-       "margin": 0.5,
-       "status": "undecided",
-       "est": 0.246413,
-       "lo": -0.0861694,
-       "hi": 0.578995,
-       "n": 63,
-       "note": ""
-      },
-      {
-       "feature": "E5",
-       "world": "trade",
-       "stat": "plateau_frac",
-       "kind": "named",
-       "term": "IV-6a",
-       "margin": 0.0,
-       "status": "undecided",
-       "est": 7.51039,
-       "lo": -0.0879006,
-       "hi": 15.1087,
-       "n": 0,
-       "note": "carrying capacity rises with mean vision (with trade)"
-      },
-      {
-       "feature": "E5",
-       "world": "both",
-       "stat": "gini_T",
-       "kind": "named",
-       "term": "IV-13b",
-       "margin": 0.0,
-       "status": "undecided",
-       "est": 0.284808,
-       "lo": -0.0598124,
-       "hi": 0.629428,
-       "n": 0,
-       "note": "inequality is higher with trade"
       }
      ]
     }
@@ -8717,7 +8170,7 @@
  },
  "judge_hash": "03b01582d2c82024",
  "design_hash": "5bc467c0868721bb",
- "created": "2026-10-28T00:08:23+00:00",
- "seconds": 4657.0,
+ "created": "2026-10-28T00:32:35+00:00",
+ "seconds": 821.8,
  "note": ""
 }

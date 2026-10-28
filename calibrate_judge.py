@@ -240,14 +240,34 @@ def write_report(path, profile, calib, margins, canon, named):
         lines.append(f"| {s} | {cm:+.2f} ± {cse:.2f} | {margins['contrast'][s]:.2f} |")
     lines += ["", "## Controls", "", "| control | role | expected | outcome | features | est. pass prob. (positives) |",
               "|---|---|---|---|---|---|"]
+    probes = []
     for name, o in calib["controls"].items():
-        feats = " ".join(f"{k}={v[0]}" for k, v in o["replications"][-1]["features"].items())
-        exp = {"positive": "accept", "margin": "-", "probe": "report"}.get(o["role"], "reject " + ",".join(o["targets"]))
-        out = "as expected" if o.get("rate_as_expected", 0) == 1 else (
-            "reported" if o["role"] == "probe" else f"rate {o.get('rate_as_expected', 0):.2f}")
-        ocp = f"{o['oc_pass_probability']:.3f} (min slack {o['oc_min_slack']:.1f} SE)" if o["role"] == "positive" else ""
+        fs = o["replications"][-1]["features"]
+        feats = " ".join(f"{k}={v[0]}" for k, v in fs.items())
+        exp = {"positive": "accept", "margin": "-", "probe": "verdict"}.get(o["role"], "reject " + ",".join(o["targets"]))
+        if o["role"] == "probe":
+            failed = [k for k, v in fs.items() if v[0] == "fail"]
+            out = ("would be accepted" if all(v[0] == "pass" for v in fs.values())
+                   else f"rejected ({', '.join(failed)})" if failed else "undecided")
+            probes.append((name, o, out))
+        else:
+            out = "as expected" if o.get("rate_as_expected", 0) == 1 else f"rate {o.get('rate_as_expected', 0):.2f}"
+        ocp = f"{o['oc_pass_probability']:.3f} (min slack {o['oc_min_slack']:.1f} SE)" if o["role"] in ("positive", "probe") \
+            and out != "undecided" and o["oc_pass_probability"] > 1e-3 else ""
         lines.append(f"| {name} | {o['role']} | {exp} | {out} | {feats} | {ocp} |")
     lines += ["", f"Statistics dropped as non-discriminative: {', '.join(calib['dropped_statistics']) or 'none'}", ""]
+    if probes:
+        lines += ["## Probes: open mechanism questions", "",
+                  "Each probe is judged exactly like a candidate at the final look. 'Would be accepted' means the "
+                  "mechanism it removes is not needed for any required feature or trait response over this domain.", ""]
+        for name, o, out in probes:
+            lines.append(f"- **{name}** ({o['doc']}): {out}.")
+            for t in o["replications"][-1]["failing_tests"]:
+                if t["status"] == "fail":
+                    rng = f"[{t['lo']:+.2f}, {t['hi']:+.2f}]" if t["lo"] is not None else ""
+                    lines.append(f"  - {t['feature']}: {t['kind']} {t['stat']} {t['term']} ({t['world']}) "
+                                 f"estimate {t['est']:+.2f} {rng}, margin {t['margin']:.2f}")
+        lines.append("")
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -256,8 +276,17 @@ def write_report(path, profile, calib, margins, canon, named):
 def main():
     ap = argparse.ArgumentParser(description="Calibrate the emergence judge.")
     ap.add_argument("--profile", default="smoke")
+    ap.add_argument("--report-only", action="store_true",
+                    help="rewrite CALIBRATION.md from the saved calibration (no runs, no re-analysis)")
     args = ap.parse_args()
     profile = load_profile(args.profile)
+    if args.report_only:
+        d = reference_dir(profile.name)
+        calib = json.loads((d / "calibration.json").read_text(encoding="utf-8"))
+        margins = json.loads((d / "margins.json").read_text(encoding="utf-8"))
+        write_report(d / "CALIBRATION.md", profile, calib, margins, margins["canon"], margins["named"])
+        log(f"report rewritten -> {d / 'CALIBRATION.md'}")
+        return 0
     alpha = profile.alpha
     t0 = time.time()
     out_dir = reference_dir(profile.name)
