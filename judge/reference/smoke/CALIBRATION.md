@@ -1,12 +1,14 @@
 # Judge calibration: profile `smoke`
 
 - Result: **FAILED** (positive controls min pass rate 0.00, negative/null controls min fail rate 1.00; required 0.95 / 0.95)
-- Judge hash `94620be625cb0d3f`, design hash `c9763bbbb1ed6cda`, created 2026-10-27T20:59:23+00:00, 0.23 h
+- Judge hash `03b01582d2c82024`, design hash `5bc467c0868721bb`, created 2026-10-28T00:54:12+00:00, 0.14 h
 - Screening bank: 48 scrambled-Sobol' points x 2 worlds x 2 seeds; holdout bank: 24 i.i.d. points x 2 x 2
 
 ## Literature-backed responses in canonical G1MT over the domain
 
-| id | claim | source | canonical estimate (signed, in SD) | 95% one-sided bound | holds |
+Estimates are signed so that positive means the claimed direction: SD units across the input's whole range for responses, SD units for the trade effect, raw units (log dispersion ratio) for IV-3.
+
+| id | claim | source | canonical estimate | 95% one-sided bound | holds |
 |---|---|---|---|---|---|
 | IV-6a | carrying capacity rises with mean vision (with trade) | Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py | +13.14 | +5.19 | yes |
 | IV-6b | carrying capacity rises with mean vision (without trade) | Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py | +17.42 | +7.36 | yes |
@@ -68,7 +70,7 @@ Change of each statistic across the full range of each input, in units of its ty
 | loghill_T | -0.31 ± 0.16 | 2.00 |
 | plateau_frac | +0.96 ± 0.28 | 2.00 |
 | tau_frac | +0.45 ± 0.18 | 2.00 |
-| fluct_cv | +0.70 ± 0.45 | 6.78 |
+| fluct_cv | +0.70 ± 0.45 | 2.00 |
 | drc_c1 | -0.12 ± 0.25 | 2.00 |
 | drc_T | +0.34 ± 0.23 | 2.00 |
 | moran_T | +0.36 ± 0.19 | 2.00 |
@@ -77,22 +79,33 @@ Change of each statistic across the full range of each input, in units of its ty
 
 | control | role | expected | outcome | features | est. pass prob. (positives) |
 |---|---|---|---|---|---|
-| numpy_reimplementation | positive | accept | rate 0.00 | E1=pass E2=undecided E3=undecided E4=undecided E5=undecided | 0.000 (min slack -2.3 SE) |
-| rng_reorder | positive | accept | rate 0.00 | E1=undecided E2=undecided E3=pass E4=undecided E5=undecided | 0.000 (min slack -3.1 SE) |
+| numpy_reimplementation | positive | accept | rate 0.00 | E1=undecided E2=pass E3=undecided E4=undecided E5=undecided |  |
+| rng_reorder | positive | accept | rate 0.00 | E1=undecided E2=pass E3=pass E4=undecided E5=undecided |  |
 | ko_no_trade | negative | reject E3,E5 | as expected | E1=undecided E2=undecided E3=fail E4=undecided E5=fail |  |
 | ko_no_growback | negative | reject E2 | as expected | E1=fail E2=fail E3=fail E4=fail E5=undecided |  |
 | ko_random_move | negative | reject E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=undecided |  |
-| ko_uniform_vision | probe | report | as expected | E1=undecided E2=fail E3=fail E4=fail E5=undecided |  |
+| ko_uniform_vision | probe | verdict | rejected (E2, E3, E4) | E1=undecided E2=fail E3=fail E4=fail E5=undecided |  |
 | ko_ignore_population | negative | reject E5 | as expected | E1=undecided E2=fail E3=undecided E4=fail E5=undecided |  |
-| ko_ignore_regrowth | probe | report | as expected | E1=undecided E2=undecided E3=undecided E4=undecided E5=undecided |  |
-| ko_ignore_vision | probe | report | as expected | E1=undecided E2=fail E3=fail E4=undecided E5=undecided |  |
+| ko_ignore_regrowth | probe | verdict | undecided | E1=undecided E2=undecided E3=undecided E4=undecided E5=undecided |  |
+| ko_ignore_vision | probe | verdict | rejected (E2, E3) | E1=undecided E2=fail E3=fail E4=undecided E5=undecided |  |
 | ko_ignore_metabolism | negative | reject E5 | as expected | E1=fail E2=fail E3=undecided E4=fail E5=undecided |  |
-| ko_ignore_endowment | probe | report | as expected | E1=undecided E2=fail E3=pass E4=undecided E5=undecided |  |
+| ko_ignore_endowment | probe | verdict | rejected (E2) | E1=undecided E2=fail E3=undecided E4=undecided E5=undecided |  |
 | ko_trade_always | negative | reject E3,E5 | as expected | E1=undecided E2=undecided E3=fail E4=undecided E5=undecided |  |
-| null_random_walk | null | reject E3,E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=undecided |  |
+| null_random_walk | null | reject E3,E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=fail |  |
 | null_static_agents | null | reject E4 | as expected | E1=fail E2=fail E3=fail E4=fail E5=undecided |  |
-| null_noise_exchange | null | reject E3 | as expected | E1=undecided E2=undecided E3=fail E4=undecided E5=undecided |  |
-| ko_no_mrs_stop | probe | report | as expected | E1=undecided E2=undecided E3=undecided E4=undecided E5=undecided |  |
-| null_random_price | probe | report | reported | E1=undecided E2=undecided E3=pass E4=undecided E5=undecided |  |
+| null_noise_exchange | null | reject E3 | as expected | E1=fail E2=pass E3=fail E4=undecided E5=undecided |  |
+| ko_no_mrs_stop | probe | verdict | undecided | E1=undecided E2=undecided E3=pass E4=pass E5=undecided |  |
+| null_random_price | probe | verdict | undecided | E1=undecided E2=undecided E3=pass E4=pass E5=undecided |  |
 
-Statistics dropped as non-discriminative: disp_down|trade, ineq_up|notrade, lorenz_T|trade, plateaued|trade
+Statistics dropped as non-discriminative: ineq_up|notrade, lorenz_T|trade, plateaued|trade
+
+## Probes: open mechanism questions
+
+Each probe is judged exactly like a candidate at the final look. 'Would be accepted' means the mechanism it removes is not needed for any required feature or trait response over this domain.
+
+- **ko_uniform_vision** (vision fixed at 1 regardless of the vision inputs): rejected (E2, E3, E4).
+- **ko_ignore_regrowth** (resources always regrow 1 unit per step whatever regrowth_rate says): undecided.
+- **ko_ignore_vision** (vision always drawn from Mesa's default 1-5 whatever the vision inputs say): rejected (E2, E3).
+- **ko_ignore_endowment** (endowments always drawn from Mesa's default 25-50 whatever the endowment inputs say): rejected (E2).
+- **ko_no_mrs_stop** (MRS-crossing stop removed from the trade rule): undecided.
+- **null_random_price** (random price unrelated to MRS, but trades still need both parties better off (zero-intelligence traders with a budget constraint, Gode & Sunder 1993)): undecided.
