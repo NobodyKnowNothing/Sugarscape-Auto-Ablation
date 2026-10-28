@@ -8151,7 +8151,7 @@
  "banks": {
   "bank_points": 384,
   "bank_seeds": 4,
-  "holdout_points": 192,
+  "holdout_points": 384,
   "holdout_seeds": 4
  },
  "canonical_complexity": {
@@ -8168,9 +8168,9 @@
   "dependency_functions": 76,
   "code_hash": "af314acdce5789e2"
  },
- "judge_hash": "03b01582d2c82024",
- "design_hash": "5bc467c0868721bb",
- "created": "2026-10-28T00:32:35+00:00",
- "seconds": 821.8,
+ "judge_hash": "c144304071e9ad4e",
+ "design_hash": "e2ca5bf9ad7dd15d",
+ "created": "2026-10-28T01:26:08+00:00",
+ "seconds": 791.3,
  "note": ""
 }

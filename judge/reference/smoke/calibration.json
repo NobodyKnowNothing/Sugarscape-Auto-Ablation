@@ -9715,9 +9715,9 @@
   "dependency_functions": 76,
   "code_hash": "af314acdce5789e2"
  },
- "judge_hash": "03b01582d2c82024",
- "design_hash": "5bc467c0868721bb",
- "created": "2026-10-28T00:54:12+00:00",
- "seconds": 498.4,
+ "judge_hash": "c144304071e9ad4e",
+ "design_hash": "e2ca5bf9ad7dd15d",
+ "created": "2026-10-28T02:14:24+00:00",
+ "seconds": 2.5,
  "note": "Pipeline smoke test only: short runs, small samples and wide margin floors so every code path (including acceptance) is exercised quickly. Not valid for scientific conclusions."
 }

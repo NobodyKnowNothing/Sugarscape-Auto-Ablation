@@ -1,7 +1,7 @@
 # Judge calibration: profile `smoke`
 
 - Result: **FAILED** (positive controls min pass rate 0.00, negative/null controls min fail rate 1.00; required 0.95 / 0.95)
-- Judge hash `03b01582d2c82024`, design hash `5bc467c0868721bb`, created 2026-10-28T00:54:12+00:00, 0.14 h
+- Judge hash `c144304071e9ad4e`, design hash `e2ca5bf9ad7dd15d`, created 2026-10-28T02:14:24+00:00, 0.00 h
 - Screening bank: 48 scrambled-Sobol' points x 2 worlds x 2 seeds; holdout bank: 24 i.i.d. points x 2 x 2
 
 ## Literature-backed responses in canonical G1MT over the domain
