@@ -5,7 +5,7 @@
 - Sweep the inputs "as wide as possible without being impossible to compute", in the spirit of reservoir-computing (ESN) hyperparameter search, which estimates from a random sample instead of sweeping every value.
 - For trade, follow the precedent in ABM, ALife and related research, given what this experiment is trying to do.
 
-Each section gives the precedent, what follows from it, the decision, and what was implemented. Calibration results are in [judge/reference/full/CALIBRATION.md](judge/reference/full/CALIBRATION.md) once the full calibration has run.
+Each section gives the precedent, what follows from it, the decision, and what was implemented. The full calibration **passed**. Its results, including two answered mechanism questions, are in §5 and in [judge/reference/full/CALIBRATION.md](judge/reference/full/CALIBRATION.md).
 
 ## Summary
 
