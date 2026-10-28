@@ -239,8 +239,11 @@ Full report: [judge/reference/full/CALIBRATION.md](judge/reference/full/CALIBRAT
 | Null societies | **3/3 rejected** (random walkers, static agents, noise exchange). |
 | Separation | every tested statistic is moved beyond margin by some knockout or null; none dropped. |
 | Margins | only 2 of ~270 were widened by the innocuous perturbations. All others sit at the pre-registered floors. |
+| End to end | Canonical Sugarscape, submitted as a candidate on fresh seeds through the real pipeline, is accepted at the 256-point look (8 min on 4 cores). It then passes the holdout audit: 256 fresh i.i.d. points on holdout seeds, all features equivalent, no located failures. The audit's coverage bound: for every tested statistic, at most 9.5% of the domain can depart by more than 2.5 seed-SDs (95% confidence; a Markov bound, so loose). |
 
 Taken together, true power for an equivalent candidate is roughly 85–97% per evaluation. A truly equivalent model is therefore occasionally left "undecided" and rejected, never accepted wrongly. That costs the search some time but does not compromise validity.
+
+The first end-to-end check exposed an audit bug, fixed before the final calibration. With 128 points the audit was underpowered, and its per-point re-test treated statistics that are undefined in most seeds of *both* models (near collapse) as "clearly different". Audits now draw 256 of 384 holdout points and re-test only statistics both models define. Where statistics exist stays tested over the domain.
 
 ### What the calibration already says about "how much can you throw away"
 
