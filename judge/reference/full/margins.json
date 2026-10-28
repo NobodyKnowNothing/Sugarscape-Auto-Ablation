@@ -1,0 +1,1927 @@
+{
+ "scales": {
+  "trade": {
+   "gini_T": 0.0507907,
+   "gini_c1": 0.0426979,
+   "top10_T": 0.0560947,
+   "cv_T": 0.0973091,
+   "loghill_T": 0.540653,
+   "lorenz_T": [
+    0.0115602,
+    0.0217499,
+    0.0309834,
+    0.037475,
+    0.0431448,
+    0.0417476,
+    0.0389842,
+    0.0319861,
+    0.0194952
+   ],
+   "ineq_up": 1.0,
+   "plateau_frac": 0.02654,
+   "tau_frac": 0.0875104,
+   "fluct_cv": 0.076978,
+   "pop_traj": [
+    0.01,
+    0.0216056,
+    0.0293481,
+    0.0308942,
+    0.0304873,
+    0.0300853,
+    0.0284308,
+    0.0278276,
+    0.0269598,
+    0.0269914,
+    0.0265376,
+    0.0268472,
+    0.027227,
+    0.0268444,
+    0.0266163,
+    0.0267291,
+    0.0264424,
+    0.0265207,
+    0.0268076,
+    0.0268764,
+    0.0269654
+   ],
+   "plateaued": 1.0,
+   "disp_late": 0.0676294,
+   "disp_decay": 0.767069,
+   "price_level": 0.179024,
+   "exch_rate": 0.0439091,
+   "disp_traj": [
+    0.0464554,
+    0.0728233,
+    0.0847284,
+    0.0839024,
+    0.0836387,
+    0.0850483,
+    0.0738856,
+    0.0782135
+   ],
+   "trading": 1.0,
+   "disp_down": 1.0,
+   "drc_c1": 0.0388252,
+   "drc_T": 0.0351748,
+   "moran_T": 0.057046,
+   "clustered": 1.0
+  },
+  "notrade": {
+   "gini_T": 0.0459845,
+   "gini_c1": 0.0428744,
+   "top10_T": 0.0553141,
+   "cv_T": 0.0888205,
+   "loghill_T": 0.573036,
+   "lorenz_T": [
+    0.00999068,
+    0.0193562,
+    0.0274942,
+    0.0344071,
+    0.0402377,
+    0.0388707,
+    0.0358445,
+    0.029381,
+    0.0169213
+   ],
+   "ineq_up": 1.0,
+   "plateau_frac": 0.0260326,
+   "tau_frac": 0.0806372,
+   "fluct_cv": 0.0463706,
+   "pop_traj": [
+    0.01,
+    0.0211381,
+    0.0282606,
+    0.0295626,
+    0.0281649,
+    0.0293812,
+    0.028927,
+    0.0284237,
+    0.0276953,
+    0.0274379,
+    0.0269465,
+    0.0268311,
+    0.0263202,
+    0.0262,
+    0.0262048,
+    0.0263538,
+    0.0262852,
+    0.0261448,
+    0.0261169,
+    0.026188,
+    0.026007
+   ],
+   "plateaued": 1.0,
+   "trading": 1.0,
+   "drc_c1": 0.038781,
+   "drc_T": 0.0352305,
+   "moran_T": 0.0605696,
+   "clustered": 1.0
+  }
+ },
+ "terms": [
+  "log_initial_population",
+  "log_regrowth_rate",
+  "vision_mean",
+  "vision_spread",
+  "metabolism_mean",
+  "metabolism_spread",
+  "endowment_mean",
+  "endowment_spread"
+ ],
+ "l2": {
+  "trade": {
+   "gini_T": 1.0,
+   "gini_c1": 1.0,
+   "top10_T": 1.0,
+   "cv_T": 1.0,
+   "loghill_T": 1.0,
+   "lorenz_T": 1.0,
+   "ineq_up": 0.25,
+   "plateau_frac": 1.0,
+   "tau_frac": 1.0,
+   "fluct_cv": 1.0,
+   "pop_traj": 1.0,
+   "plateaued": 0.25,
+   "disp_late": 1.0,
+   "disp_decay": 1.0,
+   "price_level": 1.26704,
+   "exch_rate": 1.0,
+   "disp_traj": 1.0,
+   "trading": 0.25,
+   "disp_down": 0.25,
+   "drc_c1": 1.0,
+   "drc_T": 1.0,
+   "moran_T": 1.0,
+   "clustered": 0.25
+  },
+  "notrade": {
+   "gini_T": 1.0,
+   "gini_c1": 1.0,
+   "top10_T": 1.0,
+   "cv_T": 1.0,
+   "loghill_T": 1.0,
+   "lorenz_T": 1.0,
+   "ineq_up": 0.25,
+   "plateau_frac": 1.0,
+   "tau_frac": 1.0,
+   "fluct_cv": 1.0,
+   "pop_traj": 1.0,
+   "plateaued": 0.25,
+   "trading": 0.25,
+   "drc_c1": 1.0,
+   "drc_T": 1.0,
+   "moran_T": 1.0,
+   "clustered": 0.25
+  }
+ },
+ "defined": {
+  "trade": {
+   "gini_T": 0.25,
+   "gini_c1": 0.25,
+   "top10_T": 0.25,
+   "cv_T": 0.25,
+   "loghill_T": 0.25,
+   "plateau_frac": 0.25,
+   "tau_frac": 0.25,
+   "fluct_cv": 0.25,
+   "disp_late": 0.25,
+   "disp_decay": 0.25,
+   "price_level": 0.25,
+   "exch_rate": 0.25,
+   "drc_c1": 0.25,
+   "drc_T": 0.25,
+   "moran_T": 0.25
+  },
+  "notrade": {
+   "gini_T": 0.25,
+   "gini_c1": 0.25,
+   "top10_T": 0.25,
+   "cv_T": 0.25,
+   "loghill_T": 0.25,
+   "plateau_frac": 0.25,
+   "tau_frac": 0.25,
+   "fluct_cv": 0.25,
+   "drc_c1": 0.25,
+   "drc_T": 0.25,
+   "moran_T": 0.25
+  }
+ },
+ "spread": {
+  "trade": {
+   "gini_T": 2.0,
+   "gini_c1": 2.0,
+   "top10_T": 2.0,
+   "cv_T": 2.0,
+   "loghill_T": 2.0,
+   "plateau_frac": 2.0,
+   "tau_frac": 2.0,
+   "fluct_cv": 2.0,
+   "disp_late": 2.0,
+   "disp_decay": 2.0,
+   "price_level": 2.0,
+   "exch_rate": 2.0,
+   "drc_c1": 2.0,
+   "drc_T": 2.0,
+   "moran_T": 2.0
+  },
+  "notrade": {
+   "gini_T": 2.0,
+   "gini_c1": 2.0,
+   "top10_T": 2.0,
+   "cv_T": 2.0,
+   "loghill_T": 2.0,
+   "plateau_frac": 2.0,
+   "tau_frac": 2.0,
+   "fluct_cv": 2.0,
+   "drc_c1": 2.0,
+   "drc_T": 2.0,
+   "moran_T": 2.0
+  }
+ },
+ "slope": {
+  "trade": {
+   "gini_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "gini_c1": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "top10_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "cv_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "loghill_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "plateau_frac": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 9.80379,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "tau_frac": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "fluct_cv": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "disp_late": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "disp_decay": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "price_level": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "exch_rate": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "drc_c1": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 3.03432,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "drc_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 5.12978,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "moran_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   }
+  },
+  "notrade": {
+   "gini_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "gini_c1": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "top10_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "cv_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "loghill_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.34207,
+    "endowment_spread": 2.0
+   },
+   "plateau_frac": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 9.65194,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "tau_frac": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "fluct_cv": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "drc_c1": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 3.12491,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "drc_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 5.3443,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   },
+   "moran_T": {
+    "log_initial_population": 2.0,
+    "log_regrowth_rate": 2.0,
+    "vision_mean": 2.0,
+    "vision_spread": 2.0,
+    "metabolism_mean": 2.0,
+    "metabolism_spread": 2.0,
+    "endowment_mean": 2.0,
+    "endowment_spread": 2.0
+   }
+  }
+ },
+ "contrast": {
+  "gini_T": 0.5,
+  "gini_c1": 0.5,
+  "top10_T": 0.5,
+  "cv_T": 0.5,
+  "loghill_T": 0.5,
+  "plateau_frac": 0.5,
+  "tau_frac": 0.5,
+  "fluct_cv": 0.5,
+  "drc_c1": 0.5,
+  "drc_T": 0.5,
+  "moran_T": 0.5
+ },
+ "canon": {
+  "slope": {
+   "trade": {
+    "gini_T": {
+     "log_initial_population": [
+      0.917131,
+      0.360625
+     ],
+     "log_regrowth_rate": [
+      0.0453902,
+      0.35755
+     ],
+     "vision_mean": [
+      0.506526,
+      0.522794
+     ],
+     "vision_spread": [
+      0.476252,
+      0.398332
+     ],
+     "metabolism_mean": [
+      -2.72222,
+      0.539266
+     ],
+     "metabolism_spread": [
+      4.26306,
+      0.320721
+     ],
+     "endowment_mean": [
+      -0.438211,
+      0.542541
+     ],
+     "endowment_spread": [
+      0.382416,
+      0.406651
+     ]
+    },
+    "gini_c1": {
+     "log_initial_population": [
+      1.36409,
+      0.320226
+     ],
+     "log_regrowth_rate": [
+      -0.673242,
+      0.321751
+     ],
+     "vision_mean": [
+      -0.115294,
+      0.468583
+     ],
+     "vision_spread": [
+      0.603752,
+      0.351706
+     ],
+     "metabolism_mean": [
+      2.3593,
+      0.48293
+     ],
+     "metabolism_spread": [
+      2.96923,
+      0.299493
+     ],
+     "endowment_mean": [
+      -0.500337,
+      0.485604
+     ],
+     "endowment_spread": [
+      1.02418,
+      0.347362
+     ]
+    },
+    "top10_T": {
+     "log_initial_population": [
+      -0.0942721,
+      0.28944
+     ],
+     "log_regrowth_rate": [
+      -1.87741,
+      0.346731
+     ],
+     "vision_mean": [
+      -0.89586,
+      0.479566
+     ],
+     "vision_spread": [
+      -0.115613,
+      0.334622
+     ],
+     "metabolism_mean": [
+      5.96349,
+      0.500157
+     ],
+     "metabolism_spread": [
+      -1.21273,
+      0.326595
+     ],
+     "endowment_mean": [
+      -0.396917,
+      0.433131
+     ],
+     "endowment_spread": [
+      0.0706909,
+      0.332772
+     ]
+    },
+    "cv_T": {
+     "log_initial_population": [
+      0.84975,
+      0.340921
+     ],
+     "log_regrowth_rate": [
+      -0.124238,
+      0.337392
+     ],
+     "vision_mean": [
+      0.654333,
+      0.493303
+     ],
+     "vision_spread": [
+      0.377404,
+      0.372413
+     ],
+     "metabolism_mean": [
+      -2.22705,
+      0.50569
+     ],
+     "metabolism_spread": [
+      3.87301,
+      0.301431
+     ],
+     "endowment_mean": [
+      -0.455851,
+      0.511779
+     ],
+     "endowment_spread": [
+      0.310491,
+      0.382715
+     ]
+    },
+    "loghill_T": {
+     "log_initial_population": [
+      0.850558,
+      0.272978
+     ],
+     "log_regrowth_rate": [
+      -0.0123736,
+      0.275086
+     ],
+     "vision_mean": [
+      2.44554,
+      0.391039
+     ],
+     "vision_spread": [
+      -0.409026,
+      0.282517
+     ],
+     "metabolism_mean": [
+      -6.84969,
+      0.397427
+     ],
+     "metabolism_spread": [
+      1.43778,
+      0.323453
+     ],
+     "endowment_mean": [
+      0.188364,
+      0.415594
+     ],
+     "endowment_spread": [
+      -0.856231,
+      0.293152
+     ]
+    },
+    "plateau_frac": {
+     "log_initial_population": [
+      -5.56503,
+      1.03257
+     ],
+     "log_regrowth_rate": [
+      5.53534,
+      1.00942
+     ],
+     "vision_mean": [
+      7.56052,
+      1.50767
+     ],
+     "vision_spread": [
+      -0.382765,
+      1.10124
+     ],
+     "metabolism_mean": [
+      -49.019,
+      1.36879
+     ],
+     "metabolism_spread": [
+      6.76232,
+      1.17797
+     ],
+     "endowment_mean": [
+      4.48873,
+      1.39181
+     ],
+     "endowment_spread": [
+      -1.30351,
+      1.05054
+     ]
+    },
+    "tau_frac": {
+     "log_initial_population": [
+      1.76978,
+      0.446853
+     ],
+     "log_regrowth_rate": [
+      0.398706,
+      0.464281
+     ],
+     "vision_mean": [
+      -0.129115,
+      0.68101
+     ],
+     "vision_spread": [
+      0.806893,
+      0.479501
+     ],
+     "metabolism_mean": [
+      2.94887,
+      0.643609
+     ],
+     "metabolism_spread": [
+      0.353703,
+      0.485239
+     ],
+     "endowment_mean": [
+      4.6016,
+      0.672056
+     ],
+     "endowment_spread": [
+      0.83227,
+      0.525286
+     ]
+    },
+    "fluct_cv": {
+     "log_initial_population": [
+      0.00645912,
+      0.0705743
+     ],
+     "log_regrowth_rate": [
+      -0.285889,
+      0.165441
+     ],
+     "vision_mean": [
+      -0.0759194,
+      0.154198
+     ],
+     "vision_spread": [
+      -0.0483729,
+      0.1667
+     ],
+     "metabolism_mean": [
+      1.0834,
+      0.245514
+     ],
+     "metabolism_spread": [
+      -0.503179,
+      0.130688
+     ],
+     "endowment_mean": [
+      0.516945,
+      0.182492
+     ],
+     "endowment_spread": [
+      0.227375,
+      0.233421
+     ]
+    },
+    "disp_late": {
+     "log_initial_population": [
+      1.3779,
+      0.328282
+     ],
+     "log_regrowth_rate": [
+      2.03525,
+      0.359822
+     ],
+     "vision_mean": [
+      -4.93555,
+      0.553972
+     ],
+     "vision_spread": [
+      0.785097,
+      0.313525
+     ],
+     "metabolism_mean": [
+      0.725546,
+      0.491687
+     ],
+     "metabolism_spread": [
+      -1.94752,
+      0.336466
+     ],
+     "endowment_mean": [
+      1.01912,
+      0.464686
+     ],
+     "endowment_spread": [
+      -0.132255,
+      0.298882
+     ]
+    },
+    "disp_decay": {
+     "log_initial_population": [
+      0.765832,
+      0.234101
+     ],
+     "log_regrowth_rate": [
+      0.940583,
+      0.228937
+     ],
+     "vision_mean": [
+      -1.31993,
+      0.363684
+     ],
+     "vision_spread": [
+      0.71412,
+      0.232228
+     ],
+     "metabolism_mean": [
+      -0.705709,
+      0.367653
+     ],
+     "metabolism_spread": [
+      -1.67373,
+      0.247042
+     ],
+     "endowment_mean": [
+      2.81165,
+      0.316518
+     ],
+     "endowment_spread": [
+      -0.374509,
+      0.211798
+     ]
+    },
+    "price_level": {
+     "log_initial_population": [
+      0.160262,
+      0.124838
+     ],
+     "log_regrowth_rate": [
+      0.290787,
+      0.175298
+     ],
+     "vision_mean": [
+      -0.408772,
+      0.257939
+     ],
+     "vision_spread": [
+      0.365709,
+      0.131265
+     ],
+     "metabolism_mean": [
+      -0.238437,
+      0.304626
+     ],
+     "metabolism_spread": [
+      0.217207,
+      0.17762
+     ],
+     "endowment_mean": [
+      0.184748,
+      0.191644
+     ],
+     "endowment_spread": [
+      0.0761493,
+      0.174933
+     ]
+    },
+    "exch_rate": {
+     "log_initial_population": [
+      0.942589,
+      0.34869
+     ],
+     "log_regrowth_rate": [
+      1.02608,
+      0.335626
+     ],
+     "vision_mean": [
+      -1.5545,
+      0.504558
+     ],
+     "vision_spread": [
+      0.218369,
+      0.364861
+     ],
+     "metabolism_mean": [
+      -5.38452,
+      0.491623
+     ],
+     "metabolism_spread": [
+      0.294399,
+      0.401572
+     ],
+     "endowment_mean": [
+      1.38938,
+      0.544626
+     ],
+     "endowment_spread": [
+      0.000741768,
+      0.383085
+     ]
+    },
+    "drc_c1": {
+     "log_initial_population": [
+      5.44668,
+      0.469229
+     ],
+     "log_regrowth_rate": [
+      3.04334,
+      0.505379
+     ],
+     "vision_mean": [
+      2.83696,
+      0.73203
+     ],
+     "vision_spread": [
+      0.65513,
+      0.51944
+     ],
+     "metabolism_mean": [
+      -15.1716,
+      0.692176
+     ],
+     "metabolism_spread": [
+      3.88144,
+      0.515931
+     ],
+     "endowment_mean": [
+      4.94887,
+      0.71245
+     ],
+     "endowment_spread": [
+      0.0559333,
+      0.533969
+     ]
+    },
+    "drc_T": {
+     "log_initial_population": [
+      5.67728,
+      0.512286
+     ],
+     "log_regrowth_rate": [
+      3.12456,
+      0.541802
+     ],
+     "vision_mean": [
+      2.6837,
+      0.772469
+     ],
+     "vision_spread": [
+      0.599932,
+      0.532375
+     ],
+     "metabolism_mean": [
+      -25.6489,
+      0.663833
+     ],
+     "metabolism_spread": [
+      8.79505,
+      0.529969
+     ],
+     "endowment_mean": [
+      1.48822,
+      0.718354
+     ],
+     "endowment_spread": [
+      -0.391933,
+      0.584624
+     ]
+    },
+    "moran_T": {
+     "log_initial_population": [
+      3.40397,
+      0.313982
+     ],
+     "log_regrowth_rate": [
+      3.74189,
+      0.34245
+     ],
+     "vision_mean": [
+      1.50315,
+      0.497771
+     ],
+     "vision_spread": [
+      0.685274,
+      0.332571
+     ],
+     "metabolism_mean": [
+      -9.14769,
+      0.42922
+     ],
+     "metabolism_spread": [
+      1.80347,
+      0.334577
+     ],
+     "endowment_mean": [
+      0.589702,
+      0.458653
+     ],
+     "endowment_spread": [
+      -0.210579,
+      0.346226
+     ]
+    }
+   },
+   "notrade": {
+    "gini_T": {
+     "log_initial_population": [
+      0.621085,
+      0.3871
+     ],
+     "log_regrowth_rate": [
+      -0.260769,
+      0.39667
+     ],
+     "vision_mean": [
+      1.35343,
+      0.612456
+     ],
+     "vision_spread": [
+      0.268949,
+      0.454897
+     ],
+     "metabolism_mean": [
+      -4.55254,
+      0.589774
+     ],
+     "metabolism_spread": [
+      5.69044,
+      0.378493
+     ],
+     "endowment_mean": [
+      -1.08764,
+      0.605587
+     ],
+     "endowment_spread": [
+      0.933153,
+      0.463802
+     ]
+    },
+    "gini_c1": {
+     "log_initial_population": [
+      0.697429,
+      0.315699
+     ],
+     "log_regrowth_rate": [
+      -0.79539,
+      0.302447
+     ],
+     "vision_mean": [
+      1.3469,
+      0.483537
+     ],
+     "vision_spread": [
+      0.240222,
+      0.358596
+     ],
+     "metabolism_mean": [
+      1.37756,
+      0.468832
+     ],
+     "metabolism_spread": [
+      3.25294,
+      0.267591
+     ],
+     "endowment_mean": [
+      -0.588523,
+      0.44477
+     ],
+     "endowment_spread": [
+      1.6033,
+      0.342896
+     ]
+    },
+    "top10_T": {
+     "log_initial_population": [
+      -0.764737,
+      0.314468
+     ],
+     "log_regrowth_rate": [
+      -1.80365,
+      0.374128
+     ],
+     "vision_mean": [
+      -1.08272,
+      0.547987
+     ],
+     "vision_spread": [
+      -0.36901,
+      0.366097
+     ],
+     "metabolism_mean": [
+      6.67795,
+      0.563002
+     ],
+     "metabolism_spread": [
+      -1.46723,
+      0.414203
+     ],
+     "endowment_mean": [
+      -0.726551,
+      0.485098
+     ],
+     "endowment_spread": [
+      0.511721,
+      0.37823
+     ]
+    },
+    "cv_T": {
+     "log_initial_population": [
+      0.580714,
+      0.367806
+     ],
+     "log_regrowth_rate": [
+      -0.419641,
+      0.381205
+     ],
+     "vision_mean": [
+      1.37054,
+      0.590677
+     ],
+     "vision_spread": [
+      0.183302,
+      0.434991
+     ],
+     "metabolism_mean": [
+      -3.86831,
+      0.557817
+     ],
+     "metabolism_spread": [
+      5.16038,
+      0.361719
+     ],
+     "endowment_mean": [
+      -1.07641,
+      0.577105
+     ],
+     "endowment_spread": [
+      0.839589,
+      0.443143
+     ]
+    },
+    "loghill_T": {
+     "log_initial_population": [
+      1.42611,
+      0.295257
+     ],
+     "log_regrowth_rate": [
+      -0.269302,
+      0.282192
+     ],
+     "vision_mean": [
+      1.36878,
+      0.411483
+     ],
+     "vision_spread": [
+      -0.180609,
+      0.313792
+     ],
+     "metabolism_mean": [
+      -5.51627,
+      0.47132
+     ],
+     "metabolism_spread": [
+      0.304599,
+      0.359923
+     ],
+     "endowment_mean": [
+      0.471189,
+      0.440142
+     ],
+     "endowment_spread": [
+      -1.26665,
+      0.317493
+     ]
+    },
+    "plateau_frac": {
+     "log_initial_population": [
+      -5.51739,
+      1.01307
+     ],
+     "log_regrowth_rate": [
+      4.57746,
+      0.969772
+     ],
+     "vision_mean": [
+      8.05512,
+      1.50369
+     ],
+     "vision_spread": [
+      -0.560248,
+      1.09733
+     ],
+     "metabolism_mean": [
+      -48.2597,
+      1.39026
+     ],
+     "metabolism_spread": [
+      6.43476,
+      1.155
+     ],
+     "endowment_mean": [
+      4.27763,
+      1.3743
+     ],
+     "endowment_spread": [
+      -1.41714,
+      1.04736
+     ]
+    },
+    "tau_frac": {
+     "log_initial_population": [
+      2.0349,
+      0.434422
+     ],
+     "log_regrowth_rate": [
+      -0.120762,
+      0.453687
+     ],
+     "vision_mean": [
+      0.912142,
+      0.699961
+     ],
+     "vision_spread": [
+      0.219446,
+      0.456255
+     ],
+     "metabolism_mean": [
+      2.07501,
+      0.619032
+     ],
+     "metabolism_spread": [
+      0.270123,
+      0.433497
+     ],
+     "endowment_mean": [
+      4.85313,
+      0.667633
+     ],
+     "endowment_spread": [
+      0.664498,
+      0.511303
+     ]
+    },
+    "fluct_cv": {
+     "log_initial_population": [
+      0.00640028,
+      0.145165
+     ],
+     "log_regrowth_rate": [
+      -0.295896,
+      0.135114
+     ],
+     "vision_mean": [
+      -0.0768309,
+      0.21502
+     ],
+     "vision_spread": [
+      -0.0662933,
+      0.14293
+     ],
+     "metabolism_mean": [
+      1.14154,
+      0.222157
+     ],
+     "metabolism_spread": [
+      -0.633303,
+      0.15814
+     ],
+     "endowment_mean": [
+      0.815803,
+      0.169771
+     ],
+     "endowment_spread": [
+      0.129417,
+      0.135437
+     ]
+    },
+    "drc_c1": {
+     "log_initial_population": [
+      6.04376,
+      0.490184
+     ],
+     "log_regrowth_rate": [
+      2.88087,
+      0.530925
+     ],
+     "vision_mean": [
+      3.08749,
+      0.772333
+     ],
+     "vision_spread": [
+      0.375528,
+      0.565232
+     ],
+     "metabolism_mean": [
+      -15.6245,
+      0.729451
+     ],
+     "metabolism_spread": [
+      3.33868,
+      0.568132
+     ],
+     "endowment_mean": [
+      5.69744,
+      0.776768
+     ],
+     "endowment_spread": [
+      -0.263259,
+      0.578963
+     ]
+    },
+    "drc_T": {
+     "log_initial_population": [
+      5.86833,
+      0.531807
+     ],
+     "log_regrowth_rate": [
+      2.84994,
+      0.548204
+     ],
+     "vision_mean": [
+      2.941,
+      0.771272
+     ],
+     "vision_spread": [
+      0.393333,
+      0.557718
+     ],
+     "metabolism_mean": [
+      -26.7215,
+      0.651928
+     ],
+     "metabolism_spread": [
+      9.18358,
+      0.539636
+     ],
+     "endowment_mean": [
+      1.41775,
+      0.732466
+     ],
+     "endowment_spread": [
+      -0.518663,
+      0.597202
+     ]
+    },
+    "moran_T": {
+     "log_initial_population": [
+      2.98763,
+      0.300379
+     ],
+     "log_regrowth_rate": [
+      3.13633,
+      0.321141
+     ],
+     "vision_mean": [
+      1.94301,
+      0.467866
+     ],
+     "vision_spread": [
+      0.2669,
+      0.325559
+     ],
+     "metabolism_mean": [
+      -7.79546,
+      0.404281
+     ],
+     "metabolism_spread": [
+      1.32729,
+      0.321003
+     ],
+     "endowment_mean": [
+      0.559591,
+      0.444874
+     ],
+     "endowment_spread": [
+      -0.175491,
+      0.338102
+     ]
+    }
+   }
+  },
+  "contrast": {
+   "gini_T": [
+    0.640382,
+    0.0503747
+   ],
+   "gini_c1": [
+    0.866357,
+    0.050169
+   ],
+   "top10_T": [
+    0.138702,
+    0.0473044
+   ],
+   "cv_T": [
+    0.595198,
+    0.0489129
+   ],
+   "loghill_T": [
+    -0.376641,
+    0.051117
+   ],
+   "plateau_frac": [
+    0.896416,
+    0.0664417
+   ],
+   "tau_frac": [
+    0.291578,
+    0.0598949
+   ],
+   "fluct_cv": [
+    0.0948715,
+    0.0494048
+   ],
+   "drc_c1": [
+    0.155331,
+    0.0504635
+   ],
+   "drc_T": [
+    0.136141,
+    0.049524
+   ],
+   "moran_T": [
+    0.358615,
+    0.0398838
+   ]
+  }
+ },
+ "active": {
+  "gini_T|trade": true,
+  "gini_c1|trade": true,
+  "top10_T|trade": true,
+  "cv_T|trade": true,
+  "loghill_T|trade": true,
+  "lorenz_T|trade": true,
+  "ineq_up|trade": true,
+  "plateau_frac|trade": true,
+  "pop_traj|trade": true,
+  "plateaued|trade": true,
+  "disp_late|trade": true,
+  "disp_decay|trade": true,
+  "price_level|trade": true,
+  "exch_rate|trade": true,
+  "disp_traj|trade": true,
+  "trading|trade": true,
+  "disp_down|trade": true,
+  "drc_c1|trade": true,
+  "drc_T|trade": true,
+  "moran_T|trade": true,
+  "clustered|trade": true,
+  "gini_T|notrade": true,
+  "gini_c1|notrade": true,
+  "top10_T|notrade": true,
+  "cv_T|notrade": true,
+  "loghill_T|notrade": true,
+  "lorenz_T|notrade": true,
+  "ineq_up|notrade": true,
+  "plateau_frac|notrade": true,
+  "pop_traj|notrade": true,
+  "plateaued|notrade": true,
+  "trading|notrade": true,
+  "drc_c1|notrade": true,
+  "drc_T|notrade": true,
+  "moran_T|notrade": true,
+  "clustered|notrade": true
+ },
+ "named": [
+  {
+   "id": "IV-6a",
+   "claim": "carrying capacity rises with mean vision (with trade)",
+   "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py",
+   "stat": "plateau_frac",
+   "world": "trade",
+   "term": "vision_mean",
+   "sign": 1,
+   "confirmed": true,
+   "canon_est": 7.56052,
+   "canon_lo": 5.07448,
+   "canon_hi": 10.0466
+  },
+  {
+   "id": "IV-6b",
+   "claim": "carrying capacity rises with mean vision (without trade)",
+   "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py",
+   "stat": "plateau_frac",
+   "world": "notrade",
+   "term": "vision_mean",
+   "sign": 1,
+   "confirmed": true,
+   "canon_est": 8.05512,
+   "canon_lo": 5.57564,
+   "canon_hi": 10.5346
+  },
+  {
+   "id": "IV-6c",
+   "claim": "carrying capacity is higher with trade",
+   "source": "Epstein & Axtell 1996, Fig. IV-6; Mesa sugarscape_g1mt tests.py",
+   "stat": "plateau_frac",
+   "world": "both",
+   "term": "trade",
+   "sign": 1,
+   "confirmed": true,
+   "canon_est": 0.896416,
+   "canon_lo": 0.786864,
+   "canon_hi": 1.00597
+  },
+  {
+   "id": "IV-13a",
+   "claim": "inequality falls with mean vision",
+   "source": "Epstein & Axtell 1996, Fig. IV-13 (listed as a target in Mesa's tests.py)",
+   "stat": "gini_T",
+   "world": "trade",
+   "term": "vision_mean",
+   "sign": -1,
+   "confirmed": false,
+   "canon_est": -0.506526,
+   "canon_lo": -1.36868,
+   "canon_hi": 0.35563
+  },
+  {
+   "id": "IV-13b",
+   "claim": "inequality is higher with trade",
+   "source": "Epstein & Axtell 1996, Fig. IV-13 (listed as a target in Mesa's tests.py)",
+   "stat": "gini_T",
+   "world": "both",
+   "term": "trade",
+   "sign": 1,
+   "confirmed": true,
+   "canon_est": 0.640382,
+   "canon_lo": 0.55731,
+   "canon_hi": 0.723453
+  },
+  {
+   "id": "IV-3",
+   "claim": "price dispersion falls over time",
+   "source": "Epstein & Axtell 1996, Fig. IV-3 (p. 109); Mesa sugarscape_g1mt tests.py",
+   "stat": "disp_decay",
+   "world": "trade",
+   "term": "level",
+   "sign": -1,
+   "confirmed": true,
+   "canon_est": 1.34358,
+   "canon_lo": 1.23968,
+   "canon_hi": 1.44749
+  },
+  {
+   "id": "II-met",
+   "claim": "carrying capacity falls with mean metabolism",
+   "source": "Epstein & Axtell 1996, ch. II (carrying capacity)",
+   "stat": "plateau_frac",
+   "world": "notrade",
+   "term": "metabolism_mean",
+   "sign": -1,
+   "confirmed": true,
+   "canon_est": 48.2597,
+   "canon_lo": 45.9673,
+   "canon_hi": 50.5522
+  },
+  {
+   "id": "II-growback",
+   "claim": "carrying capacity rises with the regrowth rate",
+   "source": "Epstein & Axtell 1996, ch. II (growback rule G)",
+   "stat": "plateau_frac",
+   "world": "notrade",
+   "term": "log_regrowth_rate",
+   "sign": 1,
+   "confirmed": true,
+   "canon_est": 4.57746,
+   "canon_lo": 2.97837,
+   "canon_hi": 6.17654
+  }
+ ],
+ "widened_by": {
+  "l2:trade:price_level:": "regrowth_up5",
+  "slope:notrade:loghill_T:endowment_mean": "regrowth_down5"
+ },
+ "perturbations": [
+  "endowment_jitter",
+  "growback_after_agents",
+  "regrowth_down5",
+  "regrowth_up5"
+ ],
+ "separation_hits": {
+  "gini_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "gini_c1|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "top10_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "cv_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "loghill_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "lorenz_T|trade": [
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_noise_exchange"
+  ],
+  "ineq_up|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "plateau_frac|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "pop_traj|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "ko_ignore_endowment",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "plateaued|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "disp_late|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_vision",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "disp_decay|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "price_level|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "exch_rate|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "disp_traj|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "trading|trade": [
+   "ko_no_trade",
+   "null_random_walk"
+  ],
+  "disp_down|trade": [
+   "ko_no_trade",
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "null_random_walk",
+   "null_static_agents",
+   "null_noise_exchange"
+  ],
+  "drc_c1|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "ko_ignore_endowment",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "drc_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "moran_T|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "clustered|trade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "gini_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "gini_c1|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "top10_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "cv_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "loghill_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "lorenz_T|notrade": [
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "ineq_up|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "plateau_frac|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "pop_traj|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "ko_ignore_endowment",
+   "ko_trade_always",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "plateaued|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "trading|notrade": [
+   "ko_trade_always"
+  ],
+  "drc_c1|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "ko_ignore_endowment",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "drc_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_population",
+   "ko_ignore_regrowth",
+   "ko_ignore_vision",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "moran_T|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "ko_uniform_vision",
+   "ko_ignore_regrowth",
+   "ko_ignore_metabolism",
+   "null_random_walk",
+   "null_static_agents"
+  ],
+  "clustered|notrade": [
+   "ko_no_growback",
+   "ko_random_move",
+   "null_random_walk",
+   "null_static_agents"
+  ]
+ }
+}

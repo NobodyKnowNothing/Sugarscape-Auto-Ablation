@@ -184,11 +184,13 @@ def oc_pass_probability(a: surface.Assessment, alpha: float) -> tuple[float, flo
     return math.exp(logp), slack_min
 
 
-def input_matters(canon, margins, terms):
+def input_matters(canon, margins, terms, diagnostic=()):
     """Does canonical respond to any of these regressors beyond margin (with confidence)?"""
     hits = []
     for w, tab in canon["slope"].items():
         for s, coefs in tab.items():
+            if s in diagnostic:
+                continue
             for t in terms:
                 if t in coefs:
                     b, se = coefs[t]
@@ -310,7 +312,9 @@ def main():
             reps.append((pts, run_control(profile, name, pts, k)))
         control_runs[name] = reps
     for name in by_role("negative") + by_role("null") + by_role("probe"):
-        pts = subset(bank, profile["negative_points"], f"control:{name}")
+        # probes answer open questions, so they are judged exactly like a candidate at the final look
+        n = profile["positive_points"] if VARIANTS[name]["role"] == "probe" else profile["negative_points"]
+        pts = subset(bank, n, f"control:{name}")
         log(f"{VARIANTS[name]['role'].capitalize()} control {name}: {len(pts)} points")
         control_runs[name] = [(pts, run_control(profile, name, pts, 0))]
 
@@ -339,7 +343,7 @@ def main():
         targets = list(spec.get("targets", []))
         note = ""
         if role == "negative" and spec.get("terms"):
-            matters = input_matters(canon, margins, spec["terms"])
+            matters = input_matters(canon, margins, spec["terms"], profile.design.get("diagnostic_stats", []))
             if not matters:
                 role, note = "probe", "canonical does not respond to this input beyond margin: input not required"
             else:
