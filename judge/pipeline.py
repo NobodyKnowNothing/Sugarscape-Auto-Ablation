@@ -456,7 +456,11 @@ def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | 
             rr = _run_all(canonical_code_text(), profile,
                           [(label, params, s) for s in seeds("reference", "refine", label, n_ref)])
             cr = _run_all(code, profile, [(label, params, s) for s in seeds("holdout", "refine:" + h, label, n_ref)])
-            tested = tested_scalars(profile, w)
+            # Where a statistic exists is tested over the domain (`defined`); here only statistics that
+            # both models define in at least half of the seeds are compared, so NaN-count noise near
+            # collapse is never mistaken for a located failure.
+            tested = [s for s in tested_scalars(profile, w)
+                      if min(sum(math.isfinite(x[s]) for x in cr), sum(math.isfinite(x[s]) for x in rr)) >= n_ref / 2]
             for s in tested:
                 comp = scalar_compare([x[s] for x in cr], [x[s] for x in rr], profile.alpha / len(tested))
                 if comp.clearly_different(floor["point_sigma"]):

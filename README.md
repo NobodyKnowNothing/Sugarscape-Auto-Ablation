@@ -73,7 +73,7 @@ Every input of Mesa's model is sampled jointly at random. Each point is run with
 
 - Canonical runs are stored in two banks:
   - a **screening bank**: 384 scrambled-Sobol' points × 2 worlds × 4 seeds;
-  - a **holdout bank**: 192 i.i.d. points, used only by audits.
+  - a **holdout bank**: 384 i.i.d. points, used only by audits (each audit draws 256 of them).
 - Each candidate is tested at its own random subset of the bank, on fresh seeds, so it never sees fixed design points it could overfit.
 - [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) gives the precedent for each range.
 
@@ -175,6 +175,6 @@ These are set in `judge/design.json` and justified in [DESIGN_DECISIONS.md](DESI
 - **Inputs and ranges:** the domain table above, with every point run with trade on and off.
 - **Reference machine:** CPython + stdlib + numpy.
 - **Compute (full profile):**
-  - Reference banks: 384 + 192 points × 2 worlds × 4 seeds.
+  - Reference banks: 384 + 384 points × 2 worlds × 4 seeds.
   - Candidates: 2 seeds per point at 32 → 96 → 256 points per world.
-  - Audits: 128 holdout points, plus 4 re-tested points with 8 + 8 seeds, every 5 accepted mechanism changes.
+  - Audits: 256 holdout points, plus the 4 most discrepant points re-tested with 8 + 8 seeds, every 5 accepted mechanism changes.

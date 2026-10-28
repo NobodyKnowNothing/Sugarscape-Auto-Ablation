@@ -148,7 +148,7 @@ For each input there is an "ignore this input" knockout: the model behaves as at
 
 **Sampling.**
 - *Screening bank.* Canonical runs at 384 scrambled-Sobol' points × 2 worlds × 4 seeds.
-- *Holdout bank.* 192 i.i.d. uniform points × 2 worlds × 4 seeds, used by audits only.
+- *Holdout bank.* 384 i.i.d. uniform points × 2 worlds × 4 seeds, used by audits only (each audit draws 256).
 - *Fresh subsets.* Every candidate evaluation draws its own random subset, keyed by the candidate's hash, and runs it on fresh seeds. No candidate is ever tested on fixed design points it could overfit.
 - *Many points, few seeds.* The candidate gets 2 seeds per point. The variance of a domain-level estimate scales as (1 + n_cand/n_ref)/budget, so spreading runs across points beats repeating seeds. Two seeds are kept so seed noise can be removed from the discrepancy estimate.
 
