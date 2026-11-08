@@ -1,0 +1,378 @@
+{
+  "profile": "full",
+  "updated_at": "2026-11-08T20:08:42+00:00",
+  "current_trajectory": 1,
+  "completed_trajectories": 0,
+  "total_attempts_logged": 0,
+  "evaluated_attempts_clustered": 0,
+  "pca_explained_variance": [
+    0.6426,
+    0.1767
+  ],
+  "failure_attractors": [],
+  "trajectories": [],
+  "champions_by_trajectory": {},
+  "champion_ncd_matrix": {},
+  "mechanism_matrix": {
+    "growback": {
+      "rule": "Resources regrow by regrowth_rate per step up to cell capacity",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "move_welfare": {
+      "rule": "Move to the empty cell within vision that maximizes Cobb-Douglas welfare",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "move_tiebreak": {
+      "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "welfare": {
+      "rule": "Cobb-Douglas welfare with exponents from relative metabolism",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "metabolism": {
+      "rule": "Agents consume metabolism_sugar / metabolism_spice each step",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "death": {
+      "rule": "Agents die when sugar or spice reaches zero",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "vision": {
+      "rule": "Heterogeneous vision radius bounds movement and trade neighbourhoods",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "trade": {
+      "rule": "Bilateral trade with neighbours within vision, repeated while beneficial",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "mrs_stop": {
+      "rule": "Trading stops when the post-trade MRSs would cross",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "price_rule": {
+      "rule": "Price is the geometric mean of the two MRSs; integer bundle sizes",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "heterogeneity": {
+      "rule": "Endowments, metabolisms and vision drawn per agent from uniform ranges",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "two_goods": {
+      "rule": "Two complementary goods (sugar and spice) with mirrored landscapes",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "random_activation": {
+      "rule": "Agents act in a freshly shuffled order each phase",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    },
+    "mesa_framework": {
+      "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
+      "current_status": "kept",
+      "attempts": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "trajectories_modified": [],
+      "max_feature_ratios": {
+        "E1": 0.0,
+        "E2": 0.0,
+        "E3": 0.0,
+        "E4": 0.0,
+        "E5": 0.0
+      },
+      "primary_failure_attractor": "none",
+      "classification": "untested/under-explored"
+    }
+  },
+  "attempts": [],
+  "control_landmarks": [
+    {
+      "name": "numpy_reimplementation",
+      "role": "positive",
+      "doc": "independent plain-numpy implementation of the same rules (no Mesa)",
+      "pca_x": 4.2801,
+      "pca_y": 0.2586
+    },
+    {
+      "name": "rng_reorder",
+      "role": "positive",
+      "doc": "same rules, different dice: trait draws reordered and model seed remixed",
+      "pca_x": 4.2801,
+      "pca_y": 0.2586
+    },
+    {
+      "name": "ko_no_trade",
+      "role": "negative",
+      "doc": "trade rule T removed (agents never exchange)",
+      "pca_x": 0.9701,
+      "pca_y": -0.8852
+    },
+    {
+      "name": "ko_no_growback",
+      "role": "negative",
+      "doc": "resources never regrow",
+      "pca_x": -2.1882,
+      "pca_y": 1.4228
+    },
+    {
+      "name": "ko_random_move",
+      "role": "negative",
+      "doc": "movement rule M replaced by a random empty cell within vision",
+      "pca_x": -1.6361,
+      "pca_y": 1.3592
+    },
+    {
+      "name": "ko_uniform_vision",
+      "role": "negative",
+      "doc": "vision fixed at 1 regardless of the vision inputs",
+      "pca_x": -0.8133,
+      "pca_y": 1.0658
+    },
+    {
+      "name": "ko_ignore_population",
+      "role": "negative",
+      "doc": "always starts 200 agents whatever initial_population says",
+      "pca_x": -3.9385,
+      "pca_y": -4.2217
+    },
+    {
+      "name": "ko_ignore_regrowth",
+      "role": "negative",
+      "doc": "resources always regrow 1 unit per step whatever regrowth_rate says",
+      "pca_x": -0.2762,
+      "pca_y": -0.9913
+    },
+    {
+      "name": "ko_ignore_vision",
+      "role": "negative",
+      "doc": "vision always drawn from Mesa's default 1-5 whatever the vision inputs say",
+      "pca_x": -0.3406,
+      "pca_y": -1.66
+    },
+    {
+      "name": "ko_ignore_metabolism",
+      "role": "negative",
+      "doc": "metabolisms always drawn from Mesa's default 1-5 whatever the metabolism inputs say",
+      "pca_x": -1.4666,
+      "pca_y": 1.0346
+    },
+    {
+      "name": "ko_ignore_endowment",
+      "role": "negative",
+      "doc": "endowments always drawn from Mesa's default 25-50 whatever the endowment inputs say",
+      "pca_x": 1.0495,
+      "pca_y": -0.5207
+    },
+    {
+      "name": "ko_trade_always",
+      "role": "negative",
+      "doc": "agents trade even when enable_trade is false (the trade switch is ignored)",
+      "pca_x": 1.3664,
+      "pca_y": -0.3497
+    },
+    {
+      "name": "null_random_walk",
+      "role": "null",
+      "doc": "random walkers with multiplicative random wealth; no resources, no interaction",
+      "pca_x": -3.1977,
+      "pca_y": 1.3417
+    },
+    {
+      "name": "null_static_agents",
+      "role": "null",
+      "doc": "agents never move (no foraging)",
+      "pca_x": -4.3399,
+      "pca_y": 1.4047
+    },
+    {
+      "name": "null_noise_exchange",
+      "role": "null",
+      "doc": "one exchange per encounter at a random price, with no welfare or MRS check (noise trading)",
+      "pca_x": -0.589,
+      "pca_y": 0.3538
+    },
+    {
+      "name": "ko_no_mrs_stop",
+      "role": "probe",
+      "doc": "MRS-crossing stop removed from the trade rule",
+      "pca_x": 3.7612,
+      "pca_y": 0.1802
+    },
+    {
+      "name": "null_random_price",
+      "role": "probe",
+      "doc": "random price unrelated to MRS, but trades still need both parties better off (zero-intelligence traders with a budget constraint, Gode & Sunder 1993)",
+      "pca_x": 3.0787,
+      "pca_y": -0.0513
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 520" width="100%" height="100%">
+<rect width="100%" height="100%" fill="#0f172a" rx="10"/>
+<text x="70" y="30" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">Sugarscape Behavioral Attractor Map (PCA of Standardized Emergent Feature Space)</text>
+<rect x="70" y="55" width="530" height="410" fill="#1e293b" stroke="#334155" stroke-width="1" rx="4"/>
+<line x1="336.5" y1="55" x2="336.5" y2="465" stroke="#334155" stroke-dasharray="4,4"/>
+<line x1="70" y1="178.0" x2="600" y2="178.0" stroke="#334155" stroke-dasharray="4,4"/>
+<text x="335.0" y="502" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12">PC1 (64.3% variance)</text>
+<text x="22" y="260.0" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" transform="rotate(-90 22 260.0)">PC2 (17.7% variance)</text>
+<polygon points="548.7,157.9 553.7,162.9 548.7,167.9 543.7,162.9" fill="#38bdf8" opacity="0.65"/>
+<text x="555.7" y="165.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">numpy_reimplemen</text>
+<polygon points="548.7,157.9 553.7,162.9 548.7,167.9 543.7,162.9" fill="#38bdf8" opacity="0.65"/>
+<text x="555.7" y="165.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">rng_reorder</text>
+<polygon points="384.6,224.9 389.6,229.9 384.6,234.9 379.6,229.9" fill="#64748b" opacity="0.65"/>
+<text x="391.6" y="232.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_trade</text>
+<polygon points="228.0,89.7 233.0,94.7 228.0,99.7 223.0,94.7" fill="#64748b" opacity="0.65"/>
+<text x="235.0" y="97.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_growback</text>
+<polygon points="255.4,93.4 260.4,98.4 255.4,103.4 250.4,98.4" fill="#64748b" opacity="0.65"/>
+<text x="262.4" y="101.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_move</text>
+<polygon points="296.2,110.6 301.2,115.6 296.2,120.6 291.2,115.6" fill="#64748b" opacity="0.65"/>
+<text x="303.2" y="118.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">uniform_vision</text>
+<polygon points="141.2,420.3 146.2,425.3 141.2,430.3 136.2,425.3" fill="#64748b" opacity="0.65"/>
+<text x="148.2" y="428.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_populatio</text>
+<polygon points="322.8,231.1 327.8,236.1 322.8,241.1 317.8,236.1" fill="#64748b" opacity="0.65"/>
+<text x="329.8" y="239.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_regrowth</text>
+<polygon points="319.6,270.3 324.6,275.3 319.6,280.3 314.6,275.3" fill="#64748b" opacity="0.65"/>
+<text x="326.6" y="278.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_vision</text>
+<polygon points="263.8,112.4 268.8,117.4 263.8,122.4 258.8,117.4" fill="#64748b" opacity="0.65"/>
+<text x="270.8" y="120.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_metabolis</text>
+<polygon points="388.5,203.5 393.5,208.5 388.5,213.5 383.5,208.5" fill="#64748b" opacity="0.65"/>
+<text x="395.5" y="211.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_endowment</text>
+<polygon points="404.2,193.5 409.2,198.5 404.2,203.5 399.2,198.5" fill="#64748b" opacity="0.65"/>
+<text x="411.2" y="201.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">trade_always</text>
+<polygon points="177.9,94.4 182.9,99.4 177.9,104.4 172.9,99.4" fill="#64748b" opacity="0.65"/>
+<text x="184.9" y="102.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_walk</text>
+<polygon points="121.3,90.7 126.3,95.7 121.3,100.7 116.3,95.7" fill="#64748b" opacity="0.65"/>
+<text x="128.3" y="98.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">static_agents</text>
+<polygon points="307.3,152.3 312.3,157.3 307.3,162.3 302.3,157.3" fill="#64748b" opacity="0.65"/>
+<text x="314.3" y="160.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">noise_exchange</text>
+<polygon points="523.0,162.5 528.0,167.5 523.0,172.5 518.0,167.5" fill="#64748b" opacity="0.65"/>
+<text x="530.0" y="170.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_mrs_stop</text>
+<polygon points="489.1,176.0 494.1,181.0 489.1,186.0 484.1,181.0" fill="#64748b" opacity="0.65"/>
+<text x="496.1" y="184.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_price</text>
+<text x="618" y="70" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Legend</text>
+<circle cx="624" cy="88" r="5" fill="#10b981"/>
+<text x="636" y="92" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Accepted Model (S1)</text>
+<polygon points="624,107 629,112 624,117 619,112" fill="#38bdf8"/>
+<text x="636" y="116" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Positive Control</text>
+<polygon points="624,131 629,136 624,141 619,136" fill="#64748b"/>
+<text x="636" y="140" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Knockout / Null Control</text>
+<circle cx="624" cy="160" r="5" fill="#e11d48"/>
+<text x="636" y="164" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Failure Attractor F1</text>
+<circle cx="624" cy="184" r="5" fill="#d97706"/>
+<text x="636" y="188" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Failure Attractor F2</text>
+<circle cx="624" cy="208" r="5" fill="#7c3aed"/>
+<text x="636" y="212" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Failure Attractor F3</text>
+<circle cx="624" cy="232" r="5" fill="#0284c7"/>
+<text x="636" y="236" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Failure Attractor F4+</text>
+</svg>

@@ -1,0 +1,135 @@
+name: Daily Sugarscape Auto-Ablation & Attractor Clustering
+
+on:
+  schedule:
+    # Runs once daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Judge evaluation profile (full or smoke)'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - smoke
+      generations:
+        description: 'Number of generations to run in this daily session'
+        required: false
+        default: '3'
+        type: string
+      variants:
+        description: 'Number of variants proposed per generation'
+        required: false
+        default: '4'
+        type: string
+      plateau_generations:
+        description: 'Stagnant generations before declaring a compression plateau and resetting to canonical'
+        required: false
+        default: '6'
+        type: string
+      plateau_attempts:
+        description: 'Minimum attempts without best-C improvement before plateau reset'
+        required: false
+        default: '20'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sugarscape-auto-ablation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ablate-and-cluster:
+    name: Compress Sugarscape & Cluster Attractors
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Restore Judge SQLite simulation cache
+        uses: actions/cache@v4
+        with:
+          path: judge/_cache
+          key: judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json') }}-${{ github.run_id }}
+          restore-keys: |
+            judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json') }}-
+
+      - name: Run Auto-Ablation & Plateau-Reset Loop
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PROFILE: ${{ inputs.profile || 'full' }}
+          GENERATIONS: ${{ inputs.generations || '3' }}
+          VARIANTS: ${{ inputs.variants || '4' }}
+          PLATEAU_GENS: ${{ inputs.plateau_generations || '6' }}
+          PLATEAU_ATTS: ${{ inputs.plateau_attempts || '20' }}
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${PROFILE}" = "smoke" ]; then
+            EXTRA_FLAGS="--allow-failed-calibration"
+          fi
+          python autoresearch.py \
+            --profile "${PROFILE}" \
+            --generations "${GENERATIONS}" \
+            --variants "${VARIANTS}" \
+            --plateau-generations "${PLATEAU_GENS}" \
+            --plateau-attempts "${PLATEAU_ATTS}" \
+            --no-git \
+            ${EXTRA_FLAGS}
+
+      - name: Update Behavioral Clustering & Attractor Reports
+        if: always()
+        env:
+          PROFILE: ${{ inputs.profile || 'full' }}
+        run: |
+          python cluster_analysis.py --profile "${PROFILE}"
+          if [ -f "reports/${PROFILE}/CLUSTER_REPORT.md" ]; then
+            cat "reports/${PROFILE}/CLUSTER_REPORT.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Commit and push updated results, archive, and cluster reports
+        if: always()
+        env:
+          PROFILE: ${{ inputs.profile || 'full' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add strategy.py results.tsv mechanisms.json
+          if [ -d "archive" ]; then
+            git add archive/
+          fi
+          if [ -d "reports" ]; then
+            git add reports/
+          fi
+
+          if git diff --staged --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          TRAJ=$(python -c "import json, pathlib; p=pathlib.Path('archive/${PROFILE}/archive.json'); print(json.loads(p.read_text()).get('trajectory', 1) if p.exists() else 1)")
+          GEN=$(python -c "import json, pathlib; p=pathlib.Path('archive/${PROFILE}/archive.json'); print(json.loads(p.read_text()).get('generation', 0) if p.exists() else 0)")
+          git commit -m "chore(ablation): daily run [profile=${PROFILE}, trajectory=T${TRAJ}, gen=${GEN}]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

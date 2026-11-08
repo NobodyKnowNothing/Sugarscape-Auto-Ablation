@@ -1226,6 +1226,7 @@ def build_research_prompt(
     recent: List[dict],
     complexity: dict,
     moves: List[str],
+    profile_name: str = "full",
 ) -> str:
     lines = parent_code.splitlines()
     numbered = "\n".join(f"{i + 1:4d} | {l}" for i, l in enumerate(lines))
@@ -1235,12 +1236,19 @@ def build_research_prompt(
     hist = []
     for r in recent[-12:]:
         fb = "; ".join(f"{k}: {', '.join(v[:3])}" for k, v in (r.get("feedback") or {}).items())
-        hist.append(f"- [{r.get('outcome')}] ({r.get('move')}, {r.get('mechanism')}) {r.get('desc')}"
-                    + (f" -> {r.get('reason')}" if r.get("reason") else "") + (f" | {fb}" if fb else ""))
+        ctrl = ((r.get("vector") or {}).get("nearest_control") or {}).get("name", "")
+        ctrl_tag = f" [~{ctrl}]" if ctrl and ctrl not in ("none", "parse_error") else ""
+        hist.append(f"- [T{r.get('trajectory', 1)}:{r.get('outcome')}] ({r.get('move')}, {r.get('mechanism')}) {r.get('desc')}"
+                    + (f" -> {r.get('reason')}{ctrl_tag}" if r.get("reason") else "") + (f" | {fb}" if fb else ""))
     manifest = complexity.get("dependency_manifest") or []
     mesa_summary = ", ".join(sorted({m.split(':')[0] for m in manifest})) or "none"
     move_lines = "\n".join(f"Variant {i + 1}: MOVE = {m} - {MOVE_TYPES[m]}" for i, m in enumerate(moves))
     history = "\n".join(hist) if hist else "(none yet)"
+    try:
+        from cluster_analysis import format_cluster_memory_for_prompt
+        cluster_memory = format_cluster_memory_for_prompt(profile_name)
+    except Exception:
+        cluster_memory = "(none yet)"
     return f"""{program_text}
 
 ---
@@ -1257,6 +1265,9 @@ def build_research_prompt(
 
 ## Mechanism ledger
 {ledger_txt}
+
+## Cross-Trajectory Attractor & Cluster Memory
+{cluster_memory}
 
 ## Recent attempts and the judge's qualitative feedback
 {history}
@@ -1333,10 +1344,11 @@ def generate_research_variants(
     fallback_model: str = FALLBACK_MODEL,
     temperature: float = 0.8,
     log_fn: Optional[Callable[[str], None]] = None,
+    profile_name: str = "full",
 ) -> List[Dict[str, str]]:
     from google.genai import types
 
-    prompt = build_research_prompt(parent_code, program_text, ledger, recent, complexity, moves)
+    prompt = build_research_prompt(parent_code, program_text, ledger, recent, complexity, moves, profile_name=profile_name)
     try:
         response, used = generate_content_with_failover(
             client=client,

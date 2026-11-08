@@ -22,15 +22,19 @@ judge/                     the judge (the research loop never edits this)
   pipeline.py              staged acceptance pipeline, audits, reference/margins storage
   reference/<profile>/     calibration output: reference banks, margins, control outcomes, CALIBRATION.md report
 calibrate_judge.py         builds the reference ensemble and margins and calibrates the judge against controls
-autoresearch.py            the LLM research loop (Pareto archive, move portfolio, ledger, audits, git sub-repo)
+autoresearch.py            the LLM research loop (Pareto archive, move portfolio, plateau resets, ledger, audits)
+cluster_analysis.py        behavioral vector extraction, hierarchical clustering, and cross-trajectory attractor reports
 edit_harness.py            Gemma prompting/parsing (hypothesis-driven proposals, full rewrites, multi-edit), failover
 certify.py                 knockout certificate: is every surviving rule necessary for some emergent feature?
 power_check.py             power check: canonical against itself on disjoint seeds (does the judge accept a true equivalent?)
-mechanisms.json            mechanism ledger: rule statuses and evidence
+mechanisms.json            mechanism ledger: rule statuses, evidence, and cross-trajectory history
 canonical_strategy.py      canonical Mesa G1MT ported to the judge contract (the reference model)
-strategy.py                current best model (the loop's working copy)
+strategy.py                current trajectory's best model (the loop's working copy)
 program.md                 research agenda given to the LLM
+archive/<profile>/         persistent Pareto archive, attempts.jsonl (with behavioral vectors), trajectories.json, champions/
+reports/<profile>/         CLUSTER_REPORT.md, clusters.json, and attractor_map.svg (updated after each generation)
 test_judge.py              judge test suite
+test_cluster_and_plateau.py vector logging, clustering, plateau detection, and reset test suite
 ```
 
 ## The model contract
@@ -81,7 +85,7 @@ Every input of Mesa's model is sampled jointly at random. Each point is run with
 
 | Stage | What it checks |
 |---|---|
-| 0 | The static guard, plus traced canonical complexity. C must drop by at least max(8 B, 0.1%·C). |
+| 0 | The static guard, plus traced canonical complexity. C must drop by at least max(16 B, 0.2%·C). |
 | 1 | Smoke run and determinism. If trajectories are bit-identical to the parent, the change is labelled `refactor` (a label only, never a reason to accept). |
 | 2 | Presence of E1–E4 at the default inputs, on fresh seeds. This is a cheap gate. |
 | 3 | E1–E4 over a fresh random domain sample, in sequential looks of 32 → 96 → 256 points per world (2 seeds each), with α spent mostly on the last look. Each statistic gets three tests: the noise-corrected RMS discrepancy over the domain (`l2`), the ratio of seed-to-seed spread (`spread`, mean absolute difference between seeds), and where the statistic exists at all (`defined`). |
@@ -137,7 +141,42 @@ C = min over gzip/bz2/lzma of the compressed `canon(strategy.py + executed depen
 
 - `canon()` strips docstrings, comments, annotations and asserts, then α-renames every identifier. Renaming or reformatting therefore gives ΔC = 0.
 - A short traced run, in a fresh process, records every Python function executed outside the reference machine (CPython, stdlib, numpy). Those functions are extracted from source and compressed together with the model.
-- For the canonical model, C = 5890 B. Of that, 1578 B is `strategy.py` and the rest is 76 executed Mesa functions.
+- For the canonical model, C = 8139 B. Of that, 1748 B is `strategy.py` and the rest is 98 executed Mesa functions.
+
+## Multi-Trajectory Plateau Detection & Automatic Resets
+
+To explore many independent ablation paths and discover global vs. local minimal rule sets ("attractors"), `autoresearch.py` continuously compresses `strategy.py` along a trajectory (`trajectory = 1, 2, ...`) until compression plateaus under a scientifically grounded stopping criterion (`check_plateau`):
+
+1. **Frontier Stagnation (`frontier_stagnation`)**: At least `plateau_generations` consecutive generations (default `6`, i.e. 4 full rotations across all 6 move types) AND `plateau_attempts` evaluated proposals (default `20`) have elapsed without any reduction in the trajectory's minimum complexity $C_{\min}$ (bounding the per-proposal improvement probability below $p < 0.14$ at $95\%$ confidence).
+2. **Diminishing Marginal Compression Rate (`diminishing_returns`)**: Over a rolling window of `plateau_generations` generations ($\ge$ `plateau_attempts` proposals), the relative complexity drop $(C_{\text{window}} - C_{\min}) / C_{\text{window}} < 0.2\%$ (the judge's minimum relative step `delta_rel`) with zero accepted `mechanism`-level changes.
+3. **Mechanism-Ledger Saturation (`mechanism_saturation`)**: Every remaining `"kept"` mechanism in `mechanisms.json` has been targeted by $\ge 2$ rejected `remove`/`substitute`/`merge` attempts in the current trajectory since the last `mechanism` acceptance, and at least $\lfloor \text{plateau\_generations} / 2 \rfloor$ generations have passed without a $C_{\min}$ improvement.
+
+When a plateau triggers (`handle_plateau_reset`):
+- Any unaudited mechanism changes on the trajectory champion are audited on the holdout bank.
+- The trajectory champion and its ledger are archived in `archive/<profile>/champions/traj_<T>_<id>.py` and recorded in `archive/<profile>/trajectories.json`.
+- A clear `PLATEAU_RESET` marker row is written to `results.tsv` separating Trajectory $T$ from Trajectory $T+1$.
+- `strategy.py` resets to `canonical_strategy.py` (the original flattened Mesa Sugarscape) and `mechanisms.json` resets active statuses to `"kept"` while preserving `cross_trajectory_history`.
+
+## Behavioral Vector Logging & Attractor Clustering
+
+Every candidate evaluated by the judge is mapped by `cluster_analysis.py` (with zero additional simulation overhead via `judge/_cache/runs.sqlite` cache hits) to:
+- **`v_default` (16-D)**: Standardized, $\operatorname{asinh}$-squashed shifts across the 15 scalar statistics + extinction rate at the default anchor point.
+- **`v_surface` (30-D) & `v_joint` (29-D)**: Response-surface discrepancy profile across the 5 emergent feature ratios (`E1`–`E5`), 15 L2 test ratios, 8 input-slope ratios, and trade contrast ratio.
+- **`nearest_control`**: Cosine + Euclidean similarity match against all 17 calibration controls/knockouts in `judge/reference/<profile>/calibration.json`.
+- **Structural Code Distance (`ncd_canonical`, `ncd_parent`)**: Normalized Compression Distance on AST-canonicalized code against `canonical_strategy.py` and the parent model.
+
+After every generation and plateau reset, `cluster_analysis.py` clusters all attempts across trajectories using Ward hierarchical linkage + silhouette selection and writes:
+- `reports/<profile>/CLUSTER_REPORT.md` (multi-trajectory history, cross-trajectory champion NCD convergence matrix, failure attractors, and mechanism $\times$ feature sensitivity matrix)
+- `reports/<profile>/attractor_map.svg` (2D PCA behavioral map of attempts, champions, and calibration controls)
+- `reports/<profile>/clusters.json` (machine-readable vectors and cluster assignments, also fed back into the LLM prompt memory).
+
+## Daily GitHub Action
+
+The workflow [`.github/workflows/daily_ablation.yml`](.github/workflows/daily_ablation.yml) runs once daily (`0 6 * * *` UTC, and on manual `workflow_dispatch`):
+1. Restores the SQLite run cache (`judge/_cache/runs.sqlite`).
+2. Runs `autoresearch.py --profile full` from the current repository state (continuing the active trajectory or resetting to `canonical_strategy.py` upon plateau).
+3. Runs `cluster_analysis.py --profile full` and publishes `reports/full/CLUSTER_REPORT.md` to the GitHub Actions job summary.
+4. Commits and pushes updated `strategy.py`, `results.tsv`, `mechanisms.json`, `archive/`, and `reports/` directly back to `main`.
 
 ## Usage
 

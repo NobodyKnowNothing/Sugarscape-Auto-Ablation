@@ -10,7 +10,7 @@ venv/
 env/
 ENV/
 
-# Autoresearch artifacts & logs
+# Autoresearch temporary subrepo & scratch
 agent_repo/
 scratch/
 results LOC count.tsv
@@ -26,8 +26,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Judge cache and research-loop state
+# Judge SQLite simulation cache (persisted via actions/cache in CI)
 judge/_cache/
-archive/
 knockouts/
 mesa_flattened_raw.py
+archive/test_*/
+reports/test_*/

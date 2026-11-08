@@ -1,1 +1,1 @@
-generation	variant	parent	candidate	status	stage	label	move	mechanism	action	C	delta_C	eq_distance	E1	E2	E3	E4	E5	seeds_per_point	seconds	judge_hash	reason	description
+trajectory	generation	variant	parent	candidate	status	stage	label	move	mechanism	action	C	delta_C	eq_distance	E1	E2	E3	E4	E5	nearest_control	ncd_canonical	seeds_per_point	seconds	judge_hash	reason	description
