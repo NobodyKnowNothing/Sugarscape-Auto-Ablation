@@ -1,0 +1,52 @@
+{
+ "entries": [
+  {
+   "id": "af314acdce5789e2",
+   "trajectory": 1,
+   "parent": null,
+   "C": 6158,
+   "eq_distance": 0.0,
+   "label": "origin",
+   "delta_C": 0,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 0,
+   "desc": "canonical Sugarscape origin (trajectory 1)",
+   "audited": true
+  },
+  {
+   "id": "6bcb34abcfe2fdf2",
+   "trajectory": 1,
+   "parent": "af314acdce5789e2",
+   "C": 6142,
+   "eq_distance": 0.7677745654397886,
+   "label": "mechanism",
+   "delta_C": 16,
+   "digests": [
+    "e339667b0817b8d8",
+    "8a0e87d081cd118a",
+    "48ffcef36ca55fc6"
+   ],
+   "generation": 1,
+   "desc": "Remove the MRS crossing condition from the trade rule.",
+   "move": "remove_rule",
+   "mechanism": "mrs_stop",
+   "action": "remove",
+   "hypothesis": "Price discovery (E3) is primarily driven by the welfare improvement and the price rule. The \"MRS crossing\" check is a refinement to reach equilibrium faster, but the \"both better off\" condition should be sufficient to settle on similar price levels.",
+   "ncd_canonical": 0.1733,
+   "audited": false
+  }
+ ],
+ "audits": [],
+ "generation": 3,
+ "trajectory": 1,
+ "trajectory_start_gen": 0,
+ " trajectory_started_at": "2026-11-08T20:28:46+00:00",
+ "last_best_improvement_gen": 1,
+ "attempts_since_improvement": 4,
+ "trajectory_attempts": 8,
+ "trajectory_started_at": "2026-11-08T20:28:55+00:00"
+}
