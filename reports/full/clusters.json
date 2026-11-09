@@ -1,13 +1,13 @@
 {
   "profile": "full",
-  "updated_at": "2026-11-08T21:58:19+00:00",
+  "updated_at": "2026-11-09T14:41:24+00:00",
   "current_trajectory": 1,
   "completed_trajectories": 0,
-  "total_attempts_logged": 8,
-  "evaluated_attempts_clustered": 8,
+  "total_attempts_logged": 9,
+  "evaluated_attempts_clustered": 9,
   "pca_explained_variance": [
-    0.7698,
-    0.0971
+    0.7823,
+    0.0914
   ],
   "failure_attractors": [
     {
@@ -76,7 +76,7 @@
     {
       "cluster_id": "G0",
       "archetype": "Stage 0 Gate Rejection (Complexity / Guard / Smoke)",
-      "count": 5,
+      "count": 6,
       "trajectories_hit": [
         1
       ],
@@ -86,12 +86,12 @@
       "nearest_control": "stage_0_gate",
       "mechanisms_targeted": [
         "two_goods (3)",
-        "mesa_framework (1)",
+        "mesa_framework (2)",
         "none (1)"
       ],
       "moves_used": [
+        "replace_library (2)",
         "collapse_parameters (2)",
-        "replace_library (1)",
         "refactor (1)"
       ],
       "sample_reasons": [
@@ -342,9 +342,9 @@
     "mesa_framework": {
       "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
       "current_status": "kept",
-      "attempts": 2,
+      "attempts": 3,
       "accepted": 0,
-      "rejected": 2,
+      "rejected": 3,
       "trajectories_modified": [],
       "max_feature_ratios": {
         "E1": 1.73,
@@ -380,8 +380,8 @@
         "doc": ""
       },
       "ncd_canonical": 0.9192,
-      "pca_x": 4.8888,
-      "pca_y": 0.3037,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
       "desc": "Replace Mesa framework with a lightweight NumPy-based implementation to eliminate library overhead.",
       "reason": "guard: missing module-level contract function observe()"
     },
@@ -407,8 +407,8 @@
         "doc": ""
       },
       "ncd_canonical": 0.1601,
-      "pca_x": 4.8888,
-      "pca_y": 0.3037,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
       "desc": "Collapse sugar and spice into a resource array to merge parallel logic.",
       "reason": "not simpler: C 6198 vs parent 6158 (need a drop of >= 8 bytes)"
     },
@@ -434,8 +434,8 @@
         "doc": ""
       },
       "ncd_canonical": 0.6887,
-      "pca_x": 4.8888,
-      "pca_y": 0.3037,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
       "desc": "Remove the Mesa compatibility bridge and the Scenario class to streamline initialization.",
       "reason": "complexity trace crashed: TypeError: HasPropertyLayers.add_property_layer() takes 2 positional arguments but 3 were given"
     },
@@ -461,8 +461,8 @@
         "doc": "MRS-crossing stop removed from the trade rule"
       },
       "ncd_canonical": 0.1733,
-      "pca_x": 2.5809,
-      "pca_y": 0.1794,
+      "pca_x": 2.3893,
+      "pca_y": 0.1509,
       "desc": "Remove the MRS crossing condition from the trade rule.",
       "reason": ""
     },
@@ -488,8 +488,8 @@
         "doc": "endowments always drawn from Mesa's default 25-50 whatever the endowment inputs say"
       },
       "ncd_canonical": 0.2146,
-      "pca_x": 0.1546,
-      "pca_y": -1.1411,
+      "pca_x": -0.049,
+      "pca_y": -1.161,
       "desc": "Simplify movement tie-breaking by removing the Euclidean distance check.",
       "reason": "differs: E1 (wealth inequality), E2 (carrying capacity), E3 (price discovery), E4 (spatial self-organization), E5 (trait responses)"
     },
@@ -515,8 +515,8 @@
         "doc": ""
       },
       "ncd_canonical": 0.2754,
-      "pca_x": 4.8888,
-      "pca_y": 0.3037,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
       "desc": "Use arrays for agent holdings and metabolisms to merge parallel resource logic.",
       "reason": "complexity trace crashed: AttributeError: 'Trader' object has no attribute 'sugar'"
     },
@@ -542,8 +542,8 @@
         "doc": "resources always regrow 1 unit per step whatever regrowth_rate says"
       },
       "ncd_canonical": 0.8644,
-      "pca_x": -2.2633,
-      "pca_y": -1.0127,
+      "pca_x": -2.4657,
+      "pca_y": -1.0204,
       "desc": "Replace the entire Mesa framework with a purpose-built NumPy implementation.",
       "reason": "run failed at s202240-0078|trade (seed 1386605031483928336): TimeoutError: run exceeded 300s at step 124"
     },
@@ -569,10 +569,37 @@
         "doc": ""
       },
       "ncd_canonical": 0.194,
-      "pca_x": 4.8888,
-      "pca_y": 0.3037,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
       "desc": "Collapse the two property layers into a single 3D NumPy array for the landscape.",
       "reason": "complexity trace crashed: ValueError: Dimensions of property layer do not match the dimensions of the grid"
+    },
+    {
+      "trajectory": 1,
+      "generation": 6,
+      "variant": 1,
+      "candidate": "9b988b6084596336",
+      "parent": "6bcb34abcfe2fdf2",
+      "outcome": "rejected_static",
+      "stage": 0,
+      "move": "replace_library",
+      "mechanism": "mesa_framework",
+      "action": "replace",
+      "C": null,
+      "delta_C": 0.0,
+      "eq_distance": NaN,
+      "cluster_id": "G0",
+      "nearest_control": {
+        "name": "stage_0_gate",
+        "similarity": 0.0,
+        "role": "gate",
+        "doc": ""
+      },
+      "ncd_canonical": 0.8432,
+      "pca_x": 4.7106,
+      "pca_y": 0.2744,
+      "desc": "Replace Mesa machinery with a purpose-built NumPy-based engine.",
+      "reason": "complexity trace crashed: KeyError: 'population'"
     }
   ],
   "control_landmarks": [
@@ -580,120 +607,120 @@
       "name": "numpy_reimplementation",
       "role": "positive",
       "doc": "independent plain-numpy implementation of the same rules (no Mesa)",
-      "pca_x": 2.9366,
-      "pca_y": 0.0325
+      "pca_x": 2.7472,
+      "pca_y": 0.0051
     },
     {
       "name": "rng_reorder",
       "role": "positive",
       "doc": "same rules, different dice: trait draws reordered and model seed remixed",
-      "pca_x": 2.9366,
-      "pca_y": 0.0325
+      "pca_x": 2.7472,
+      "pca_y": 0.0051
     },
     {
       "name": "ko_no_trade",
       "role": "negative",
       "doc": "trade rule T removed (agents never exchange)",
-      "pca_x": -0.8842,
-      "pca_y": -1.205
+      "pca_x": -1.0958,
+      "pca_y": -1.2289
     },
     {
       "name": "ko_no_growback",
       "role": "negative",
       "doc": "resources never regrow",
-      "pca_x": -3.4815,
-      "pca_y": 1.6587
+      "pca_x": -3.6584,
+      "pca_y": 1.6689
     },
     {
       "name": "ko_random_move",
       "role": "negative",
       "doc": "movement rule M replaced by a random empty cell within vision",
-      "pca_x": -3.032,
-      "pca_y": 1.4954
+      "pca_x": -3.2162,
+      "pca_y": 1.4972
     },
     {
       "name": "ko_uniform_vision",
       "role": "negative",
       "doc": "vision fixed at 1 regardless of the vision inputs",
-      "pca_x": -2.2527,
-      "pca_y": 1.1277
+      "pca_x": -2.4403,
+      "pca_y": 1.124
     },
     {
       "name": "ko_ignore_population",
       "role": "negative",
       "doc": "always starts 200 agents whatever initial_population says",
-      "pca_x": -5.3192,
-      "pca_y": -3.4973
+      "pca_x": -5.4953,
+      "pca_y": -3.4492
     },
     {
       "name": "ko_ignore_regrowth",
       "role": "negative",
       "doc": "resources always regrow 1 unit per step whatever regrowth_rate says",
-      "pca_x": -1.8414,
-      "pca_y": -0.9438
+      "pca_x": -2.0358,
+      "pca_y": -0.9456
     },
     {
       "name": "ko_ignore_vision",
       "role": "negative",
       "doc": "vision always drawn from Mesa's default 1-5 whatever the vision inputs say",
-      "pca_x": -2.0533,
-      "pca_y": -1.6728
+      "pca_x": -2.2544,
+      "pca_y": -1.6772
     },
     {
       "name": "ko_ignore_metabolism",
       "role": "negative",
       "doc": "metabolisms always drawn from Mesa's default 1-5 whatever the metabolism inputs say",
-      "pca_x": -2.8667,
-      "pca_y": 1.156
+      "pca_x": -3.051,
+      "pca_y": 1.1583
     },
     {
       "name": "ko_ignore_endowment",
       "role": "negative",
       "doc": "endowments always drawn from Mesa's default 25-50 whatever the endowment inputs say",
-      "pca_x": -0.6729,
-      "pca_y": -0.771
+      "pca_x": -0.8793,
+      "pca_y": -0.7911
     },
     {
       "name": "ko_trade_always",
       "role": "negative",
       "doc": "agents trade even when enable_trade is false (the trade switch is ignored)",
-      "pca_x": -0.2903,
-      "pca_y": -0.5853
+      "pca_x": -0.4932,
+      "pca_y": -0.605
     },
     {
       "name": "null_random_walk",
       "role": "null",
       "doc": "random walkers with multiplicative random wealth; no resources, no interaction",
-      "pca_x": -4.4334,
-      "pca_y": 1.7074
+      "pca_x": -4.6054,
+      "pca_y": 1.7271
     },
     {
       "name": "null_static_agents",
       "role": "null",
       "doc": "agents never move (no foraging)",
-      "pca_x": -5.4833,
-      "pca_y": 1.9034
+      "pca_x": -5.6482,
+      "pca_y": 1.9344
     },
     {
       "name": "null_noise_exchange",
       "role": "null",
       "doc": "one exchange per encounter at a random price, with no welfare or MRS check (noise trading)",
-      "pca_x": -2.032,
-      "pca_y": 0.4299
+      "pca_x": -2.2201,
+      "pca_y": 0.4281
     },
     {
       "name": "ko_no_mrs_stop",
       "role": "probe",
       "doc": "MRS-crossing stop removed from the trade rule",
-      "pca_x": 2.3474,
-      "pca_y": -0.0684
+      "pca_x": 2.1545,
+      "pca_y": -0.0952
     },
     {
       "name": "null_random_price",
       "role": "probe",
       "doc": "random price unrelated to MRS, but trades still need both parties better off (zero-intelligence traders with a budget constraint, Gode & Sunder 1993)",
-      "pca_x": 1.506,
-      "pca_y": -0.3439
+      "pca_x": 1.3064,
+      "pca_y": -0.3719
     }
   ]
 }

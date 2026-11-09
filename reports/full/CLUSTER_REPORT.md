@@ -1,8 +1,8 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-08T21:58:19+00:00`
+- **Updated**: `2026-11-09T14:41:24+00:00`
 - **Active Trajectory**: `Trajectory #1` (`0` plateau resets completed)
-- **Total Attempts Logged**: `8` (`8` with full behavioral vectors)
+- **Total Attempts Logged**: `9` (`9` with full behavioral vectors)
 
 ![Behavioral Attractor Map](./attractor_map.svg)
 
@@ -26,7 +26,7 @@ Rejected attempts are clustered in standardized behavioral response space and ma
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
 | **`F1`** | E1+E2 Breakdown (~ko_ignore_endowment) | `1` | T1 | No | `E1, E2, E3, E4, E5` | `pop_traj(l2), plateau_frac(l2), loghill_T(slope)` | `ko_ignore_endowment` | move_tiebreak (1) |
 | **`F2`** | E1+E2 Breakdown (~ko_ignore_regrowth) | `1` | T1 | No | `E1, E2, E3, E4, E5` | `loghill_T(slope), moran_T(slope), drc_T(slope)` | `ko_ignore_regrowth` | mesa_framework (1) |
-| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `5` | T1 | No | `Stage 0/1` | `—` | `stage_0_gate` | two_goods (3), mesa_framework (1), none (1) |
+| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `6` | T1 | No | `Stage 0/1` | `—` | `stage_0_gate` | two_goods (3), mesa_framework (2), none (1) |
 
 ---
 
@@ -49,4 +49,4 @@ Worst-case feature discrepancy ratio ($\text{ratio} < 1.0$ passes equivalence; $
 | **`heterogeneity`** | untested/under-explored | `0` (`0` / `0`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `none` |
 | **`two_goods`** | load-bearing (candidate) | `3` (`0` / `3`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `G0` |
 | **`random_activation`** | untested/under-explored | `0` (`0` / `0`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `none` |
-| **`mesa_framework`** | load-bearing (candidate) | `2` (`0` / `2`) | — | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |
+| **`mesa_framework`** | load-bearing (candidate) | `3` (`0` / `3`) | — | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |
