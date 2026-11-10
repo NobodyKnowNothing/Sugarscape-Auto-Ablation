@@ -232,3 +232,38 @@ def test_plateau_detection_and_reset_cycle(tmp_path, monkeypatch):
     tsv_text = (tmp_path / "results.tsv").read_text(encoding="utf-8")
     assert "PLATEAU_RESET" in tsv_text
     assert "TRAJECTORY 1 PLATEAUED" in tsv_text
+
+
+def test_empty_generation_does_not_count_toward_plateau(tmp_path, monkeypatch):
+    """A generation with no proposals (e.g. API quota exhausted) gives its number back."""
+    import autoresearch
+
+    monkeypatch.setattr(autoresearch, "ARCHIVE_ROOT", tmp_path / "archive")
+    monkeypatch.setattr(autoresearch.cx, "measure", lambda code, profile: {"C": 9200})
+
+    class EmptyProposer:
+        def propose(self, *a, **k):
+            return []
+
+    canon = canonical_code()
+    arch = Archive("smoke")
+    arch.add(canon, {"id": "orig", "trajectory": 1, "parent": None, "C": 9200, "eq_distance": 0.0,
+                     "label": "origin", "delta_C": 0, "generation": 0, "audited": True})
+    arch.data.update(generation=0, last_best_improvement_gen=0, attempts_since_improvement=20,
+                     trajectory_attempts=20)
+    args = argparse.Namespace(variants=4, plateau_generations=2, plateau_attempts=6, no_git=True, no_push=True)
+    profile = load_profile("smoke")
+    ledger = json.loads((Path(__file__).parent / "mechanisms.json").read_text(encoding="utf-8"))
+    rng = np.random.default_rng(0)
+
+    for _ in range(5):
+        arch.data["generation"] += 1
+        res = autoresearch.run_generation(arch.data["generation"], arch, EmptyProposer(), profile,
+                                          None, None, None, ledger, rng, args)
+        assert res is None
+
+    assert arch.data["generation"] == 0
+    assert Archive("smoke").data["generation"] == 0       # persisted
+    assert arch.data["attempts_since_improvement"] == 20  # no attempts were added
+    is_p, _ = check_plateau(arch, ledger, gen=arch.data["generation"], args=args)
+    assert not is_p

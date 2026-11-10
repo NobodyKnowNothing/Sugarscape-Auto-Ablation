@@ -76,6 +76,8 @@ FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemma-4-26b-a4b-it")
 VARIANTS_PER_GENERATION = int(os.environ.get("VARIANTS_PER_GENERATION", 4))
 DEFAULT_PLATEAU_GENERATIONS = int(os.environ.get("PLATEAU_GENERATIONS", 6))
 DEFAULT_PLATEAU_ATTEMPTS = int(os.environ.get("PLATEAU_ATTEMPTS", 20))
+# Consecutive generations with no proposals (e.g. HTTP 429 quota exhaustion) before a run stops early.
+MAX_EMPTY_GENERATIONS = int(os.environ.get("MAX_EMPTY_GENERATIONS", 2))
 
 ROOT = Path(__file__).resolve().parent
 STRATEGY_FILE = ROOT / "strategy.py"
@@ -762,8 +764,12 @@ def run_generation(gen: int, archive: Archive, proposer, profile, ref, margins, 
     log(f"Moves: {', '.join(moves)}")
     variants = proposer.propose(parent_code, ledger, archive.recent_attempts(), pcomp, moves)
     if not variants:
-        log("No variants proposed this generation.")
-        return 0
+        # Nothing was proposed (typically an API quota or outage). Give the generation number back
+        # so an empty generation never counts toward plateau detection as a stagnant one.
+        archive.data["generation"] = gen - 1
+        archive.save()
+        log("No variants proposed this generation; it does not count toward the trajectory or plateau detection.")
+        return None
     accepted = 0
     for k, v in enumerate(variants, 1):
         log(f"--- [T{traj}] Variant {k}/{len(variants)} [{v.get('move')}/{v.get('mechanism')}/{v.get('action')}]: {v.get('desc')}")
@@ -1219,13 +1225,23 @@ def main():
 
     try:
         done = 0
+        empty_in_a_row = 0
         trajectories_completed_this_run = 0
         while args.generations == 0 or done < args.generations:
             archive.data["generation"] += 1
             gen = archive.data["generation"]
             archive.save()
             try:
-                run_generation(gen, archive, proposer, profile, ref, margins, calib, ledger, rng, args)
+                accepted = run_generation(gen, archive, proposer, profile, ref, margins, calib, ledger, rng, args)
+                if accepted is None:
+                    empty_in_a_row += 1
+                    done += 1
+                    if empty_in_a_row >= MAX_EMPTY_GENERATIONS:
+                        log(f"{empty_in_a_row} generations in a row produced no proposals "
+                            "(the API quota is probably exhausted). Stopping this run.")
+                        break
+                    continue
+                empty_in_a_row = 0
                 maybe_audit(archive, profile, ref, margins, args)
                 analyze_clusters(profile.name)
 
