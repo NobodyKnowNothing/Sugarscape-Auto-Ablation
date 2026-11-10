@@ -2,53 +2,56 @@
 <rect width="100%" height="100%" fill="#0f172a" rx="10"/>
 <text x="70" y="30" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">Sugarscape Behavioral Attractor Map (PCA of Standardized Emergent Feature Space)</text>
 <rect x="70" y="55" width="530" height="410" fill="#1e293b" stroke="#334155" stroke-width="1" rx="4"/>
-<line x1="354.3" y1="55" x2="354.3" y2="465" stroke="#334155" stroke-dasharray="4,4"/>
-<line x1="70" y1="213.5" x2="600" y2="213.5" stroke="#334155" stroke-dasharray="4,4"/>
-<text x="335.0" y="502" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12">PC1 (78.2% variance)</text>
-<text x="22" y="260.0" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" transform="rotate(-90 22 260.0)">PC2 (9.1% variance)</text>
-<polygon points="467.7,208.2 472.7,213.2 467.7,218.2 462.7,213.2" fill="#38bdf8" opacity="0.65"/>
-<text x="474.7" y="216.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">numpy_reimplemen</text>
-<polygon points="467.7,208.2 472.7,213.2 467.7,218.2 462.7,213.2" fill="#38bdf8" opacity="0.65"/>
-<text x="474.7" y="216.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">rng_reorder</text>
-<polygon points="309.1,284.0 314.1,289.0 309.1,294.0 304.1,289.0" fill="#64748b" opacity="0.65"/>
-<text x="316.1" y="292.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_trade</text>
-<polygon points="203.4,106.0 208.4,111.0 203.4,116.0 198.4,111.0" fill="#64748b" opacity="0.65"/>
-<text x="210.4" y="114.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_growback</text>
-<polygon points="221.6,116.5 226.6,121.5 221.6,126.5 216.6,121.5" fill="#64748b" opacity="0.65"/>
-<text x="228.6" y="124.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_move</text>
-<polygon points="253.7,139.4 258.7,144.4 253.7,149.4 248.7,144.4" fill="#64748b" opacity="0.65"/>
-<text x="260.7" y="147.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">uniform_vision</text>
-<polygon points="127.6,420.3 132.6,425.3 127.6,430.3 122.6,425.3" fill="#64748b" opacity="0.65"/>
-<text x="134.6" y="428.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_populatio</text>
-<polygon points="270.3,266.6 275.3,271.6 270.3,276.6 265.3,271.6" fill="#64748b" opacity="0.65"/>
-<text x="277.3" y="274.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_regrowth</text>
-<polygon points="261.3,311.5 266.3,316.5 261.3,321.5 256.3,316.5" fill="#64748b" opacity="0.65"/>
-<text x="268.3" y="319.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_vision</text>
-<polygon points="228.5,137.3 233.5,142.3 228.5,147.3 223.5,142.3" fill="#64748b" opacity="0.65"/>
-<text x="235.5" y="145.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_metabolis</text>
-<polygon points="318.1,257.1 323.1,262.1 318.1,267.1 313.1,262.1" fill="#64748b" opacity="0.65"/>
-<text x="325.1" y="265.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_endowment</text>
-<polygon points="334.0,245.6 339.0,250.6 334.0,255.6 329.0,250.6" fill="#64748b" opacity="0.65"/>
-<text x="341.0" y="253.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">trade_always</text>
-<polygon points="164.3,102.4 169.3,107.4 164.3,112.4 159.3,107.4" fill="#64748b" opacity="0.65"/>
-<text x="171.3" y="110.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_walk</text>
-<polygon points="121.3,89.7 126.3,94.7 121.3,99.7 116.3,94.7" fill="#64748b" opacity="0.65"/>
-<text x="128.3" y="97.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">static_agents</text>
-<polygon points="262.7,182.2 267.7,187.2 262.7,192.2 257.7,187.2" fill="#64748b" opacity="0.65"/>
-<text x="269.7" y="190.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">noise_exchange</text>
-<polygon points="443.2,214.3 448.2,219.3 443.2,224.3 438.2,219.3" fill="#64748b" opacity="0.65"/>
-<text x="450.2" y="222.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_mrs_stop</text>
-<polygon points="408.2,231.3 413.2,236.3 408.2,241.3 403.2,236.3" fill="#64748b" opacity="0.65"/>
-<text x="415.2" y="239.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_price</text>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="452.9" cy="204.2" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="352.3" cy="284.8" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="252.6" cy="276.2" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="548.7" cy="196.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<line x1="296.7" y1="55" x2="296.7" y2="465" stroke="#334155" stroke-dasharray="4,4"/>
+<line x1="70" y1="301.7" x2="600" y2="301.7" stroke="#334155" stroke-dasharray="4,4"/>
+<text x="335.0" y="502" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12">PC1 (80.9% variance)</text>
+<text x="22" y="260.0" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" transform="rotate(-90 22 260.0)">PC2 (8.0% variance)</text>
+<polygon points="203.4,293.5 208.4,298.5 203.4,303.5 198.4,298.5" fill="#38bdf8" opacity="0.65"/>
+<text x="210.4" y="301.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">numpy_reimplemen</text>
+<polygon points="203.4,293.5 208.4,298.5 203.4,303.5 198.4,298.5" fill="#38bdf8" opacity="0.65"/>
+<text x="210.4" y="301.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">rng_reorder</text>
+<polygon points="364.2,217.7 369.2,222.7 364.2,227.7 359.2,222.7" fill="#64748b" opacity="0.65"/>
+<text x="371.2" y="225.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_trade</text>
+<polygon points="467.4,401.2 472.4,406.2 467.4,411.2 462.4,406.2" fill="#64748b" opacity="0.65"/>
+<text x="474.4" y="409.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_growback</text>
+<polygon points="449.7,389.5 454.7,394.5 449.7,399.5 444.7,394.5" fill="#64748b" opacity="0.65"/>
+<text x="456.7" y="397.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_move</text>
+<polygon points="417.9,365.8 422.9,370.8 417.9,375.8 412.9,370.8" fill="#64748b" opacity="0.65"/>
+<text x="424.9" y="373.8" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">uniform_vision</text>
+<polygon points="543.3,89.7 548.3,94.7 543.3,99.7 538.3,94.7" fill="#64748b" opacity="0.65"/>
+<text x="550.3" y="97.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_populatio</text>
+<polygon points="401.7,238.0 406.7,243.0 401.7,248.0 396.7,243.0" fill="#64748b" opacity="0.65"/>
+<text x="408.7" y="246.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_regrowth</text>
+<polygon points="411.3,192.5 416.3,197.5 411.3,202.5 406.3,197.5" fill="#64748b" opacity="0.65"/>
+<text x="418.3" y="200.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_vision</text>
+<polygon points="442.9,368.7 447.9,373.7 442.9,378.7 437.9,373.7" fill="#64748b" opacity="0.65"/>
+<text x="449.9" y="376.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_metabolis</text>
+<polygon points="354.8,245.3 359.8,250.3 354.8,255.3 349.8,250.3" fill="#64748b" opacity="0.65"/>
+<text x="361.8" y="253.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_endowment</text>
+<polygon points="338.6,256.8 343.6,261.8 338.6,266.8 333.6,261.8" fill="#64748b" opacity="0.65"/>
+<text x="345.6" y="264.8" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">trade_always</text>
+<polygon points="506.2,406.1 511.2,411.1 506.2,416.1 501.2,411.1" fill="#64748b" opacity="0.65"/>
+<text x="513.2" y="414.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_walk</text>
+<polygon points="548.7,420.3 553.7,425.3 548.7,430.3 543.7,425.3" fill="#64748b" opacity="0.65"/>
+<text x="555.7" y="428.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">static_agents</text>
+<polygon points="408.8,323.0 413.8,328.0 408.8,333.0 403.8,328.0" fill="#64748b" opacity="0.65"/>
+<text x="415.8" y="331.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">noise_exchange</text>
+<polygon points="228.2,287.4 233.2,292.4 228.2,297.4 223.2,292.4" fill="#64748b" opacity="0.65"/>
+<text x="235.2" y="295.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_mrs_stop</text>
+<polygon points="263.9,270.1 268.9,275.1 263.9,280.1 258.9,275.1" fill="#64748b" opacity="0.65"/>
+<text x="270.9" y="278.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_price</text>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="218.4" cy="307.4" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="320.2" cy="227.4" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="420.1" cy="237.7" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="314.9" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
 <text x="618" y="70" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Legend</text>
 <circle cx="624" cy="88" r="5" fill="#10b981"/>
 <text x="636" y="92" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Accepted Model (S1)</text>

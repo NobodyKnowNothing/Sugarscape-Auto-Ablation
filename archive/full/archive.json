@@ -41,12 +41,12 @@
   }
  ],
  "audits": [],
- "generation": 6,
+ "generation": 9,
  "trajectory": 1,
  "trajectory_start_gen": 0,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
  "last_best_improvement_gen": 1,
- "attempts_since_improvement": 5,
- "trajectory_attempts": 9,
+ "attempts_since_improvement": 13,
+ "trajectory_attempts": 17,
  "trajectory_started_at": "2026-11-08T20:28:55+00:00"
 }
