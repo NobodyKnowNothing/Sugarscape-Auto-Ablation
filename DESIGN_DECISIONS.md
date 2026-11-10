@@ -245,6 +245,8 @@ Taken together, true power for an equivalent candidate is roughly 85–97% per e
 
 The first end-to-end check exposed an audit bug, fixed before the final calibration. With 128 points the audit was underpowered, and its per-point re-test treated statistics that are undefined in most seeds of *both* models (near collapse) as "clearly different". Audits now draw 256 of 384 holdout points and re-test only statistics both models define. Where statistics exist stays tested over the domain.
 
+A second instance of the same problem surfaced in the first live audit (2026-11-10). The re-test still compared *how often* each statistic was defined, with a fixed 0.2 slack and no significance test. At one near-collapse point (initial population 52, metabolism 2–6, trade on), the MRS-stop removal had sparse-trade price statistics undefined in noticeably more of its 8 seeds than canonical, and was rolled back. With 64 seeds per model the definedness was indistinguishable (`disp_late` 27/64 vs 28/64, Fisher p = 1.0). The re-test now compares only the values on seeds where each model defines the statistic (`refine_failures` in `judge/pipeline.py`). Calibration never calls the audit, so the calibration was restamped to the new judge hash rather than re-run.
+
 ### What the calibration already says about "how much can you throw away"
 
 - **Every input is required.** Canonical responds beyond margin to population, regrowth, vision, metabolism and endowment, and to the trade switch. Every input-ignoring knockout is rejected, so no rule that consumes an input can be dropped without reproducing its response some other way.

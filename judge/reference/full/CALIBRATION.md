@@ -1,7 +1,7 @@
 # Judge calibration: profile `full`
 
 - Result: **PASSED** (positive controls min pass rate 1.00, negative/null controls min fail rate 1.00; required 0.95 / 0.95)
-- Judge hash `31cf7138c1ded1db`, design hash `e2ca5bf9ad7dd15d`, created 2026-10-28T01:26:08+00:00, 0.22 h
+- Judge hash `7fb5260dd83ddfd8`, design hash `e2ca5bf9ad7dd15d`, created 2026-10-28T01:26:08+00:00, 0.22 h
 - Screening bank: 384 scrambled-Sobol' points x 2 worlds x 4 seeds; holdout bank: 384 i.i.d. points x 2 x 4
 
 ## Literature-backed responses in canonical G1MT over the domain

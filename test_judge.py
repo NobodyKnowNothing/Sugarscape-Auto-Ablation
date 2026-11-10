@@ -354,3 +354,37 @@ def test_run_cache_serves_repeats_but_not_digest_runs():
     assert a["gini_T"] == b["gini_T"] and b["_seed"] == 424242
     d = _run_all(CANON, profile, spec, digest=True)[0]
     assert "_digest" in d and d["gini_T"] == a["gini_T"]
+
+
+# ---------------------------------------------------------------------------
+# Audit re-test of the most discrepant points
+# ---------------------------------------------------------------------------
+
+def _runs(values):
+    return [{"disp_late": v} for v in values]
+
+
+def test_refine_ignores_definedness_noise():
+    """The false rollback of 2026-11-10: same values, candidate defines the stat in fewer seeds."""
+    from judge.pipeline import refine_failures
+    nan = math.nan
+    rng = np.random.default_rng(0)
+    ref = _runs(list(rng.normal(1.0, 0.1, 7)) + [nan])          # defined in 7/8
+    cand = _runs(list(rng.normal(1.0, 0.1, 4)) + [nan] * 4)     # defined in 4/8
+    assert refine_failures(cand, ref, ["disp_late"], 8, 0.05, 2.5) == []
+
+
+def test_refine_still_catches_a_value_shift():
+    from judge.pipeline import refine_failures
+    rng = np.random.default_rng(1)
+    ref = _runs(rng.normal(1.0, 0.1, 8))
+    cand = _runs(rng.normal(2.0, 0.1, 8))                       # ~10 reference SDs too high
+    assert refine_failures(cand, ref, ["disp_late"], 8, 0.05, 2.5) == [("disp_late", "too high")]
+
+
+def test_refine_skips_statistics_defined_in_too_few_seeds():
+    from judge.pipeline import refine_failures
+    nan = math.nan
+    ref = _runs([1.0, 1.1, 0.9, 1.0, 1.05, 0.95, 1.0, 1.0])
+    cand = _runs([5.0, 5.1, 5.2] + [nan] * 5)                   # defined in 3/8 < half: not compared
+    assert refine_failures(cand, ref, ["disp_late"], 8, 0.05, 2.5) == []

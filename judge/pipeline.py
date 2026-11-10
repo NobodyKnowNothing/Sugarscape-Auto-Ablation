@@ -430,6 +430,30 @@ def worst_points(cand: dict, ref_runs: dict, pts: list[Point], margins: dict, k:
     return scored[:k]
 
 
+def refine_failures(cand_runs: list[dict], ref_runs: list[dict], stats: list[str], n_seeds: int,
+                    alpha: float, sigma: float) -> list[tuple[str, str]]:
+    """
+    Adversarial re-test of one point: (stat, direction) for every statistic whose *value* clearly
+    differs between the models.
+
+    Where a statistic exists at all is tested over the whole domain (the `defined` tests). Here
+    only statistics both models define in at least half of the seeds are compared, and only on
+    the seeds where each defines it. Comparing definedness at a single point with a handful of
+    seeds would mistake binomial noise near collapse (sparse trade, few survivors) for a located
+    failure.
+    """
+    def vals(runs, s):
+        return [x[s] for x in runs if math.isfinite(x[s])]
+
+    tested = [s for s in stats if min(len(vals(cand_runs, s)), len(vals(ref_runs, s))) >= n_seeds / 2]
+    out = []
+    for s in tested:
+        comp = scalar_compare(vals(cand_runs, s), vals(ref_runs, s), alpha / len(tested))
+        if comp.clearly_different(sigma):
+            out.append((s, comp.direction()))
+    return out
+
+
 def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | None = None) -> dict:
     """Holdout audit: fresh i.i.d. points, holdout seeds, single look, then adversarial refinement."""
     if ref is None or margins is None:
@@ -456,16 +480,9 @@ def audit(code: str, profile: Profile, ref: dict | None = None, margins: dict | 
             rr = _run_all(canonical_code_text(), profile,
                           [(label, params, s) for s in seeds("reference", "refine", label, n_ref)])
             cr = _run_all(code, profile, [(label, params, s) for s in seeds("holdout", "refine:" + h, label, n_ref)])
-            # Where a statistic exists is tested over the domain (`defined`); here only statistics that
-            # both models define in at least half of the seeds are compared, so NaN-count noise near
-            # collapse is never mistaken for a located failure.
-            tested = [s for s in tested_scalars(profile, w)
-                      if min(sum(math.isfinite(x[s]) for x in cr), sum(math.isfinite(x[s]) for x in rr)) >= n_ref / 2]
-            for s in tested:
-                comp = scalar_compare([x[s] for x in cr], [x[s] for x in rr], profile.alpha / len(tested))
-                if comp.clearly_different(floor["point_sigma"]):
-                    located.append({"point": pt.id, "world": w, "inputs": pt.params, "stat": s,
-                                    "direction": comp.direction()})
+            for s, direction in refine_failures(cr, rr, tested_scalars(profile, w), n_ref, profile.alpha,
+                                                floor["point_sigma"]):
+                located.append({"point": pt.id, "world": w, "inputs": pt.params, "stat": s, "direction": direction})
     except RunError as e:
         return {"passed": False, "reason": str(e), "features": a.feature_status()}
     cov = coverage_bounds(a, floor["point_sigma"])
