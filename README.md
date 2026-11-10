@@ -141,7 +141,7 @@ C = min over gzip/bz2/lzma of the compressed `canon(strategy.py + executed depen
 
 - `canon()` strips docstrings, comments, annotations and asserts, then α-renames every identifier. Renaming or reformatting therefore gives ΔC = 0.
 - A short traced run, in a fresh process, records every Python function executed outside the reference machine (CPython, stdlib, numpy). Those functions are extracted from source and compressed together with the model.
-- For the canonical model, C = 8139 B. Of that, 1748 B is `strategy.py` and the rest is 98 executed Mesa functions.
+- For the canonical model under Mesa 3.5.2 (pinned in `requirements.txt`), C = 6158 B. Of that, 1578 B is `strategy.py` and the rest is 76 executed Mesa functions. C depends on the Mesa version, because a different version executes different library code.
 
 ## Multi-Trajectory Plateau Detection & Automatic Resets
 

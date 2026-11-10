@@ -70,9 +70,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: judge/_cache
-          key: judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json') }}-${{ github.run_id }}
+          key: judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json', 'requirements.txt') }}-${{ github.run_id }}
           restore-keys: |
-            judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json') }}-
+            judge-sqlite-cache-${{ runner.os }}-${{ hashFiles('judge/*.py', 'judge/design.json', 'requirements.txt') }}-
 
       - name: Run Auto-Ablation & Plateau-Reset Loop
         env:

@@ -1,4 +1,4 @@
-mesa
+mesa==3.5.2  # pinned: complexity C and canonical behaviour depend on the Mesa version
 google-genai
 numpy
 scipy
