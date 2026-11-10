@@ -37,16 +37,128 @@
    "action": "remove",
    "hypothesis": "Price discovery (E3) is primarily driven by the welfare improvement and the price rule. The \"MRS crossing\" check is a refinement to reach equilibrium faster, but the \"both better off\" condition should be sufficient to settle on similar price levels.",
    "ncd_canonical": 0.1733,
-   "audited": false
+   "audited": "failed",
+   "excluded": true
+  },
+  {
+   "id": "af314acdce5789e2",
+   "trajectory": 2,
+   "parent": null,
+   "C": 6158,
+   "eq_distance": 0.0,
+   "label": "origin",
+   "delta_C": 0,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 10,
+   "desc": "canonical Sugarscape origin (trajectory 2)",
+   "audited": true
   }
  ],
- "audits": [],
- "generation": 9,
- "trajectory": 1,
- "trajectory_start_gen": 0,
+ "audits": [
+  {
+   "trajectory": 1,
+   "model": "6bcb34abcfe2fdf2",
+   "time": "2026-11-10T21:33:42+00:00",
+   "passed": false,
+   "features": {
+    "E1": "pass",
+    "E2": "pass",
+    "E3": "pass",
+    "E4": "pass",
+    "E5": "pass"
+   },
+   "reason": "located failures: disp_late undefined (missing in candidate) at {'initial_population': 52, 'regrowth_rate': 3.925, 'vision_min': 1, 'vision_max': 8, 'metabolism_min': 2, 'metabolism_max': 6, 'endowment_min': 14, 'endowment_max': 36} (trade); disp_decay undefined (missing in candidate) at {'initial_population': 52, 'regrowth_rate': 3.925, 'vision_min': 1, 'vision_max': 8, 'metabolism_min': 2, 'metabolism_max': 6, 'endowment_min': 14, 'endowment_max': 36} (trade); price_level undefined (missing in candidate) at {'initial_population': 52, 'regrowth_rate': 3.925, 'vision_min': 1, 'vision_max': 8, 'metabolism_min': 2, 'metabolism_max': 6, 'endowment_min': 14, 'endowment_max': 36} (trade)",
+   "eq_distance": 0.7752832551976011,
+   "located_failures": [
+    {
+     "point": "i756503-0099",
+     "world": "trade",
+     "inputs": {
+      "initial_population": 52,
+      "regrowth_rate": 3.925,
+      "vision_min": 1,
+      "vision_max": 8,
+      "metabolism_min": 2,
+      "metabolism_max": 6,
+      "endowment_min": 14,
+      "endowment_max": 36
+     },
+     "stat": "disp_late",
+     "direction": "undefined (missing in candidate)"
+    },
+    {
+     "point": "i756503-0099",
+     "world": "trade",
+     "inputs": {
+      "initial_population": 52,
+      "regrowth_rate": 3.925,
+      "vision_min": 1,
+      "vision_max": 8,
+      "metabolism_min": 2,
+      "metabolism_max": 6,
+      "endowment_min": 14,
+      "endowment_max": 36
+     },
+     "stat": "disp_decay",
+     "direction": "undefined (missing in candidate)"
+    },
+    {
+     "point": "i756503-0099",
+     "world": "trade",
+     "inputs": {
+      "initial_population": 52,
+      "regrowth_rate": 3.925,
+      "vision_min": 1,
+      "vision_max": 8,
+      "metabolism_min": 2,
+      "metabolism_max": 6,
+      "endowment_min": 14,
+      "endowment_max": 36
+     },
+     "stat": "price_level",
+     "direction": "undefined (missing in candidate)"
+    }
+   ],
+   "coverage": {
+    "per_statistic": {
+     "gini_T|trade": 0.06902119223585401,
+     "gini_c1|trade": 0.03361658972721808,
+     "top10_T|trade": 0.030084496415924335,
+     "cv_T|trade": 0.06787544166665344,
+     "loghill_T|trade": 0.058403198721767094,
+     "plateau_frac|trade": 0.04110474638909751,
+     "disp_late|trade": 0.059370732334614706,
+     "disp_decay|trade": 0.05334755325662435,
+     "price_level|trade": 0.019423248108614878,
+     "exch_rate|trade": 0.06972320946213899,
+     "drc_c1|trade": 0.050032187936884104,
+     "drc_T|trade": 0.02099618902664968,
+     "moran_T|trade": 0.017962106738442157,
+     "gini_T|notrade": 0.0,
+     "gini_c1|notrade": 0.05582202927362479,
+     "top10_T|notrade": 0.012864577856348735,
+     "cv_T|notrade": 0.008723186391656158,
+     "loghill_T|notrade": 0.03869440832858304,
+     "plateau_frac|notrade": 0.002962556954148871,
+     "drc_c1|notrade": 0.013848813963231782,
+     "drc_T|notrade": 0.010866836529178026,
+     "moran_T|notrade": 0.03290837024195881
+    },
+    "worst": 0.06972320946213899,
+    "any_statistic_union": 0.7676516715592135
+   }
+  }
+ ],
+ "generation": 11,
+ "trajectory": 2,
+ "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 1,
- "attempts_since_improvement": 13,
- "trajectory_attempts": 17,
- "trajectory_started_at": "2026-11-08T20:28:55+00:00"
+ "last_best_improvement_gen": 10,
+ "attempts_since_improvement": 4,
+ "trajectory_attempts": 4,
+ "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }

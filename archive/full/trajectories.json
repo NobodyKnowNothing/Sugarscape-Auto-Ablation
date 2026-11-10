@@ -1,0 +1,51 @@
+[
+  {
+    "trajectory_id": 1,
+    "started_at": "2026-11-08T20:28:55+00:00",
+    "completed_at": "2026-11-10T21:33:42+00:00",
+    "start_generation": 1,
+    "end_generation": 10,
+    "generations_run": 10,
+    "attempts_evaluated": 21,
+    "variants_accepted": 0,
+    "origin_id": "af314acdce5789e2",
+    "origin_C": 6158,
+    "champion_id": "af314acdce5789e2",
+    "champion_C": 6158,
+    "champion_eq_distance": 0.0,
+    "total_bytes_saved": 0,
+    "compression_ratio": 1.0,
+    "bytes_saved_refactor": 0.0,
+    "bytes_saved_mechanism": 0.0,
+    "mechanisms_modified": {
+      "mrs_stop": "removed"
+    },
+    "mechanisms_kept": [
+      "growback",
+      "move_welfare",
+      "move_tiebreak",
+      "welfare",
+      "metabolism",
+      "death",
+      "vision",
+      "trade",
+      "price_rule",
+      "heterogeneity",
+      "two_goods",
+      "random_activation",
+      "mesa_framework"
+    ],
+    "plateau_reason": "diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances",
+    "lineage": [
+      {
+        "id": "af314acdce5789e2",
+        "C": 6158,
+        "delta_C": 0,
+        "label": "origin",
+        "move": "",
+        "mechanism": "",
+        "desc": "canonical Sugarscape origin (trajectory 1)"
+      }
+    ]
+  }
+]

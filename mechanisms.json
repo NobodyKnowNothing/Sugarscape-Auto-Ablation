@@ -11,53 +11,77 @@
       "rule": "Resources regrow by regrowth_rate per step up to cell capacity",
       "status": "kept",
       "canonical_knockout": "ko_no_growback",
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "move_welfare": {
       "rule": "Move to the empty cell within vision that maximizes Cobb-Douglas welfare",
       "status": "kept",
       "canonical_knockout": "ko_random_move",
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "move_tiebreak": {
       "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "welfare": {
       "rule": "Cobb-Douglas welfare with exponents from relative metabolism",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "metabolism": {
       "rule": "Agents consume metabolism_sugar / metabolism_spice each step",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "death": {
       "rule": "Agents die when sugar or spice reaches zero",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "vision": {
       "rule": "Heterogeneous vision radius bounds movement and trade neighbourhoods",
       "status": "kept",
       "canonical_knockout": "ko_uniform_vision",
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "trade": {
       "rule": "Bilateral trade with neighbours within vision, repeated while beneficial",
       "status": "kept",
       "canonical_knockout": "ko_no_trade",
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "mrs_stop": {
       "rule": "Trading stops when the post-trade MRSs would cross",
-      "status": "removed",
+      "status": "kept",
       "canonical_knockout": "ko_no_mrs_stop",
       "evidence": [
         {
@@ -77,37 +101,55 @@
           },
           "eq_distance": 0.7677745654397886
         }
-      ]
+      ],
+      "cross_trajectory_history": {
+        "T1": "removed"
+      }
     },
     "price_rule": {
       "rule": "Price is the geometric mean of the two MRSs; integer bundle sizes",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "heterogeneity": {
       "rule": "Endowments, metabolisms and vision drawn per agent from uniform ranges",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "two_goods": {
       "rule": "Two complementary goods (sugar and spice) with mirrored landscapes",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "random_activation": {
       "rule": "Agents act in a freshly shuffled order each phase",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     },
     "mesa_framework": {
       "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": []
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept"
+      }
     }
   }
 }
