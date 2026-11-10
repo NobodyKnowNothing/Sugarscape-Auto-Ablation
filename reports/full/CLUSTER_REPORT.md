@@ -1,6 +1,6 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-10T21:37:36+00:00`
+- **Updated**: `2026-11-10T23:03:34+00:00`
 - **Active Trajectory**: `Trajectory #2` (`1` plateau resets completed)
 - **Total Attempts Logged**: `26` (`17` with full behavioral vectors)
 
@@ -14,15 +14,15 @@ Each trajectory starts from the canonical flattened Mesa Sugarscape (`canonical_
 
 | Trajectory | Status | Generations | Attempts | Origin $C$ | Champion $C$ | Saved ($\Delta C$) | NCD vs. Canonical | Modified Mechanisms | Plateau Reason |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
-| **T1** | ✅ Plateaued & Reset | 10 | 21 | `6158` B | `6158` B (`af314acdce5789e2`) | **-0 B** | `0.000` | mrs_stop:removed | diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances |
+| **T1** | ✅ Plateaued & Reset | 10 | 21 | `6158` B | `6142` B (`6bcb34abcfe2fdf2`) | **-16 B** | `0.173` | mrs_stop:removed | diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances |
 | **T2** | 🔄 Active | — | — | — | `6158` B (`af314acdce5789e2`) | — | `0.000` | (in progress) | active trajectory |
 
 ### Cross-Trajectory Champion Convergence (Pairwise AST Normalized Compression Distance)
 
 | Champion | T1 | T2 |
 | :--- | :---: | :---: |
-| **T1** | `0.000` | `0.000` |
-| **T2** | `0.000` | `0.000` |
+| **T1** | `0.000` | `0.169` |
+| **T2** | `0.173` | `0.000` |
 
 ---
 

@@ -37,8 +37,7 @@
    "action": "remove",
    "hypothesis": "Price discovery (E3) is primarily driven by the welfare improvement and the price rule. The \"MRS crossing\" check is a refinement to reach equilibrium faster, but the \"both better off\" condition should be sufficient to settle on similar price levels.",
    "ncd_canonical": 0.1733,
-   "audited": "failed",
-   "excluded": true
+   "audited": true
   },
   {
    "id": "af314acdce5789e2",
@@ -150,7 +149,30 @@
     },
     "worst": 0.06972320946213899,
     "any_statistic_union": 0.7676516715592135
-   }
+   },
+   "superseded": "champion restored: audit rejection reversed by the fixed re-test (commit 6e2bb82)"
+  },
+  {
+   "trajectory": 1,
+   "model": "6bcb34abcfe2fdf2",
+   "time": "2026-11-10T23:05:00+00:00",
+   "passed": true,
+   "features": {
+    "E1": "pass",
+    "E2": "pass",
+    "E3": "pass",
+    "E4": "pass",
+    "E5": "pass"
+   },
+   "reason": "",
+   "eq_distance": 0.779,
+   "located_failures": [],
+   "coverage": {
+    "worst": 0.0708574946222525,
+    "any_statistic_union": 0.7735131743515802
+   },
+   "judge_hash": "7fb5260dd83ddfd8",
+   "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
  "generation": 11,

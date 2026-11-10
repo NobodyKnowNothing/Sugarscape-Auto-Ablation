@@ -7,16 +7,16 @@
     "end_generation": 10,
     "generations_run": 10,
     "attempts_evaluated": 21,
-    "variants_accepted": 0,
+    "variants_accepted": 1,
     "origin_id": "af314acdce5789e2",
     "origin_C": 6158,
-    "champion_id": "af314acdce5789e2",
-    "champion_C": 6158,
-    "champion_eq_distance": 0.0,
-    "total_bytes_saved": 0,
-    "compression_ratio": 1.0,
+    "champion_id": "6bcb34abcfe2fdf2",
+    "champion_C": 6142,
+    "champion_eq_distance": 0.7677745654397886,
+    "total_bytes_saved": 16,
+    "compression_ratio": 0.9974,
     "bytes_saved_refactor": 0.0,
-    "bytes_saved_mechanism": 0.0,
+    "bytes_saved_mechanism": 16.0,
     "mechanisms_modified": {
       "mrs_stop": "removed"
     },
@@ -45,7 +45,17 @@
         "move": "",
         "mechanism": "",
         "desc": "canonical Sugarscape origin (trajectory 1)"
+      },
+      {
+        "id": "6bcb34abcfe2fdf2",
+        "C": 6142,
+        "delta_C": 16,
+        "label": "mechanism",
+        "move": "remove_rule",
+        "mechanism": "mrs_stop",
+        "desc": "Remove the MRS crossing condition from the trade rule."
       }
-    ]
+    ],
+    "note": "champion restored: audit rejection reversed by the fixed re-test (commit 6e2bb82)"
   }
 ]

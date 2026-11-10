@@ -1,6 +1,6 @@
 {
   "profile": "full",
-  "updated_at": "2026-11-10T21:37:36+00:00",
+  "updated_at": "2026-11-10T23:03:34+00:00",
   "current_trajectory": 2,
   "completed_trajectories": 1,
   "total_attempts_logged": 26,
@@ -112,16 +112,16 @@
       "end_generation": 10,
       "generations_run": 10,
       "attempts_evaluated": 21,
-      "variants_accepted": 0,
+      "variants_accepted": 1,
       "origin_id": "af314acdce5789e2",
       "origin_C": 6158,
-      "champion_id": "af314acdce5789e2",
-      "champion_C": 6158,
-      "champion_eq_distance": 0.0,
-      "total_bytes_saved": 0,
-      "compression_ratio": 1.0,
+      "champion_id": "6bcb34abcfe2fdf2",
+      "champion_C": 6142,
+      "champion_eq_distance": 0.7677745654397886,
+      "total_bytes_saved": 16,
+      "compression_ratio": 0.9974,
       "bytes_saved_refactor": 0.0,
-      "bytes_saved_mechanism": 0.0,
+      "bytes_saved_mechanism": 16.0,
       "mechanisms_modified": {
         "mrs_stop": "removed"
       },
@@ -150,16 +150,26 @@
           "move": "",
           "mechanism": "",
           "desc": "canonical Sugarscape origin (trajectory 1)"
+        },
+        {
+          "id": "6bcb34abcfe2fdf2",
+          "C": 6142,
+          "delta_C": 16,
+          "label": "mechanism",
+          "move": "remove_rule",
+          "mechanism": "mrs_stop",
+          "desc": "Remove the MRS crossing condition from the trade rule."
         }
-      ]
+      ],
+      "note": "champion restored: audit rejection reversed by the fixed re-test (commit 6e2bb82)"
     }
   ],
   "champions_by_trajectory": {
     "T1": {
-      "id": "af314acdce5789e2",
-      "C": 6158,
-      "eq_distance": 0.0,
-      "ncd_canonical": 0.0
+      "id": "6bcb34abcfe2fdf2",
+      "C": 6142,
+      "eq_distance": 0.7677745654397886,
+      "ncd_canonical": 0.1733
     },
     "T2": {
       "id": "af314acdce5789e2",
@@ -171,10 +181,10 @@
   "champion_ncd_matrix": {
     "T1": {
       "T1": 0.0,
-      "T2": 0.0
+      "T2": 0.1686
     },
     "T2": {
-      "T1": 0.0,
+      "T1": 0.1733,
       "T2": 0.0
     }
   },

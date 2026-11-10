@@ -190,12 +190,7 @@ class Trader(CellAgent):
             welfare_self < self.calculate_welfare(self_sugar, self_spice)
         ) and (welfare_other < other.calculate_welfare(other_sugar, other_spice))
 
-        # trade criteria #2 is their mrs crossing with potential trade
-        mrs_not_crossing = self.calculate_MRS(
-            self_sugar, self_spice
-        ) > other.calculate_MRS(other_sugar, other_spice)
-
-        if not (both_agents_better_off and mrs_not_crossing):
+        if not both_agents_better_off:
             return False
 
         # criteria met, execute trade
