@@ -498,7 +498,7 @@ class Archive:
                 "generation": 0,
                 "trajectory": 1,
                 "trajectory_start_gen": 0,
-                " trajectory_started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "trajectory_started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "last_best_improvement_gen": 0,
                 "attempts_since_improvement": 0,
                 "trajectory_attempts": 0,

@@ -33,6 +33,11 @@ def test_guard_accepts_canonical():
     ("from judge import pipeline\n", "import from 'judge'"),
     ("f = open('sugar-map.txt')\n", "call to 'open'"),
     ("x = b'abc'\n", "bytes literals"),
+    ("from numpy import random\n", "numpy's global 'random'"),
+    ("import numpy as np\nr = np.random\n", "global numpy RNG"),
+    ("x = getattr(int, '__dict__')\n", "access to '__dict__'"),
+    ("x = getattr(int, '__di' + 'ct__')\n", "literal attribute name"),
+    ("x = __builtins__\n", "access to '__builtins__'"),
 ])
 def test_guard_rejects(snippet, fragment):
     problems = guard.check(CANON + "\n" + snippet)

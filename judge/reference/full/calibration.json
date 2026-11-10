@@ -8168,7 +8168,7 @@
   "dependency_functions": 76,
   "code_hash": "af314acdce5789e2"
  },
- "judge_hash": "c144304071e9ad4e",
+ "judge_hash": "31cf7138c1ded1db", "judge_hash_restamped_from": "c144304071e9ad4e",
  "design_hash": "e2ca5bf9ad7dd15d",
  "created": "2026-10-28T01:26:08+00:00",
  "seconds": 791.3,
