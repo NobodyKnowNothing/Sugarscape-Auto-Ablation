@@ -134,8 +134,13 @@ def test_plateau_detection_and_reset_cycle(tmp_path, monkeypatch):
 
     canon = canonical_code()
     (tmp_path / "strategy.py").write_text(canon, encoding="utf-8")
-    ledger_src = Path(__file__).parent / "mechanisms.json"
-    (tmp_path / "mechanisms.json").write_text(ledger_src.read_text(encoding="utf-8"), encoding="utf-8")
+    # Start from a pristine ledger: the repo's mechanisms.json carries live experiment state.
+    ledger_src = json.loads((Path(__file__).parent / "mechanisms.json").read_text(encoding="utf-8"))
+    for entry in ledger_src["mechanisms"].values():
+        entry["status"] = "kept"
+        entry["evidence"] = []
+        entry.pop("cross_trajectory_history", None)
+    (tmp_path / "mechanisms.json").write_text(json.dumps(ledger_src, indent=2), encoding="utf-8")
 
     autoresearch.init_results()
     profile = load_profile("smoke")
