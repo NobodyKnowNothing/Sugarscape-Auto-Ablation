@@ -55,6 +55,72 @@
    "generation": 10,
    "desc": "canonical Sugarscape origin (trajectory 2)",
    "audited": true
+  },
+  {
+   "id": "d46178751b980ad7",
+   "trajectory": 2,
+   "parent": "af314acdce5789e2",
+   "C": 6114,
+   "eq_distance": 0.6959705453537528,
+   "label": "refactor",
+   "delta_C": 44,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 12,
+   "desc": "Merge bundle calculation and exchange execution into a single trade verification method.",
+   "move": "collapse_parameters",
+   "mechanism": "price_rule",
+   "action": "merge",
+   "hypothesis": "Combining `calculate_sell_spice_amount` and `sell_spice` into `maybe_sell_spice` reduces the number of function calls and redundant state checks without altering the trade logic.",
+   "ncd_canonical": 0.2907,
+   "audited": false
+  },
+  {
+   "id": "897e17ec5067ebfc",
+   "trajectory": 2,
+   "parent": "d46178751b980ad7",
+   "C": 6098,
+   "eq_distance": 0.7600465972498541,
+   "label": "refactor",
+   "delta_C": 16,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 13,
+   "desc": "Replace manual Euclidean distance calculation with `math.dist`.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "refactor",
+   "hypothesis": "Replacing the explicit distance calculation with the built-in `math.dist` is a pure refactor that reduces code complexity without changing the mathematical result or the model's behavior.",
+   "ncd_canonical": 0.4611,
+   "audited": false
+  },
+  {
+   "id": "b5c8c2fda376bc50",
+   "trajectory": 2,
+   "parent": "d46178751b980ad7",
+   "C": 6106,
+   "eq_distance": 0.788026191960286,
+   "label": "refactor",
+   "delta_C": 8,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 13,
+   "desc": "Remove the `mrs_stop` safety check in the `trade` method.",
+   "move": "remove_rule",
+   "mechanism": "mrs_stop",
+   "action": "remove",
+   "hypothesis": "The `maybe_sell_spice` function already implements a strict Pareto-improvement check (welfare and MRS) that prevents non-beneficial trades. The `math.isclose` check in `trade` is merely a performance optimization that stops recursion early; removing it will not change the equilibrium or the emergent statistical patterns.",
+   "ncd_canonical": 0.3031,
+   "audited": false
   }
  ],
  "audits": [
@@ -175,12 +241,12 @@
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
- "generation": 11,
+ "generation": 14,
  "trajectory": 2,
  "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 10,
- "attempts_since_improvement": 4,
- "trajectory_attempts": 4,
+ "last_best_improvement_gen": 13,
+ "attempts_since_improvement": 6,
+ "trajectory_attempts": 16,
  "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }

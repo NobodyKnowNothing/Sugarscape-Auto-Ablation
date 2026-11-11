@@ -55,17 +55,7 @@ except ImportError:
 # ===========================================================================
 
 def get_distance(cell_1, cell_2):
-    """
-    Calculate the Euclidean distance between two positions
-
-    used in trade.move()
-    """
-
-    x1, y1 = cell_1.coordinate
-    x2, y2 = cell_2.coordinate
-    dx = x1 - x2
-    dy = y1 - y2
-    return math.sqrt(dx**2 + dy**2)
+    return math.dist(cell_1.coordinate, cell_2.coordinate)
 
 class Trader(CellAgent):
     """
@@ -135,73 +125,24 @@ class Trader(CellAgent):
 
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
 
-    def calculate_sell_spice_amount(self, price):
-        """
-        helper function for self.maybe_sell_spice() which is called from
-        self.trade()
-        """
-
-        if price >= 1:
-            sugar = 1
-            spice = int(price)
-        else:
-            sugar = int(1 / price)
-            spice = 1
-        return sugar, spice
-
-    def sell_spice(self, other, sugar, spice):
-        """
-        used in self.maybe_sell_spice()
-
-        exchanges sugar and spice between traders
-        """
-
-        self.sugar += sugar
-        other.sugar -= sugar
-        self.spice -= spice
-        other.spice += spice
-        self.model.exchanges.append((self.unique_id, other.unique_id, (sugar, -spice)))
-
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """
-        helper function for self.trade()
-        """
+        s_ex, p_ex = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+        s_self, p_self = self.sugar + s_ex, self.spice - p_ex
+        s_other, p_other = other.sugar - s_ex, other.spice + p_ex
 
-        sugar_exchanged, spice_exchanged = self.calculate_sell_spice_amount(price)
-
-        # Assess new sugar and spice amount - what if change did occur
-        self_sugar = self.sugar + sugar_exchanged
-        other_sugar = other.sugar - sugar_exchanged
-        self_spice = self.spice - spice_exchanged
-        other_spice = other.spice + spice_exchanged
-
-        # double check to ensure agents have resources
-
-        if (
-            (self_sugar <= 0)
-            or (other_sugar <= 0)
-            or (self_spice <= 0)
-            or (other_spice <= 0)
-        ):
+        if s_self <= 0 or s_other <= 0 or p_self <= 0 or p_other <= 0:
             return False
 
-        # trade criteria #1 - are both agents better off?
-        both_agents_better_off = (
-            welfare_self < self.calculate_welfare(self_sugar, self_spice)
-        ) and (welfare_other < other.calculate_welfare(other_sugar, other_spice))
-
-        # trade criteria #2 is their mrs crossing with potential trade
-        mrs_not_crossing = self.calculate_MRS(
-            self_sugar, self_spice
-        ) > other.calculate_MRS(other_sugar, other_spice)
-
-        if not (both_agents_better_off and mrs_not_crossing):
-            return False
-
-        # criteria met, execute trade
-        self.sell_spice(other, sugar_exchanged, spice_exchanged)
-
-        return True
+        if (welfare_self < self.calculate_welfare(s_self, p_self) and 
+            welfare_other < other.calculate_welfare(s_other, p_other) and 
+            self.calculate_MRS(s_self, p_self) > other.calculate_MRS(s_other, p_other)):
+            self.sugar += s_ex
+            other.sugar -= s_ex
+            self.spice -= p_ex
+            other.spice += p_ex
+            self.model.exchanges.append((self.unique_id, other.unique_id, (s_ex, -p_ex)))
+            return True
+        return False
 
     def trade(self, other):
         """
