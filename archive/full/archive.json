@@ -121,6 +121,72 @@
    "hypothesis": "The `maybe_sell_spice` function already implements a strict Pareto-improvement check (welfare and MRS) that prevents non-beneficial trades. The `math.isclose` check in `trade` is merely a performance optimization that stops recursion early; removing it will not change the equilibrium or the emergent statistical patterns.",
    "ncd_canonical": 0.3031,
    "audited": false
+  },
+  {
+   "id": "fce8377ed58a5637",
+   "trajectory": 2,
+   "parent": "d46178751b980ad7",
+   "C": 6098,
+   "eq_distance": 0.6593199764604571,
+   "label": "refactor",
+   "delta_C": 16,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 15,
+   "desc": "Remove the unused `get_trader` method.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "remove",
+   "hypothesis": "The `get_trader` method is defined in the `Trader` class but never called by any other method in the model; removing it reduces the code size without affecting any emergent features.",
+   "ncd_canonical": 0.3467,
+   "audited": false
+  },
+  {
+   "id": "3c6819f2209a7c22",
+   "trajectory": 2,
+   "parent": "fce8377ed58a5637",
+   "C": 1225,
+   "eq_distance": 0.7605131294806692,
+   "label": "mechanism",
+   "delta_C": 4873,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 16,
+   "desc": "Replace Mesa machinery with a minimal NumPy-based state",
+   "move": "representation",
+   "mechanism": "mesa_framework",
+   "action": "substitute",
+   "hypothesis": "By replacing Mesa's `Model`, `Agent`, `Grid`, and `PropertyLayer` with a simple Python object and NumPy arrays, we eliminate the vast majority of executed library code while maintaining the exact same mechanical rules.",
+   "ncd_canonical": 0.8473,
+   "audited": false
+  },
+  {
+   "id": "4973919d121c20e6",
+   "trajectory": 2,
+   "parent": "3c6819f2209a7c22",
+   "C": 1213,
+   "eq_distance": 0.9861466843566493,
+   "label": "refactor",
+   "delta_C": 12,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 17,
+   "desc": "Use `rng.permutation` instead of `np.arange` + `rng.shuffle`",
+   "move": "replace_library",
+   "mechanism": "random_activation",
+   "action": "substitute",
+   "hypothesis": "Replacing the manual shuffle of an index array with `rng.permutation` reduces the number of executed lines and operations without changing the stochastic nature of agent activation.",
+   "ncd_canonical": 0.8544,
+   "audited": false
   }
  ],
  "audits": [
@@ -241,12 +307,12 @@
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
- "generation": 14,
+ "generation": 17,
  "trajectory": 2,
  "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 13,
- "attempts_since_improvement": 6,
- "trajectory_attempts": 16,
+ "last_best_improvement_gen": 17,
+ "attempts_since_improvement": 3,
+ "trajectory_attempts": 29,
  "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }

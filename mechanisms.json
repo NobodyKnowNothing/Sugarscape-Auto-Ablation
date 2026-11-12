@@ -144,9 +144,27 @@
     },
     "mesa_framework": {
       "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
-      "status": "kept",
+      "status": "replaced",
       "canonical_knockout": null,
-      "evidence": [],
+      "evidence": [
+        {
+          "trajectory": 2,
+          "generation": 16,
+          "candidate": "3c6819f2209a7c22",
+          "action": "substitute",
+          "description": "Replace Mesa machinery with a minimal NumPy-based state",
+          "hypothesis": "By replacing Mesa's `Model`, `Agent`, `Grid`, and `PropertyLayer` with a simple Python object and NumPy arrays, we eliminate the vast majority of executed library code while maintaining the exact same mechanical rules.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7605131294806692
+        }
+      ],
       "cross_trajectory_history": {
         "T1": "kept"
       }
