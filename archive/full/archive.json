@@ -187,6 +187,28 @@
    "hypothesis": "Replacing the manual shuffle of an index array with `rng.permutation` reduces the number of executed lines and operations without changing the stochastic nature of agent activation.",
    "ncd_canonical": 0.8544,
    "audited": false
+  },
+  {
+   "id": "0c1904c267bf420f",
+   "trajectory": 2,
+   "parent": "4973919d121c20e6",
+   "C": 1191,
+   "eq_distance": 0.7939719037051305,
+   "label": "refactor",
+   "delta_C": 22,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 18,
+   "desc": "Simplify the movement tie-breaking logic by removing floating-point tolerances.",
+   "move": "substitute_rule",
+   "mechanism": "move_tiebreak",
+   "action": "substitute",
+   "hypothesis": "The epsilon tolerances (`1e-9`, `1e-2`) are guards for float precision, but in Sugarscape, identical resource values in cells lead to identical welfare calculations. Using direct comparisons should be statistically equivalent and more concise.",
+   "ncd_canonical": 0.8555,
+   "audited": false
   }
  ],
  "audits": [
@@ -307,12 +329,12 @@
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
- "generation": 17,
+ "generation": 18,
  "trajectory": 2,
  "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 17,
- "attempts_since_improvement": 3,
- "trajectory_attempts": 29,
+ "last_best_improvement_gen": 18,
+ "attempts_since_improvement": 2,
+ "trajectory_attempts": 33,
  "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }
