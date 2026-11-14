@@ -58,15 +58,10 @@ def step(state, rng):
                 if 0 <= nx < 50 and 0 <= ny < 50 and not occupied[nx, ny]:
                     w = get_welfare(state.sugar_h[i] + state.sugar[nx, ny], state.spice_h[i] + state.spice[nx, ny], state.met_s[i], state.met_p[i])
                     dist = math.dist((x, y), (nx, ny))
-                    if w > best_w:
-                        best_w, best_dist, best_cell = w, dist, (nx, ny)
-                        candidates = [(nx, ny)]
-                    elif w == best_w:
-                        if dist < best_dist:
-                            best_dist, best_cell = dist, (nx, ny)
-                            candidates = [(nx, ny)]
-                        elif dist == best_dist:
-                            candidates.append((nx, ny))
+                    if (w, -dist) > (best_w, -best_dist):
+                        best_w, best_dist, candidates = w, dist, [(nx, ny)]
+                    elif (w, -dist) == (best_w, -best_dist):
+                        candidates.append((nx, ny))
         
         if candidates:
             occupied[x, y] = False

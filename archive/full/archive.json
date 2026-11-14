@@ -209,6 +209,28 @@
    "hypothesis": "The epsilon tolerances (`1e-9`, `1e-2`) are guards for float precision, but in Sugarscape, identical resource values in cells lead to identical welfare calculations. Using direct comparisons should be statistically equivalent and more concise.",
    "ncd_canonical": 0.8555,
    "audited": false
+  },
+  {
+   "id": "5869928c303c094b",
+   "trajectory": 2,
+   "parent": "0c1904c267bf420f",
+   "C": 1175,
+   "eq_distance": 0.7789854208146575,
+   "label": "refactor",
+   "delta_C": 16,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 19,
+   "desc": "Simplify movement tie-breaking using tuple comparison",
+   "move": "substitute_rule",
+   "mechanism": "move_tiebreak",
+   "action": "substitute",
+   "hypothesis": "The emergent features (carrying capacity, price discovery) depend on the \"best welfare, then nearest, then random\" tie-breaking rule; using a tuple `(w, -dist)` implements this logic more concisely without changing the behavior.",
+   "ncd_canonical": 0.8579,
+   "audited": false
   }
  ],
  "audits": [
@@ -329,12 +351,12 @@
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
- "generation": 18,
+ "generation": 21,
  "trajectory": 2,
  "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 18,
- "attempts_since_improvement": 2,
- "trajectory_attempts": 33,
+ "last_best_improvement_gen": 19,
+ "attempts_since_improvement": 11,
+ "trajectory_attempts": 45,
  "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }

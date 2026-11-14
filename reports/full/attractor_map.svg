@@ -2,85 +2,92 @@
 <rect width="100%" height="100%" fill="#0f172a" rx="10"/>
 <text x="70" y="30" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">Sugarscape Behavioral Attractor Map (PCA of Standardized Emergent Feature Space)</text>
 <rect x="70" y="55" width="530" height="410" fill="#1e293b" stroke="#334155" stroke-width="1" rx="4"/>
-<line x1="230.7" y1="55" x2="230.7" y2="465" stroke="#334155" stroke-dasharray="4,4"/>
-<line x1="70" y1="269.1" x2="600" y2="269.1" stroke="#334155" stroke-dasharray="4,4"/>
-<text x="335.0" y="502" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12">PC1 (85.1% variance)</text>
-<text x="22" y="260.0" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" transform="rotate(-90 22 260.0)">PC2 (5.8% variance)</text>
-<polygon points="205.7,275.0 210.7,280.0 205.7,285.0 200.7,280.0" fill="#38bdf8" opacity="0.65"/>
-<text x="212.7" y="283.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">numpy_reimplemen</text>
-<polygon points="205.7,275.0 210.7,280.0 205.7,285.0 200.7,280.0" fill="#38bdf8" opacity="0.65"/>
-<text x="212.7" y="283.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">rng_reorder</text>
-<polygon points="370.9,370.2 375.9,375.2 370.9,380.2 365.9,375.2" fill="#64748b" opacity="0.65"/>
-<text x="377.9" y="378.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_trade</text>
-<polygon points="468.8,131.5 473.8,136.5 468.8,141.5 463.8,136.5" fill="#64748b" opacity="0.65"/>
-<text x="475.8" y="139.5" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_growback</text>
-<polygon points="452.2,155.0 457.2,160.0 452.2,165.0 447.2,160.0" fill="#64748b" opacity="0.65"/>
-<text x="459.2" y="163.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_move</text>
-<polygon points="420.7,184.2 425.7,189.2 420.7,194.2 415.7,189.2" fill="#64748b" opacity="0.65"/>
-<text x="427.7" y="192.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">uniform_vision</text>
-<polygon points="545.4,420.3 550.4,425.3 545.4,430.3 540.4,425.3" fill="#64748b" opacity="0.65"/>
-<text x="552.4" y="428.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_populatio</text>
-<polygon points="405.8,320.4 410.8,325.4 405.8,330.4 400.8,325.4" fill="#64748b" opacity="0.65"/>
-<text x="412.8" y="328.4" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_regrowth</text>
-<polygon points="416.5,371.9 421.5,376.9 416.5,381.9 411.5,376.9" fill="#64748b" opacity="0.65"/>
-<text x="423.5" y="379.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_vision</text>
-<polygon points="445.3,175.7 450.3,180.7 445.3,185.7 440.3,180.7" fill="#64748b" opacity="0.65"/>
-<text x="452.3" y="183.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_metabolis</text>
-<polygon points="360.8,338.6 365.8,343.6 360.8,348.6 355.8,343.6" fill="#64748b" opacity="0.65"/>
-<text x="367.8" y="346.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_endowment</text>
-<polygon points="343.7,320.3 348.7,325.3 343.7,330.3 338.7,325.3" fill="#64748b" opacity="0.65"/>
-<text x="350.7" y="328.3" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">trade_always</text>
-<polygon points="507.0,115.2 512.0,120.2 507.0,125.2 502.0,120.2" fill="#64748b" opacity="0.65"/>
-<text x="514.0" y="123.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_walk</text>
-<polygon points="548.7,89.7 553.7,94.7 548.7,99.7 543.7,94.7" fill="#64748b" opacity="0.65"/>
-<text x="555.7" y="97.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">static_agents</text>
-<polygon points="411.8,227.9 416.8,232.9 411.8,237.9 406.8,232.9" fill="#64748b" opacity="0.65"/>
-<text x="418.8" y="235.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">noise_exchange</text>
-<polygon points="231.2,285.0 236.2,290.0 231.2,295.0 226.2,290.0" fill="#64748b" opacity="0.65"/>
-<text x="238.2" y="293.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_mrs_stop</text>
-<polygon points="268.1,306.6 273.1,311.6 268.1,316.6 263.1,311.6" fill="#64748b" opacity="0.65"/>
-<text x="275.1" y="314.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_price</text>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="221.2" cy="277.2" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="325.7" cy="367.2" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="425.8" cy="348.9" r="4.5" fill="#7c3aed" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="220.6" cy="280.7" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="253.8" cy="333.4" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="226.6" cy="291.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="229.3" cy="286.9" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="214.9" cy="290.4" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="227.1" cy="310.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="232.9" cy="287.4" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="318.4" cy="353.0" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="255.7" cy="339.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
-<circle cx="221.3" cy="294.1" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
-<circle cx="121.3" cy="253.6" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<line x1="217.5" y1="55" x2="217.5" y2="465" stroke="#334155" stroke-dasharray="4,4"/>
+<line x1="70" y1="205.0" x2="600" y2="205.0" stroke="#334155" stroke-dasharray="4,4"/>
+<text x="335.0" y="502" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12">PC1 (82.0% variance)</text>
+<text x="22" y="260.0" fill="#94a3b8" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" transform="rotate(-90 22 260.0)">PC2 (7.7% variance)</text>
+<polygon points="192.7,207.0 197.7,212.0 192.7,217.0 187.7,212.0" fill="#38bdf8" opacity="0.65"/>
+<text x="199.7" y="215.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">numpy_reimplemen</text>
+<polygon points="192.7,207.0 197.7,212.0 192.7,217.0 187.7,212.0" fill="#38bdf8" opacity="0.65"/>
+<text x="199.7" y="215.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">rng_reorder</text>
+<polygon points="331.6,231.0 336.6,236.0 331.6,241.0 326.6,236.0" fill="#64748b" opacity="0.65"/>
+<text x="338.6" y="239.0" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_trade</text>
+<polygon points="408.9,127.9 413.9,132.9 408.9,137.9 403.9,132.9" fill="#64748b" opacity="0.65"/>
+<text x="415.9" y="135.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_growback</text>
+<polygon points="394.8,150.6 399.8,155.6 394.8,160.6 389.8,155.6" fill="#64748b" opacity="0.65"/>
+<text x="401.8" y="158.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_move</text>
+<polygon points="369.2,163.1 374.2,168.1 369.2,173.1 364.2,168.1" fill="#64748b" opacity="0.65"/>
+<text x="376.2" y="171.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">uniform_vision</text>
+<polygon points="476.5,178.7 481.5,183.7 476.5,188.7 471.5,183.7" fill="#64748b" opacity="0.65"/>
+<text x="483.5" y="186.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_populatio</text>
+<polygon points="359.9,204.8 364.9,209.8 359.9,214.8 354.9,209.8" fill="#64748b" opacity="0.65"/>
+<text x="366.9" y="212.8" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_regrowth</text>
+<polygon points="369.2,216.9 374.2,221.9 369.2,226.9 364.2,221.9" fill="#64748b" opacity="0.65"/>
+<text x="376.2" y="224.9" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_vision</text>
+<polygon points="389.4,153.7 394.4,158.7 389.4,163.7 384.4,158.7" fill="#64748b" opacity="0.65"/>
+<text x="396.4" y="161.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_metabolis</text>
+<polygon points="325.0,244.6 330.0,249.6 325.0,254.6 320.0,249.6" fill="#64748b" opacity="0.65"/>
+<text x="332.0" y="252.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">ignore_endowment</text>
+<polygon points="308.4,218.2 313.4,223.2 308.4,228.2 303.4,223.2" fill="#64748b" opacity="0.65"/>
+<text x="315.4" y="226.2" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">trade_always</text>
+<polygon points="440.1,111.6 445.1,116.6 440.1,121.6 435.1,116.6" fill="#64748b" opacity="0.65"/>
+<text x="447.1" y="119.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_walk</text>
+<polygon points="474.6,89.7 479.6,94.7 474.6,99.7 469.6,94.7" fill="#64748b" opacity="0.65"/>
+<text x="481.6" y="97.7" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">static_agents</text>
+<polygon points="362.7,179.6 367.7,184.6 362.7,189.6 357.7,184.6" fill="#64748b" opacity="0.65"/>
+<text x="369.7" y="187.6" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">noise_exchange</text>
+<polygon points="214.6,214.1 219.6,219.1 214.6,224.1 209.6,219.1" fill="#64748b" opacity="0.65"/>
+<text x="221.6" y="222.1" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">no_mrs_stop</text>
+<polygon points="245.2,215.8 250.2,220.8 245.2,225.8 240.2,220.8" fill="#64748b" opacity="0.65"/>
+<text x="252.2" y="223.8" fill="#94a3b8" font-family="monospace" font-size="9" opacity="0.8">random_price</text>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="205.9" cy="217.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="295.5" cy="247.0" r="4.5" fill="#7c3aed" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="379.2" cy="217.7" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="205.6" cy="217.2" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="234.4" cy="241.4" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="210.8" cy="222.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="213.0" cy="222.4" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="200.8" cy="221.6" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="211.6" cy="229.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="215.8" cy="217.6" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="289.6" cy="247.2" r="4.5" fill="#7c3aed" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="236.2" cy="243.4" r="4.5" fill="#d97706" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="206.5" cy="226.3" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="205.8" cy="228.0" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.5"/>
+<circle cx="548.7" cy="261.4" r="4.5" fill="#db2777" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="299.9" cy="425.3" r="4.5" fill="#0284c7" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="365.7" cy="219.3" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
+<circle cx="121.3" cy="194.2" r="4.5" fill="#e11d48" opacity="0.85" stroke="#0f172a" stroke-width="1"/>
 <text x="618" y="70" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Legend</text>
 <circle cx="624" cy="88" r="5" fill="#10b981"/>
 <text x="636" y="92" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Accepted Model (S1)</text>
