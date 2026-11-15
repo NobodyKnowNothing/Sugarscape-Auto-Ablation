@@ -231,6 +231,94 @@
    "hypothesis": "The emergent features (carrying capacity, price discovery) depend on the \"best welfare, then nearest, then random\" tie-breaking rule; using a tuple `(w, -dist)` implements this logic more concisely without changing the behavior.",
    "ncd_canonical": 0.8579,
    "audited": false
+  },
+  {
+   "id": "d89ea3b9efd0cbf3",
+   "trajectory": 2,
+   "parent": "3c6819f2209a7c22",
+   "C": 1185,
+   "eq_distance": 0.7244692314181349,
+   "label": "refactor",
+   "delta_C": 40,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 22,
+   "desc": "Merge sugar and spice landscapes into a single 3D array and vectorize regrowth.",
+   "move": "collapse_parameters",
+   "mechanism": "growback",
+   "action": "merge",
+   "hypothesis": "Treating the two resources as a single array `(2, 50, 50)` allows using vectorized NumPy operations for regrowth and clipping, reducing the number of lines and executed logic while maintaining identical behavior.",
+   "ncd_canonical": 0.8638,
+   "audited": false
+  },
+  {
+   "id": "07340c12281e390b",
+   "trajectory": 2,
+   "parent": "3c6819f2209a7c22",
+   "C": 1210,
+   "eq_distance": 0.9219981231339847,
+   "label": "refactor",
+   "delta_C": 15,
+   "digests": [
+    "ac44484decc05b06",
+    "3feace8ce174ed76",
+    "3559e742bf4c59a4"
+   ],
+   "generation": 22,
+   "desc": "Remove unused `best_cell` variable and simplify movement tie-break assignment.",
+   "move": "refactor",
+   "mechanism": "move_tiebreak",
+   "action": "refactor",
+   "hypothesis": "The variable `best_cell` is tracked but never used; removing it and slightly streamlining the updates to `best_w` and `best_dist` reduces code without altering behavior.",
+   "ncd_canonical": 0.8467,
+   "audited": false
+  },
+  {
+   "id": "e1e868ffe8469fb3",
+   "trajectory": 2,
+   "parent": "fce8377ed58a5637",
+   "C": 6078,
+   "eq_distance": 0.7907011656329673,
+   "label": "refactor",
+   "delta_C": 20,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 24,
+   "desc": "Refactor the trade and welfare logic to reduce redundancy and function call overhead.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "refactor",
+   "hypothesis": "Reducing the number of redundant calculations (like `m_total`) and simplifying the logic flow in the trade loop should reduce the compressed size without affecting behavior.",
+   "ncd_canonical": 0.3662,
+   "audited": false
+  },
+  {
+   "id": "6dafc053afa65821",
+   "trajectory": 2,
+   "parent": "fce8377ed58a5637",
+   "C": 6090,
+   "eq_distance": 0.8068715304598786,
+   "label": "refactor",
+   "delta_C": 8,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 24,
+   "desc": "Remove the explicit MRS convergence check at the start of the trade loop.",
+   "move": "remove_rule",
+   "mechanism": "mrs_stop",
+   "action": "remove",
+   "hypothesis": "The `maybe_sell_spice` function already checks if welfare increases and if the post-trade MRS condition is met. If the MRSs are already very close, the welfare gain will be zero or negative, so the trade will naturally stop.",
+   "ncd_canonical": 0.3508,
+   "audited": false
   }
  ],
  "audits": [
@@ -351,12 +439,12 @@
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
   }
  ],
- "generation": 21,
+ "generation": 24,
  "trajectory": 2,
  "trajectory_start_gen": 10,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
  "last_best_improvement_gen": 19,
- "attempts_since_improvement": 11,
- "trajectory_attempts": 45,
+ "attempts_since_improvement": 23,
+ "trajectory_attempts": 57,
  "trajectory_started_at": "2026-11-10T21:33:43+00:00"
 }
