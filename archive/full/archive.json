@@ -76,7 +76,7 @@
    "action": "merge",
    "hypothesis": "Combining `calculate_sell_spice_amount` and `sell_spice` into `maybe_sell_spice` reduces the number of function calls and redundant state checks without altering the trade logic.",
    "ncd_canonical": 0.2907,
-   "audited": false
+   "audited": true
   },
   {
    "id": "897e17ec5067ebfc",
@@ -142,7 +142,7 @@
    "action": "remove",
    "hypothesis": "The `get_trader` method is defined in the `Trader` class but never called by any other method in the model; removing it reduces the code size without affecting any emergent features.",
    "ncd_canonical": 0.3467,
-   "audited": false
+   "audited": true
   },
   {
    "id": "3c6819f2209a7c22",
@@ -164,7 +164,7 @@
    "action": "substitute",
    "hypothesis": "By replacing Mesa's `Model`, `Agent`, `Grid`, and `PropertyLayer` with a simple Python object and NumPy arrays, we eliminate the vast majority of executed library code while maintaining the exact same mechanical rules.",
    "ncd_canonical": 0.8473,
-   "audited": false
+   "audited": true
   },
   {
    "id": "4973919d121c20e6",
@@ -186,7 +186,7 @@
    "action": "substitute",
    "hypothesis": "Replacing the manual shuffle of an index array with `rng.permutation` reduces the number of executed lines and operations without changing the stochastic nature of agent activation.",
    "ncd_canonical": 0.8544,
-   "audited": false
+   "audited": true
   },
   {
    "id": "0c1904c267bf420f",
@@ -208,7 +208,7 @@
    "action": "substitute",
    "hypothesis": "The epsilon tolerances (`1e-9`, `1e-2`) are guards for float precision, but in Sugarscape, identical resource values in cells lead to identical welfare calculations. Using direct comparisons should be statistically equivalent and more concise.",
    "ncd_canonical": 0.8555,
-   "audited": false
+   "audited": true
   },
   {
    "id": "5869928c303c094b",
@@ -230,7 +230,7 @@
    "action": "substitute",
    "hypothesis": "The emergent features (carrying capacity, price discovery) depend on the \"best welfare, then nearest, then random\" tie-breaking rule; using a tuple `(w, -dist)` implements this logic more concisely without changing the behavior.",
    "ncd_canonical": 0.8579,
-   "audited": false
+   "audited": true
   },
   {
    "id": "d89ea3b9efd0cbf3",
@@ -319,6 +319,23 @@
    "hypothesis": "The `maybe_sell_spice` function already checks if welfare increases and if the post-trade MRS condition is met. If the MRSs are already very close, the welfare gain will be zero or negative, so the trade will naturally stop.",
    "ncd_canonical": 0.3508,
    "audited": false
+  },
+  {
+   "id": "af314acdce5789e2",
+   "trajectory": 3,
+   "parent": null,
+   "C": 6158,
+   "eq_distance": 0.0,
+   "label": "origin",
+   "delta_C": 0,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 25,
+   "desc": "canonical Sugarscape origin (trajectory 3)",
+   "audited": true
   }
  ],
  "audits": [
@@ -437,14 +454,58 @@
    },
    "judge_hash": "7fb5260dd83ddfd8",
    "note": "re-run of the 2026-11-10 holdout audit (same points and seeds) with the fixed re-test"
+  },
+  {
+   "trajectory": 2,
+   "model": "5869928c303c094b",
+   "time": "2026-11-16T15:25:41+00:00",
+   "passed": true,
+   "features": {
+    "E1": "pass",
+    "E2": "pass",
+    "E3": "pass",
+    "E4": "pass",
+    "E5": "pass"
+   },
+   "reason": "",
+   "eq_distance": 0.8193952841213749,
+   "located_failures": [],
+   "coverage": {
+    "per_statistic": {
+     "gini_T|trade": 0.013367515922173478,
+     "gini_c1|trade": 0.06385179534229919,
+     "top10_T|trade": 0.013688883292360676,
+     "cv_T|trade": 0.016724834742836793,
+     "loghill_T|trade": 0.022369885029173062,
+     "plateau_frac|trade": 0.002608702987782003,
+     "disp_late|trade": 0.023105294458459477,
+     "disp_decay|trade": 0.024180126419212442,
+     "price_level|trade": 0.03855966389768408,
+     "exch_rate|trade": 0.012283452606000717,
+     "drc_c1|trade": 0.011889327233193622,
+     "drc_T|trade": 0.013460535094684816,
+     "moran_T|trade": 0.01437316588541514,
+     "gini_T|notrade": 0.0788201206715229,
+     "gini_c1|notrade": 0.0,
+     "top10_T|notrade": 0.011549227456213356,
+     "cv_T|notrade": 0.0664999996909272,
+     "loghill_T|notrade": 0.037250761171879684,
+     "plateau_frac|notrade": 0.029839444123503037,
+     "drc_c1|notrade": 0.033831608368747296,
+     "drc_T|notrade": 0.013973715092144507,
+     "moran_T|notrade": 0.024035784256376976
+    },
+    "worst": 0.0788201206715229,
+    "any_statistic_union": 0.5662638437425904
+   }
   }
  ],
- "generation": 24,
- "trajectory": 2,
- "trajectory_start_gen": 10,
+ "generation": 27,
+ "trajectory": 3,
+ "trajectory_start_gen": 25,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 19,
- "attempts_since_improvement": 23,
- "trajectory_attempts": 57,
- "trajectory_started_at": "2026-11-10T21:33:43+00:00"
+ "last_best_improvement_gen": 25,
+ "attempts_since_improvement": 5,
+ "trajectory_attempts": 5,
+ "trajectory_started_at": "2026-11-16T15:25:43+00:00"
 }

@@ -57,5 +57,108 @@
       }
     ],
     "note": "champion restored: audit rejection reversed by the fixed re-test (commit 6e2bb82)"
+  },
+  {
+    "trajectory_id": 2,
+    "started_at": "2026-11-10T21:33:43+00:00",
+    "completed_at": "2026-11-16T15:25:41+00:00",
+    "start_generation": 11,
+    "end_generation": 25,
+    "generations_run": 15,
+    "attempts_evaluated": 61,
+    "variants_accepted": 12,
+    "origin_id": "af314acdce5789e2",
+    "origin_C": 6158,
+    "champion_id": "5869928c303c094b",
+    "champion_C": 1175,
+    "champion_eq_distance": 0.7789854208146575,
+    "total_bytes_saved": 4983,
+    "compression_ratio": 0.1908,
+    "bytes_saved_refactor": 110.0,
+    "bytes_saved_mechanism": 4873.0,
+    "mechanisms_modified": {
+      "mesa_framework": "replaced"
+    },
+    "mechanisms_kept": [
+      "growback",
+      "move_welfare",
+      "move_tiebreak",
+      "welfare",
+      "metabolism",
+      "death",
+      "vision",
+      "trade",
+      "mrs_stop",
+      "price_rule",
+      "heterogeneity",
+      "two_goods",
+      "random_activation"
+    ],
+    "plateau_reason": "frontier_stagnation: 6 generations (27 attempts) without C_min improvement (95% upper bound on per-attempt improvement rate p < 0.105)",
+    "lineage": [
+      {
+        "id": "af314acdce5789e2",
+        "C": 6158,
+        "delta_C": 0,
+        "label": "origin",
+        "move": "",
+        "mechanism": "",
+        "desc": "canonical Sugarscape origin (trajectory 2)"
+      },
+      {
+        "id": "d46178751b980ad7",
+        "C": 6114,
+        "delta_C": 44,
+        "label": "refactor",
+        "move": "collapse_parameters",
+        "mechanism": "price_rule",
+        "desc": "Merge bundle calculation and exchange execution into a single trade verification method."
+      },
+      {
+        "id": "fce8377ed58a5637",
+        "C": 6098,
+        "delta_C": 16,
+        "label": "refactor",
+        "move": "refactor",
+        "mechanism": "none",
+        "desc": "Remove the unused `get_trader` method."
+      },
+      {
+        "id": "3c6819f2209a7c22",
+        "C": 1225,
+        "delta_C": 4873,
+        "label": "mechanism",
+        "move": "representation",
+        "mechanism": "mesa_framework",
+        "desc": "Replace Mesa machinery with a minimal NumPy-based state"
+      },
+      {
+        "id": "4973919d121c20e6",
+        "C": 1213,
+        "delta_C": 12,
+        "label": "refactor",
+        "move": "replace_library",
+        "mechanism": "random_activation",
+        "desc": "Use `rng.permutation` instead of `np.arange` + `rng.shuffle`"
+      },
+      {
+        "id": "0c1904c267bf420f",
+        "C": 1191,
+        "delta_C": 22,
+        "label": "refactor",
+        "move": "substitute_rule",
+        "mechanism": "move_tiebreak",
+        "desc": "Simplify the movement tie-breaking logic by removing floating-point tolerances."
+      },
+      {
+        "id": "5869928c303c094b",
+        "C": 1175,
+        "delta_C": 16,
+        "label": "refactor",
+        "move": "substitute_rule",
+        "mechanism": "move_tiebreak",
+        "desc": "Simplify movement tie-breaking using tuple comparison"
+      }
+    ]
   }
 ]
