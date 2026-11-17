@@ -117,37 +117,8 @@ class Trader(CellAgent):
             self.metabolism_spice / m_total
         )
 
-    def is_starved(self):
-        """
-        Helper function for self.maybe_die()
-        """
-
-        return (self.sugar <= 0) or (self.spice <= 0)
-
     def calculate_MRS(self, sugar, spice):
-        """
-        Helper function for
-          - self.trade()
-          - self.maybe_self_spice()
-
-        Determines what trader agent needs and can give up
-        """
-
         return (spice / self.metabolism_spice) / (sugar / self.metabolism_sugar)
-
-    def calculate_sell_spice_amount(self, price):
-        """
-        helper function for self.maybe_sell_spice() which is called from
-        self.trade()
-        """
-
-        if price >= 1:
-            sugar = 1
-            spice = int(price)
-        else:
-            sugar = int(1 / price)
-            spice = 1
-        return sugar, spice
 
     def sell_spice(self, other, sugar, spice):
         """
@@ -163,11 +134,7 @@ class Trader(CellAgent):
         self.model.exchanges.append((self.unique_id, other.unique_id, (sugar, -spice)))
 
     def maybe_sell_spice(self, other, price, welfare_self, welfare_other):
-        """
-        helper function for self.trade()
-        """
-
-        sugar_exchanged, spice_exchanged = self.calculate_sell_spice_amount(price)
+        sugar_exchanged, spice_exchanged = (1, int(price)) if price >= 1 else (int(1 / price), 1)
 
         # Assess new sugar and spice amount - what if change did occur
         self_sugar = self.sugar + sugar_exchanged
@@ -315,11 +282,7 @@ class Trader(CellAgent):
         self.spice -= self.metabolism_spice
 
     def maybe_die(self):
-        """
-        Function to remove Traders who have consumed all their sugar or spice
-        """
-
-        if self.is_starved():
+        if self.sugar <= 0 or self.spice <= 0:
             self.remove()
 
     def step(self):

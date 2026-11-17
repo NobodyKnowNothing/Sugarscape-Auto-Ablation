@@ -336,6 +336,28 @@
    "generation": 25,
    "desc": "canonical Sugarscape origin (trajectory 3)",
    "audited": true
+  },
+  {
+   "id": "f6716115203482b2",
+   "trajectory": 3,
+   "parent": "af314acdce5789e2",
+   "C": 6130,
+   "eq_distance": 0.6997023176561111,
+   "label": "refactor",
+   "delta_C": 28,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 30,
+   "desc": "Inline helper functions to reduce call overhead.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "refactor",
+   "hypothesis": "Inlining small helper functions (`is_starved`, `calculate_sell_spice_amount`) reduces the number of function calls executed and the overall code size without altering the model's behavior.",
+   "ncd_canonical": 0.2565,
+   "audited": false
   }
  ],
  "audits": [
@@ -500,12 +522,12 @@
    }
   }
  ],
- "generation": 27,
+ "generation": 30,
  "trajectory": 3,
  "trajectory_start_gen": 25,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 25,
- "attempts_since_improvement": 5,
- "trajectory_attempts": 5,
+ "last_best_improvement_gen": 30,
+ "attempts_since_improvement": 0,
+ "trajectory_attempts": 17,
  "trajectory_started_at": "2026-11-16T15:25:43+00:00"
 }
