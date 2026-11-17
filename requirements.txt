@@ -4,3 +4,9 @@ numpy
 scipy
 python-dotenv
 networkx
+pandas
+sentence-transformers
+umap-learn
+hdbscan
+plotly
+scikit-learn

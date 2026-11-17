@@ -733,6 +733,15 @@ def run_ablation_round(generation: int, client: genai.Client, baseline: dict):
             if vr:
                 log(f"     KS p={vr.ks_pvalue:.4f} | DTW pop={vr.dtw_population:.4f} "
                     f"| Moran's I={vr.morans_i:.4f} | Wasserstein={vr.wasserstein_distance:.4f}")
+                if not vr.stage2_scalar_pass:
+                    failed_bounds = {k: v for k, v in vr.stage2_scalar_details.items()
+                                     if not v.get("passes", True)}
+                    bound_summary = ", ".join(
+                        f"{k}: {v['variant']:.4f} vs {v['baseline']:.4f} "
+                        f"(err={v['error']:.4f}, bound={v['bound']:.4f})"
+                        for k, v in failed_bounds.items()
+                    )
+                    log(f"  ⚠️  SCALAR BOUNDS EXCEEDED (advisory): {bound_summary}")
             # Track best passing variant (largest combined score reduction)
             if score_delta > best_simplification:
                 best_variant = (code, desc, var_complexity, result)

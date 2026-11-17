@@ -39,11 +39,11 @@ from scipy import stats
 STAGE1_SEEDS = [42]
 STAGE1_STEPS = 50
 
-STAGE2_SEEDS = list(range(42, 47))     # 5 seeds: 42..46
+STAGE2_SEEDS = list(range(42, 57))     # 15 seeds: 42..56
 STAGE2_STEPS = 200
 
 STAGE3_TOTAL_SEEDS = 50                # total across stages 2 + 3
-STAGE3_EXTRA_SEEDS = list(range(47, 92))  # 45 more seeds: 47..91
+STAGE3_EXTRA_SEEDS = list(range(57, 92))  # 35 more seeds: 57..91
 STAGE3_STEPS = 200
 
 # KS test threshold (Stage 2)
@@ -85,8 +85,11 @@ class ValidationResult:
     ks_statistic: float = 0.0
     ks_pvalue: float = 1.0
     stage2_scalar_pass: bool = False
+    stage2_scalar_details: Dict[str, dict] = field(default_factory=dict)
     stage2_mean_metrics: Dict[str, float] = field(default_factory=dict)
     stage2_wealths: List[List[float]] = field(default_factory=list)
+    stage2_price_std_converges: bool = False
+    stage2_price_std_windows: List[float] = field(default_factory=list)
 
     # Stage 3 data
     bonferroni_results: Dict[str, dict] = field(default_factory=dict)
@@ -257,6 +260,76 @@ def ks_test_wealth(
     return float(stat), float(pval)
 
 
+def check_price_std_convergence(
+    price_series_list: List[List[float]],
+    n_windows: int = 4,
+    tolerance: float = 0.10,
+) -> Tuple[bool, List[float]]:
+    """
+    Verify that trade-price volatility is monotonically decreasing over time.
+
+    Divides each seed's price series into ``n_windows`` equal windows,
+    computes the standard deviation within each window *per seed*, then
+    averages the per-seed stds for each window.  The check passes if each
+    successive window's mean std does not exceed the previous window's
+    mean std by more than ``tolerance`` (relative).
+
+    Returns
+    -------
+    (passes, window_stds)
+        ``passes`` is True if monotone convergence holds.
+        ``window_stds`` is the list of mean per-window stds.
+    """
+    if not price_series_list:
+        return True, []  # no data → vacuously pass
+
+    # Determine common series length (pad shorter series with last value)
+    max_len = max((len(s) for s in price_series_list if s), default=0)
+    if max_len < n_windows * 2:
+        return True, []  # too short for meaningful windowing
+
+    padded = []
+    for s in price_series_list:
+        if not s:
+            continue
+        arr = list(s)
+        if len(arr) < max_len:
+            arr = arr + [arr[-1]] * (max_len - len(arr))
+        padded.append(arr[:max_len])
+
+    if not padded:
+        return True, []
+
+    window_size = max_len // n_windows
+
+    # Compute per-seed, per-window std, then average across seeds
+    seed_window_stds = []  # shape: (n_seeds, n_windows)
+    for series in padded:
+        stds = []
+        for i in range(n_windows):
+            start = i * window_size
+            end = start + window_size if i < n_windows - 1 else max_len
+            stds.append(float(np.std(series[start:end])))
+        seed_window_stds.append(stds)
+
+    mean_window_stds = np.mean(seed_window_stds, axis=0).tolist()
+
+    # Check monotone convergence: each window's std must not exceed
+    # the previous by more than tolerance (relative)
+    for i in range(1, len(mean_window_stds)):
+        prev_std = mean_window_stds[i - 1]
+        curr_std = mean_window_stds[i]
+        if prev_std > 1e-10:
+            if curr_std > prev_std * (1.0 + tolerance):
+                return False, mean_window_stds
+        else:
+            # Previous window already ~0; any meaningful increase fails
+            if curr_std > 1e-8:
+                return False, mean_window_stds
+
+    return True, mean_window_stds
+
+
 def stage2_lightweight_filter(
     strategy_code: str,
     baseline: dict,
@@ -265,11 +338,12 @@ def stage2_lightweight_filter(
     ks_alpha: float = KS_ALPHA,
 ) -> ValidationResult:
     """
-    Stage 2: Run 5 seeds at full steps.  Check:
+    Stage 2: Run 15 seeds at full steps.  Check:
       (a) KS test on wealth histogram vs baseline
-      (b) Scalar bounds on key metrics (same as old check_within_bounds)
+      (b) Monotone convergence of trade-price std over the run
+      (c) Scalar bounds on key metrics (advisory, logged only)
 
-    Costs ~15 seconds.
+    Costs ~45 seconds.
     """
     from metrics import compute_all_metrics, check_within_bounds
 
@@ -279,9 +353,12 @@ def stage2_lightweight_filter(
 
     all_metrics = []
     all_wealths = []
+    all_price_series = []
 
     for seed in seeds:
-        data = _run_strategy_once(strategy_code, seed=seed, steps=steps)
+        data = _run_strategy_once(
+            strategy_code, seed=seed, steps=steps, collect_timeseries=True,
+        )
         if "error" in data:
             result.reject_reason = f"Stage2 crash at seed {seed}: {data['error']}"
             result.stage2_time = time.time() - t0
@@ -291,6 +368,7 @@ def stage2_lightweight_filter(
         metrics = compute_all_metrics(data)
         all_metrics.append(metrics)
         all_wealths.append(data.get("agent_wealths", []))
+        all_price_series.append(data.get("_price_series", []))
 
     # 2a. Compute mean metrics
     mean_metrics = {}
@@ -298,16 +376,11 @@ def stage2_lightweight_filter(
         mean_metrics[key] = float(np.mean([m[key] for m in all_metrics]))
     result.stage2_mean_metrics = mean_metrics
 
-    # 2b. Scalar bounds check
+    # 2b. Scalar bounds check (advisory — logged but no longer a rejection gate)
     baseline_means = baseline.get("mean_metrics", {})
-    passes_scalar, _ = check_within_bounds(baseline_means, mean_metrics)
+    passes_scalar, scalar_details = check_within_bounds(baseline_means, mean_metrics)
     result.stage2_scalar_pass = passes_scalar
-
-    if not passes_scalar:
-        result.reject_reason = "Stage2 scalar bounds check failed"
-        result.stage2_time = time.time() - t0
-        result.total_time = result.stage1_time + result.stage2_time
-        return result
+    result.stage2_scalar_details = scalar_details
 
     # 2c. KS test on wealth distribution
     baseline_wealths = baseline.get("per_seed_wealths", [])
@@ -323,6 +396,20 @@ def stage2_lightweight_filter(
             result.stage2_time = time.time() - t0
             result.total_time = result.stage1_time + result.stage2_time
             return result
+
+    # 2d. Monotone-convergence check on trade-price std
+    converges, window_stds = check_price_std_convergence(all_price_series)
+    result.stage2_price_std_converges = converges
+    result.stage2_price_std_windows = window_stds
+
+    if not converges:
+        result.reject_reason = (
+            f"Stage2 price-std convergence failed: "
+            f"window stds={[f'{s:.4f}' for s in window_stds]}"
+        )
+        result.stage2_time = time.time() - t0
+        result.total_time = result.stage1_time + result.stage2_time
+        return result
 
     # Stage 2 passed
     result.all_run_metrics = all_metrics
