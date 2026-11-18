@@ -240,37 +240,15 @@ class Trader(CellAgent):
             # all neighboring cells are occupied
             return
 
-        # 2. determine which move maximizes welfare
-
-        welfares = [
-            self.calculate_welfare(
-                self.sugar + cell.sugar,
-                self.spice + cell.spice,
+        # Find cell that maximizes welfare, then minimizes distance, then random tie-break
+        self.cell = min(
+            neighboring_cells, 
+            key=lambda c: (
+                -self.calculate_welfare(self.sugar + c.sugar, self.spice + c.spice), 
+                get_distance(self.cell, c), 
+                self.random.random()
             )
-            for cell in neighboring_cells
-        ]
-
-        # 3. Find closest best option
-
-        # find the highest welfare in welfares
-        max_welfare = max(welfares)
-        # Get cells with the highest welfare
-        candidates = [
-            cell
-            for cell, welfare in zip(neighboring_cells, welfares)
-            if math.isclose(welfare, max_welfare)
-        ]
-
-        min_dist = min(get_distance(self.cell, cell) for cell in candidates)
-
-        final_candidates = [
-            cell
-            for cell in candidates
-            if math.isclose(get_distance(self.cell, cell), min_dist, rel_tol=1e-02)
-        ]
-
-        # 4. Move Agent
-        self.cell = self.random.choice(final_candidates)
+        )
 
     def eat(self):
         self.sugar += self.cell.sugar

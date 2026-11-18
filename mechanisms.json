@@ -29,9 +29,27 @@
     },
     "move_tiebreak": {
       "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
-      "status": "kept",
+      "status": "replaced",
       "canonical_knockout": null,
-      "evidence": [],
+      "evidence": [
+        {
+          "trajectory": 3,
+          "generation": 31,
+          "candidate": "f15e9cb14ec72be5",
+          "action": "substitute",
+          "description": "Substitute the multi-step movement selection with a single-pass sorted key.",
+          "hypothesis": "Using a tuple `(-welfare, distance, random_jitter)` as a sort key is mathematically equivalent to finding the maximum welfare, then the minimum distance, then breaking ties randomly.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.9405161328867669
+        }
+      ],
       "cross_trajectory_history": {
         "T1": "kept",
         "T2": "kept"

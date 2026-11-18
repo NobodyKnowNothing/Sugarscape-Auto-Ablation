@@ -358,6 +358,50 @@
    "hypothesis": "Inlining small helper functions (`is_starved`, `calculate_sell_spice_amount`) reduces the number of function calls executed and the overall code size without altering the model's behavior.",
    "ncd_canonical": 0.2565,
    "audited": false
+  },
+  {
+   "id": "4a5dbd61d5e6b8fd",
+   "trajectory": 3,
+   "parent": "f6716115203482b2",
+   "C": 6118,
+   "eq_distance": 0.7060752397322361,
+   "label": "refactor",
+   "delta_C": 12,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 31,
+   "desc": "Remove the explicit MRS equality check in the trade loop.",
+   "move": "remove_rule",
+   "mechanism": "trade",
+   "action": "remove",
+   "hypothesis": "If the MRS of two agents are nearly identical, the resulting price will lead to zero or negligible welfare gains, causing the subsequent `maybe_sell_spice` check to fail naturally; the explicit `math.isclose` check is therefore redundant.",
+   "ncd_canonical": 0.2653,
+   "audited": false
+  },
+  {
+   "id": "f15e9cb14ec72be5",
+   "trajectory": 3,
+   "parent": "f6716115203482b2",
+   "C": 6082,
+   "eq_distance": 0.9405161328867669,
+   "label": "mechanism",
+   "delta_C": 48,
+   "digests": [
+    "5067ad02ada65e8e",
+    "e2ba322df1144175",
+    "a5c6fbfdcbd61e29"
+   ],
+   "generation": 31,
+   "desc": "Substitute the multi-step movement selection with a single-pass sorted key.",
+   "move": "substitute_rule",
+   "mechanism": "move_tiebreak",
+   "action": "substitute",
+   "hypothesis": "Using a tuple `(-welfare, distance, random_jitter)` as a sort key is mathematically equivalent to finding the maximum welfare, then the minimum distance, then breaking ties randomly.",
+   "ncd_canonical": 0.3249,
+   "audited": false
   }
  ],
  "audits": [
@@ -522,12 +566,12 @@
    }
   }
  ],
- "generation": 30,
+ "generation": 32,
  "trajectory": 3,
  "trajectory_start_gen": 25,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 30,
- "attempts_since_improvement": 0,
- "trajectory_attempts": 17,
+ "last_best_improvement_gen": 31,
+ "attempts_since_improvement": 4,
+ "trajectory_attempts": 25,
  "trajectory_started_at": "2026-11-16T15:25:43+00:00"
 }

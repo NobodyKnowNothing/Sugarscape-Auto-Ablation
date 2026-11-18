@@ -1,8 +1,8 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-17T16:13:39+00:00`
+- **Updated**: `2026-11-18T15:46:33+00:00`
 - **Active Trajectory**: `Trajectory #3` (`2` plateau resets completed)
-- **Total Attempts Logged**: `101` (`75` with full behavioral vectors)
+- **Total Attempts Logged**: `109` (`79` with full behavioral vectors)
 
 ![Behavioral Attractor Map](./attractor_map.svg)
 
@@ -16,15 +16,15 @@ Each trajectory starts from the canonical flattened Mesa Sugarscape (`canonical_
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
 | **T1** | ✅ Plateaued & Reset | 10 | 21 | `6158` B | `6142` B (`6bcb34abcfe2fdf2`) | **-16 B** | `0.173` | mrs_stop:removed | diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances |
 | **T2** | ✅ Plateaued & Reset | 15 | 61 | `6158` B | `1175` B (`5869928c303c094b`) | **-4983 B** | `0.858` | mesa_framework:replaced | frontier_stagnation: 6 generations (27 attempts) without C_min improvement (95% upper bound on per-attempt improvement rate p < 0.105) |
-| **T3** | 🔄 Active | — | — | — | `6130` B (`f6716115203482b2`) | — | `0.257` | (in progress) | active trajectory |
+| **T3** | 🔄 Active | — | — | — | `6082` B (`f15e9cb14ec72be5`) | — | `0.325` | (in progress) | active trajectory |
 
 ### Cross-Trajectory Champion Convergence (Pairwise AST Normalized Compression Distance)
 
 | Champion | T1 | T2 | T3 |
 | :--- | :---: | :---: | :---: |
-| **T1** | `0.000` | `0.860` | `0.257` |
-| **T2** | `0.867` | `0.000` | `0.855` |
-| **T3** | `0.243` | `0.847` | `0.000` |
+| **T1** | `0.000` | `0.860` | `0.328` |
+| **T2** | `0.867` | `0.000` | `0.854` |
+| **T3** | `0.316` | `0.849` | `0.000` |
 
 ---
 
@@ -36,7 +36,7 @@ Rejected attempts are clustered in standardized behavioral response space and ma
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
 | **`F1`** | E2+E3 Breakdown (~ko_no_mrs_stop) | `12` | T1, T2, T3 | 🔥 **YES** | `E2, E3, E1, E4, E5` | `pop_traj(l2), plateau_frac(l2), loghill_T(slope)` | `ko_no_mrs_stop` | move_tiebreak (5), mesa_framework (3), two_goods (2) |
 | **`F2`** | E1+E2 Breakdown (~ko_ignore_regrowth) | `2` | T2 | No | `E1, E2, E3, E4, E5` | `plateau_frac(slope), pop_traj(l2), disp_late(slope)` | `ko_ignore_regrowth` | heterogeneity (1), none (1) |
-| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `44` | T1, T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (13), two_goods (7), none (5) |
+| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `46` | T1, T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (14), two_goods (8), none (5) |
 | **`G1`** | Stage 1 Gate Rejection (Complexity / Guard / Smoke) | `3` | T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_1_gate` | mesa_framework (2), none (1) |
 
 ---
@@ -49,15 +49,15 @@ Worst-case feature discrepancy ratio ($\text{ratio} < 1.0$ passes equivalence; $
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **`growback`** | compressible | `2` (`1` / `1`) | — | `1.99` | `1.61` | `1.81` | `1.58` | `3.13` | `F1` |
 | **`move_welfare`** | untested/under-explored | `0` (`0` / `0`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `none` |
-| **`move_tiebreak`** | compressible | `11` (`3` / `8`) | — | `1.27` | `2.22` | `1.43` | `1.01` | `1.55` | `F1` |
+| **`move_tiebreak`** | compressible | `12` (`4` / `8`) | T3 | `1.27` | `2.22` | `1.43` | `1.01` | `1.55` | `F1` |
 | **`welfare`** | untested/under-explored | `1` (`0` / `1`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `G0` |
 | **`metabolism`** | untested/under-explored | `1` (`0` / `1`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `G0` |
 | **`death`** | untested/under-explored | `0` (`0` / `0`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `none` |
 | **`vision`** | untested/under-explored | `0` (`0` / `0`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `none` |
-| **`trade`** | load-bearing (candidate) | `4` (`0` / `4`) | — | `0.00` | `0.00` | `0.00` | `0.00` | `0.00` | `G0` |
+| **`trade`** | compressible | `5` (`1` / `4`) | — | `0.64` | `0.71` | `0.62` | `0.65` | `0.66` | `G0` |
 | **`mrs_stop`** | compressible | `5` (`3` / `2`) | T1 | `0.79` | `0.55` | `0.81` | `0.56` | `0.78` | `G0` |
 | **`price_rule`** | compressible | `3` (`1` / `2`) | — | `0.70` | `0.62` | `0.49` | `0.63` | `0.62` | `G0` |
 | **`heterogeneity`** | load-bearing (candidate) | `4` (`0` / `4`) | — | `2.98` | `9.85` | `4.36` | `4.94` | `14.59` | `G0` |
-| **`two_goods`** | load-bearing (candidate) | `9` (`0` / `9`) | — | `1.06` | `1.77` | `1.36` | `1.22` | `1.64` | `G0` |
+| **`two_goods`** | load-bearing (candidate) | `10` (`0` / `10`) | — | `1.06` | `1.77` | `1.36` | `1.22` | `1.64` | `G0` |
 | **`random_activation`** | compressible | `5` (`1` / `4`) | — | `0.65` | `0.53` | `0.87` | `0.56` | `0.99` | `G0` |
-| **`mesa_framework`** | compressible | `19` (`1` / `18`) | T2 | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |
+| **`mesa_framework`** | compressible | `20` (`1` / `19`) | T2 | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |
