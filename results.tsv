@@ -108,3 +108,11 @@ trajectory	generation	variant	parent	candidate	status	stage	label	move	mechanism
 3	32	2	f15e9cb14ec72be5		parse_error			replace_library	none	substitute														edit could not be applied	Replace the Mesa `Scenario` class with a simple dictionary.
 3	32	3	f15e9cb14ec72be5		parse_error			collapse_parameters	two_goods	merge														edit could not be applied	Merge the sugar and spice resources into a single 2-component array to collapse parallel logic.
 3	32	4	f15e9cb14ec72be5		parse_error			refactor	welfare	refactor														edit could not be applied	Inline the `calculate_welfare` helper function to reduce call overhead and lines of code.
+3	33	1	f15e9cb14ec72be5		parse_error			refactor	none	refactor														edit could not be applied	Remove unused helper function
+3	33	2	f15e9cb14ec72be5		parse_error			remove_rule	trade	remove														edit could not be applied	Remove redundant MRS equality check
+3	33	3	f15e9cb14ec72be5	066c355a69cc47c4	accepted	4	mechanism	substitute_rule	move_tiebreak	substitute	6074	8	0.743	pass	pass	pass	pass	pass	ko_no_mrs_stop	0.440	2	1144.200	7fb5260dd83ddfd8		Substitute Euclidean distance with Manhattan distance for tie-breaking
+3	33	4	f15e9cb14ec72be5	882aec186b177704	accepted	4	mechanism	representation	mesa_framework	substitute	1132	4950	0.804	pass	pass	pass	pass	pass	ko_no_mrs_stop	0.864	2	1632.600	7fb5260dd83ddfd8		Replace Mesa framework with lightweight NumPy/Object representation
+3	34	1	882aec186b177704		parse_error			replace_library	none	remove														edit could not be applied	Remove unused mesa import
+3	34	2	882aec186b177704	5d5427fcf04ac08c	accepted	4	refactor	collapse_parameters	two_goods	merge	1105	27	0.819	pass	pass	pass	pass	pass	ko_no_mrs_stop	0.867	2	1738.400	7fb5260dd83ddfd8		Collapse sugar and spice into parallel arrays/lists
+3	34	3	882aec186b177704		parse_error			refactor	move_tiebreak	refactor														edit could not be applied	Optimize movement tie-breaking and distance
+3	34	4	882aec186b177704	1bc5e77eb055601d	rejected_static	0		remove_rule	trade	remove	1138	-6							stage_0_gate	0.856	0	3.500	7fb5260dd83ddfd8	not simpler: C 1138 vs parent 1132 (need a drop of >= 8 bytes)	Remove early exit on equal MRS

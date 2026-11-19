@@ -48,6 +48,23 @@
             "E5": "pass"
           },
           "eq_distance": 0.9405161328867669
+        },
+        {
+          "trajectory": 3,
+          "generation": 33,
+          "candidate": "066c355a69cc47c4",
+          "action": "substitute",
+          "description": "Substitute Euclidean distance with Manhattan distance for tie-breaking",
+          "hypothesis": "In a grid-based world where vision is defined by Manhattan distance (Von Neumann neighborhood), using Manhattan distance for movement tie-breaking is more consistent and typically produces statistically equivalent spatial clustering.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7430519903758532
         }
       ],
       "cross_trajectory_history": {
@@ -175,7 +192,7 @@
     },
     "mesa_framework": {
       "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
-      "status": "kept",
+      "status": "replaced",
       "canonical_knockout": null,
       "evidence": [
         {
@@ -194,6 +211,23 @@
             "E5": "pass"
           },
           "eq_distance": 0.7605131294806692
+        },
+        {
+          "trajectory": 3,
+          "generation": 33,
+          "candidate": "882aec186b177704",
+          "action": "substitute",
+          "description": "Replace Mesa framework with lightweight NumPy/Object representation",
+          "hypothesis": "The core logic of Sugarscape depends on the rules of movement, metabolism, and trade, not on the specific Mesa `CellAgent` or `OrthogonalVonNeumannGrid` classes. A custom implementation reduces the number of executed library functions and overhead significantly while preserving the exact mechanics.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.8038967595406762
         }
       ],
       "cross_trajectory_history": {
