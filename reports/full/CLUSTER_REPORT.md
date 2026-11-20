@@ -1,6 +1,6 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-19T16:11:34+00:00`
+- **Updated**: `2026-11-20T14:31:42+00:00`
 - **Active Trajectory**: `Trajectory #3` (`2` plateau resets completed)
 - **Total Attempts Logged**: `117` (`83` with full behavioral vectors)
 
