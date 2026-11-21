@@ -357,7 +357,7 @@
    "action": "refactor",
    "hypothesis": "Inlining small helper functions (`is_starved`, `calculate_sell_spice_amount`) reduces the number of function calls executed and the overall code size without altering the model's behavior.",
    "ncd_canonical": 0.2565,
-   "audited": false
+   "audited": true
   },
   {
    "id": "4a5dbd61d5e6b8fd",
@@ -401,7 +401,7 @@
    "action": "substitute",
    "hypothesis": "Using a tuple `(-welfare, distance, random_jitter)` as a sort key is mathematically equivalent to finding the maximum welfare, then the minimum distance, then breaking ties randomly.",
    "ncd_canonical": 0.3249,
-   "audited": false
+   "audited": true
   },
   {
    "id": "066c355a69cc47c4",
@@ -423,7 +423,7 @@
    "action": "substitute",
    "hypothesis": "In a grid-based world where vision is defined by Manhattan distance (Von Neumann neighborhood), using Manhattan distance for movement tie-breaking is more consistent and typically produces statistically equivalent spatial clustering.",
    "ncd_canonical": 0.4404,
-   "audited": false
+   "audited": true
   },
   {
    "id": "882aec186b177704",
@@ -445,7 +445,7 @@
    "action": "substitute",
    "hypothesis": "The core logic of Sugarscape depends on the rules of movement, metabolism, and trade, not on the specific Mesa `CellAgent` or `OrthogonalVonNeumannGrid` classes. A custom implementation reduces the number of executed library functions and overhead significantly while preserving the exact mechanics.",
    "ncd_canonical": 0.8644,
-   "audited": false
+   "audited": true
   },
   {
    "id": "5d5427fcf04ac08c",
@@ -467,7 +467,95 @@
    "action": "merge",
    "hypothesis": "Treating sugar and spice as indices 0 and 1 of a resource array eliminates duplicate logic in eating, regrowth, and welfare calculations without changing the underlying dynamics.",
    "ncd_canonical": 0.8667,
+   "audited": true
+  },
+  {
+   "id": "020b1d1b8d1bf196",
+   "trajectory": 3,
+   "parent": "5d5427fcf04ac08c",
+   "C": 1092,
+   "eq_distance": 0.6657212016282518,
+   "label": "refactor",
+   "delta_C": 13,
+   "digests": [
+    "f1cf47b3c9a4caae",
+    "e6ce8710aa6da63b",
+    "9a37658a4b764ea1"
+   ],
+   "generation": 35,
+   "desc": "remove the MRS equality check in trade",
+   "move": "remove_rule",
+   "mechanism": "trade",
+   "action": "remove",
+   "hypothesis": "The check `if m_s == m_o: return` is a micro-optimization. If the MRSs are equal, the subsequent welfare and MRS-crossing checks will naturally prevent any non-beneficial trades, so the emergent price discovery and wealth patterns will remain unchanged.",
+   "ncd_canonical": 0.8715,
+   "audited": true
+  },
+  {
+   "id": "4df3da3fc1862f90",
+   "trajectory": 3,
+   "parent": "5d5427fcf04ac08c",
+   "C": 1092,
+   "eq_distance": 0.9415216010519731,
+   "label": "refactor",
+   "delta_C": 13,
+   "digests": [
+    "f1cf47b3c9a4caae",
+    "e6ce8710aa6da63b",
+    "9a37658a4b764ea1"
+   ],
+   "generation": 35,
+   "desc": "remove math library dependency",
+   "move": "replace_library",
+   "mechanism": "none",
+   "action": "substitute",
+   "hypothesis": "Replacing `math.sqrt` with the `** 0.5` operator and removing the `math` import reduces the number of library calls and the code footprint without changing the mathematical outcomes of the simulation.",
+   "ncd_canonical": 0.8697,
    "audited": false
+  },
+  {
+   "id": "eef72f183bf1059e",
+   "trajectory": 3,
+   "parent": "020b1d1b8d1bf196",
+   "C": 1077,
+   "eq_distance": 0.797130269571208,
+   "label": "mechanism",
+   "delta_C": 15,
+   "digests": [
+    "2f38f51bdd3d814f",
+    "8e37f4aff935c1d2",
+    "3ad3ce64060d2eb7"
+   ],
+   "generation": 36,
+   "desc": "Simplify welfare and MRS expressions",
+   "move": "refactor",
+   "mechanism": "welfare",
+   "action": "refactor",
+   "hypothesis": "The Cobb-Douglas welfare function is monotonic with respect to the product of resources raised to their metabolism weights. Removing the division by total metabolism doesn't change the relative ordering of cells or the direction of trade.",
+   "ncd_canonical": 0.8697,
+   "audited": true
+  },
+  {
+   "id": "ced26fba3b702b5f",
+   "trajectory": 3,
+   "parent": "020b1d1b8d1bf196",
+   "C": 1074,
+   "eq_distance": 0.7188163653339676,
+   "label": "mechanism",
+   "delta_C": 18,
+   "digests": [
+    "282ef4e53cce17b8",
+    "775054d68960e083",
+    "9b2581de58b53f9e"
+   ],
+   "generation": 36,
+   "desc": "Replace Agent objects with NumPy arrays",
+   "move": "representation",
+   "mechanism": "mesa_framework",
+   "action": "substitute",
+   "hypothesis": "Representing agent attributes as parallel NumPy arrays removes the overhead of class instances and method calls, significantly reducing the compressed size of the logic while maintaining the exact same mechanical rules.",
+   "ncd_canonical": 0.875,
+   "audited": true
   }
  ],
  "audits": [
@@ -630,14 +718,58 @@
     "worst": 0.0788201206715229,
     "any_statistic_union": 0.5662638437425904
    }
+  },
+  {
+   "trajectory": 3,
+   "model": "ced26fba3b702b5f",
+   "time": "2026-11-21T18:35:45+00:00",
+   "passed": true,
+   "features": {
+    "E1": "pass",
+    "E2": "pass",
+    "E3": "pass",
+    "E4": "pass",
+    "E5": "pass"
+   },
+   "reason": "",
+   "eq_distance": 0.8628988887617526,
+   "located_failures": [],
+   "coverage": {
+    "per_statistic": {
+     "gini_T|trade": 0.06970396671257115,
+     "gini_c1|trade": 0.03349055046448659,
+     "top10_T|trade": 0.1191351187562028,
+     "cv_T|trade": 0.07491772781282859,
+     "loghill_T|trade": 0.031545911698737,
+     "plateau_frac|trade": 0.0,
+     "disp_late|trade": 0.05776066492337775,
+     "disp_decay|trade": 0.03987484293722113,
+     "price_level|trade": 0.008180738149971795,
+     "exch_rate|trade": 0.05975640599322512,
+     "drc_c1|trade": 0.020116364737557936,
+     "drc_T|trade": 0.012548321970014771,
+     "moran_T|trade": 0.027404457069709925,
+     "gini_T|notrade": 0.015185152306775956,
+     "gini_c1|notrade": 0.009506057806648385,
+     "top10_T|notrade": 0.0,
+     "cv_T|notrade": 0.012563083238034466,
+     "loghill_T|notrade": 0.002454249706982382,
+     "plateau_frac|notrade": 0.018308414975461554,
+     "drc_c1|notrade": 0.011591732198005784,
+     "drc_T|notrade": 0.00413935249009518,
+     "moran_T|notrade": 0.00918631791417148
+    },
+    "worst": 0.1191351187562028,
+    "any_statistic_union": 0.6373694318620797
+   }
   }
  ],
- "generation": 34,
+ "generation": 37,
  "trajectory": 3,
  "trajectory_start_gen": 25,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 34,
- "attempts_since_improvement": 2,
- "trajectory_attempts": 33,
+ "last_best_improvement_gen": 36,
+ "attempts_since_improvement": 1,
+ "trajectory_attempts": 42,
  "trajectory_started_at": "2026-11-16T15:25:43+00:00"
 }

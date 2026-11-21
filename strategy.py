@@ -1,114 +1,98 @@
-import math
 import numpy as np
 
-class Agent:
-    def __init__(self, uid, x, y, h, m, vision):
-        self.uid = uid
-        self.x, self.y = x, y
-        self.h = h # [sugar, spice]
-        self.m = m # [m_sugar, m_spice]
-        self.vision = vision
+def init(env, rng):
+    n = env["initial_population"]
+    state = {
+        "n": n,
+        "caps": np.array(env["landscape"], dtype=float),
+        "maps": np.array(env["landscape"], dtype=float),
+        "regrowth": env["regrowth_rate"],
+        "enable_trade": env["enable_trade"],
+        "exchanges": [],
+        "grid": np.full((50, 50), -1, dtype=int),
+        "pos": np.zeros((n, 2), dtype=int),
+        "h": np.zeros((n, 2), dtype=float),
+        "m": np.zeros((n, 2), dtype=float),
+        "v": np.zeros(n, dtype=int),
+        "alive": np.ones(n, dtype=bool)
+    }
+    coords = rng.choice([x*50+y for x in range(50) for y in range(50)], n, replace=False)
+    for i in range(n):
+        x, y = divmod(coords[i], 50)
+        state["pos"][i] = [x, y]
+        state["grid"][x, y] = i
+        state["h"][i] = [rng.integers(env["endowment_min"], env["endowment_max"] + 1) for _ in range(2)]
+        state["m"][i] = [rng.integers(env["metabolism_min"], env["metabolism_max"] + 1) for _ in range(2)]
+        state["v"][i] = rng.integers(env["vision_min"], env["vision_max"] + 1)
+    return state
 
-    def welfare(self, h):
-        mt = sum(self.m)
-        return (h[0] ** (self.m[0] / mt)) * (h[1] ** (self.m[1] / mt))
-
-    def mrs(self, h):
-        return (h[1] / self.m[1]) / (h[0] / self.m[0])
-
-    def move(self, model, rng):
-        best_cell = None
-        best_val = (float('inf'), float('inf'), float('inf'))
-        x, y = self.x, self.y
-        v = self.vision
+def step(s, rng):
+    s["exchanges"] = []
+    s["maps"] = np.minimum(s["maps"] + s["regrowth"], s["caps"])
+    
+    order = np.arange(s["n"])
+    rng.shuffle(order)
+    for i in order:
+        if not s["alive"][i]: continue
+        x, y = s["pos"][i]
+        v = s["v"][i]
+        best_cell, best_val = None, (float('inf'), float('inf'), float('inf'))
         for dx in range(-v, v + 1):
             for dy in range(-(v - abs(dx)), (v - abs(dx)) + 1):
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < 50 and 0 <= ny < 50 and model.agent_grid[nx, ny] is None:
-                    h_next = [self.h[0] + model.maps[0, nx, ny], self.h[1] + model.maps[1, nx, ny]]
-                    w = self.welfare(h_next)
+                if 0 <= nx < 50 and 0 <= ny < 50 and s["grid"][nx, ny] == -1:
+                    h_next = s["h"][i] + s["maps"][:, nx, ny]
+                    w = (h_next[0]**s["m"][i, 0]) * (h_next[1]**s["m"][i, 1])
                     val = (-w, dx*dx + dy*dy, rng.random())
-                    if val < best_val:
-                        best_val, best_cell = val, (nx, ny)
+                    if val < best_val: best_val, best_cell = val, (nx, ny)
         if best_cell:
-            model.agent_grid[self.x, self.y] = None
-            self.x, self.y = best_cell
-            model.agent_grid[self.x, self.y] = self
+            s["grid"][x, y] = -1
+            s["pos"][i] = best_cell
+            s["grid"][best_cell[0], best_cell[1]] = i
+        
+        s["h"][i] += s["maps"][:, s["pos"][i][0], s["pos"][i][1]]
+        s["maps"][:, s["pos"][i][0], s["pos"][i][1]] = 0
+        s["h"][i] -= s["m"][i]
+        if np.any(s["h"][i] <= 0):
+            s["grid"][s["pos"][i][0], s["pos"][i][1]] = -1
+            s["alive"][i] = False
 
-    def eat(self, model):
-        for i in range(2):
-            self.h[i] += model.maps[i, self.x, self.y]
-            model.maps[i, self.x, self.y] = 0
-            self.h[i] -= self.m[i]
-
-    def trade(self, other, model):
-        if any(v <= 0 for v in self.h + other.h): return
-        m_s, m_o = self.mrs(self.h), other.mrs(other.h)
-        if m_s == m_o: return
-        price = math.sqrt(m_s * m_o)
-        buyer, seller = (self, other) if m_s > m_o else (other, self)
-        sq, sp = (1, int(price)) if price >= 1 else (int(1 / price), 1)
-        if buyer.h[0] < sq or seller.h[1] < sp: return
-        w_b, w_s = buyer.welfare(buyer.h), seller.welfare(seller.h)
-        nb_h, ns_h = [buyer.h[0] + sq, buyer.h[1] - sp], [seller.h[0] - sq, seller.h[1] + sp]
-        if (buyer.welfare(nb_h) > w_b and seller.welfare(ns_h) > w_s and 
-            buyer.mrs(nb_h) > seller.mrs(ns_h)):
-            buyer.h[0] += sq; buyer.h[1] -= sp
-            seller.h[0] -= sq; seller.h[1] += sp
-            model.exchanges.append((seller.uid, buyer.uid, (sq, -sp)) if seller == self else (buyer.uid, seller.uid, (-sq, sp)))
-            self.trade(other, model)
-
-class SugarscapeG1mt:
-    def __init__(self, env, rng):
-        self.w, self.h = 50, 50
-        self.caps = np.array(env["landscape"], dtype=float)
-        self.maps = self.caps.copy()
-        self.regrowth = env["regrowth_rate"]
-        self.enable_trade = env["enable_trade"]
-        self.exchanges = []
-        self.agent_grid = np.full((50, 50), None)
-        n = env["initial_population"]
-        self.agents = []
-        coords = rng.choice([(x, y) for x in range(50) for y in range(50)], n, replace=False)
-        for i in range(n):
-            a = Agent(i, *coords[i], 
-                      [rng.integers(env["endowment_min"], env["endowment_max"] + 1) for _ in range(2)],
-                      [rng.integers(env["metabolism_min"], env["metabolism_max"] + 1) for _ in range(2)],
-                      rng.integers(env["vision_min"], env["vision_max"] + 1))
-            self.agents.append(a)
-            self.agent_grid[a.x, a.y] = a
-
-    def step(self, rng):
-        self.exchanges = []
-        self.maps[:] = np.minimum(self.maps + self.regrowth, self.caps)
-        order = list(self.agents)
+    if s["enable_trade"]:
         rng.shuffle(order)
-        for a in order:
-            if a in self.agents:
-                a.move(self, rng)
-                a.eat(self)
-                if a.h[0] <= 0 or a.h[1] <= 0:
-                    self.agent_grid[a.x, a.y] = None
-                    self.agents.remove(a)
-        if self.enable_trade:
-            order = list(self.agents)
-            rng.shuffle(order)
-            for a in order:
-                v = a.vision
-                for dx in range(-v, v + 1):
-                    for dy in range(-(v - abs(dx)), (v - abs(dx)) + 1):
-                        nx, ny = a.x + dx, a.y + dy
-                        if 0 <= nx < 50 and 0 <= ny < 50:
-                            other = self.agent_grid[nx, ny]
-                            if other and other != a: a.trade(other, self)
+        for i in order:
+            if not s["alive"][i]: continue
+            x, y = s["pos"][i]
+            v = s["v"][i]
+            for dx in range(-v, v + 1):
+                for dy in range(-(v - abs(dx)), (v - abs(dx)) + 1):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < 50 and 0 <= ny < 50:
+                        j = s["grid"][nx, ny]
+                        if j != -1 and j != i:
+                            while True:
+                                if np.any(s["h"][i] <= 0) or np.any(s["h"][j] <= 0): break
+                                mrs_i = (s["h"][i, 1] * s["m"][i, 0]) / (s["h"][i, 0] * s["m"][i, 1])
+                                mrs_j = (s["h"][j, 1] * s["m"][j, 0]) / (s["h"][j, 0] * s["m"][j, 1])
+                                price = (mrs_i * mrs_j)**0.5
+                                b, sl = (i, j) if mrs_i > mrs_j else (j, i)
+                                sq, sp = (1, int(price)) if price >= 1 else (int(1 / price), 1)
+                                if s["h"][b, 0] < sq or s["h"][sl, 1] < sp: break
+                                w_b, w_sl = (s["h"][b, 0]**s["m"][b, 0] * s["h"][b, 1]**s["m"][b, 1]), (s["h"][sl, 0]**s["m"][sl, 0] * s["h"][sl, 1]**s["m"][sl, 1])
+                                nb_h, ns_h = [s["h"][b, 0] + sq, s["h"][b, 1] - sp], [s["h"][sl, 0] - sq, s["h"][sl, 1] + sp]
+                                if (nb_h[0]**s["m"][b, 0] * nb_h[1]**s["m"][b, 1] > w_b and 
+                                    ns_h[0]**s["m"][sl, 0] * ns_h[1]**s["m"][sl, 1] > w_sl and 
+                                    (nb_h[1] * s["m"][b, 0]) / (nb_h[0] * s["m"][b, 1]) > (ns_h[1] * s["m"][sl, 0]) / (ns_h[0] * s["m"][sl, 1])):
+                                    s["h"][b] += [sq, -sp]
+                                    s["h"][sl] += [-sq, sp]
+                                    s["exchanges"].append((sl, b, (sq, -sp)) if sl == i else (b, sl, (-sq, sp)))
+                                else: break
 
-def init(env, rng): return SugarscapeG1mt(env, rng)
-def step(model, rng): model.step(rng)
-def observe(model):
+def observe(s):
+    alive_idx = np.where(s["alive"])[0]
     return {
-        "ids": [a.uid for a in model.agents],
-        "positions": [(a.x, a.y) for a in model.agents],
-        "holdings": [tuple(a.h) for a in model.agents],
-        "exchanges": model.exchanges,
-        "resources": model.maps,
+        "ids": alive_idx.tolist(),
+        "positions": s["pos"][alive_idx].tolist(),
+        "holdings": s["h"][alive_idx].tolist(),
+        "exchanges": s["exchanges"],
+        "resources": s["maps"],
     }

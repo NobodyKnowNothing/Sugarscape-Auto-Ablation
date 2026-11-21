@@ -76,7 +76,25 @@
       "rule": "Cobb-Douglas welfare with exponents from relative metabolism",
       "status": "kept",
       "canonical_knockout": null,
-      "evidence": [],
+      "evidence": [
+        {
+          "trajectory": 3,
+          "generation": 36,
+          "candidate": "eef72f183bf1059e",
+          "action": "refactor",
+          "description": "Simplify welfare and MRS expressions",
+          "hypothesis": "The Cobb-Douglas welfare function is monotonic with respect to the product of resources raised to their metabolism weights. Removing the division by total metabolism doesn't change the relative ordering of cells or the direction of trade.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.797130269571208
+        }
+      ],
       "cross_trajectory_history": {
         "T1": "kept",
         "T2": "kept"
@@ -228,6 +246,23 @@
             "E5": "pass"
           },
           "eq_distance": 0.8038967595406762
+        },
+        {
+          "trajectory": 3,
+          "generation": 36,
+          "candidate": "ced26fba3b702b5f",
+          "action": "substitute",
+          "description": "Replace Agent objects with NumPy arrays",
+          "hypothesis": "Representing agent attributes as parallel NumPy arrays removes the overhead of class instances and method calls, significantly reducing the compressed size of the logic while maintaining the exact same mechanical rules.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7188163653339676
         }
       ],
       "cross_trajectory_history": {
