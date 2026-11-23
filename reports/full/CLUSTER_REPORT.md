@@ -1,8 +1,8 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-22T14:52:50+00:00`
+- **Updated**: `2026-11-23T16:48:45+00:00`
 - **Active Trajectory**: `Trajectory #3` (`2` plateau resets completed)
-- **Total Attempts Logged**: `130` (`93` with full behavioral vectors)
+- **Total Attempts Logged**: `134` (`96` with full behavioral vectors)
 
 ![Behavioral Attractor Map](./attractor_map.svg)
 
@@ -36,7 +36,7 @@ Rejected attempts are clustered in standardized behavioral response space and ma
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
 | **`F1`** | E2+E3 Breakdown (~ko_no_mrs_stop) | `15` | T1, T2, T3 | 🔥 **YES** | `E2, E3, E1, E4, E5` | `pop_traj(l2), plateau_frac(l2), loghill_T(slope)` | `ko_no_mrs_stop` | move_tiebreak (6), mesa_framework (3), two_goods (2) |
 | **`F2`** | E1+E2 Breakdown (~ko_ignore_regrowth) | `2` | T2 | No | `E1, E2, E3, E4, E5` | `plateau_frac(slope), pop_traj(l2), disp_late(slope)` | `ko_ignore_regrowth` | heterogeneity (1), none (1) |
-| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `50` | T1, T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (15), two_goods (8), none (7) |
+| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `53` | T1, T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (15), two_goods (8), none (7) |
 | **`G1`** | Stage 1 Gate Rejection (Complexity / Guard / Smoke) | `3` | T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_1_gate` | mesa_framework (2), none (1) |
 
 ---
