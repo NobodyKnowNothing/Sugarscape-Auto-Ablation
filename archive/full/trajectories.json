@@ -160,5 +160,108 @@
         "desc": "Simplify movement tie-breaking using tuple comparison"
       }
     ]
+  },
+  {
+    "trajectory_id": 3,
+    "started_at": "2026-11-16T15:25:43+00:00",
+    "completed_at": "2026-11-24T17:20:12+00:00",
+    "start_generation": 26,
+    "end_generation": 42,
+    "generations_run": 17,
+    "attempts_evaluated": 59,
+    "variants_accepted": 10,
+    "origin_id": "af314acdce5789e2",
+    "origin_C": 6158,
+    "champion_id": "ced26fba3b702b5f",
+    "champion_C": 1074,
+    "champion_eq_distance": 0.7188163653339676,
+    "total_bytes_saved": 5084,
+    "compression_ratio": 0.1744,
+    "bytes_saved_refactor": 68.0,
+    "bytes_saved_mechanism": 5016.0,
+    "mechanisms_modified": {
+      "move_tiebreak": "replaced",
+      "mesa_framework": "replaced"
+    },
+    "mechanisms_kept": [
+      "growback",
+      "move_welfare",
+      "welfare",
+      "metabolism",
+      "death",
+      "vision",
+      "trade",
+      "mrs_stop",
+      "price_rule",
+      "heterogeneity",
+      "two_goods",
+      "random_activation"
+    ],
+    "plateau_reason": "diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances",
+    "lineage": [
+      {
+        "id": "af314acdce5789e2",
+        "C": 6158,
+        "delta_C": 0,
+        "label": "origin",
+        "move": "",
+        "mechanism": "",
+        "desc": "canonical Sugarscape origin (trajectory 3)"
+      },
+      {
+        "id": "f6716115203482b2",
+        "C": 6130,
+        "delta_C": 28,
+        "label": "refactor",
+        "move": "refactor",
+        "mechanism": "none",
+        "desc": "Inline helper functions to reduce call overhead."
+      },
+      {
+        "id": "f15e9cb14ec72be5",
+        "C": 6082,
+        "delta_C": 48,
+        "label": "mechanism",
+        "move": "substitute_rule",
+        "mechanism": "move_tiebreak",
+        "desc": "Substitute the multi-step movement selection with a single-pass sorted key."
+      },
+      {
+        "id": "882aec186b177704",
+        "C": 1132,
+        "delta_C": 4950,
+        "label": "mechanism",
+        "move": "representation",
+        "mechanism": "mesa_framework",
+        "desc": "Replace Mesa framework with lightweight NumPy/Object representation"
+      },
+      {
+        "id": "5d5427fcf04ac08c",
+        "C": 1105,
+        "delta_C": 27,
+        "label": "refactor",
+        "move": "collapse_parameters",
+        "mechanism": "two_goods",
+        "desc": "Collapse sugar and spice into parallel arrays/lists"
+      },
+      {
+        "id": "020b1d1b8d1bf196",
+        "C": 1092,
+        "delta_C": 13,
+        "label": "refactor",
+        "move": "remove_rule",
+        "mechanism": "trade",
+        "desc": "remove the MRS equality check in trade"
+      },
+      {
+        "id": "ced26fba3b702b5f",
+        "C": 1074,
+        "delta_C": 18,
+        "label": "mechanism",
+        "move": "representation",
+        "mechanism": "mesa_framework",
+        "desc": "Replace Agent objects with NumPy arrays"
+      }
+    ]
   }
 ]

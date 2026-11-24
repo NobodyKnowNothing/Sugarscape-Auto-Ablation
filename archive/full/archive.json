@@ -556,6 +556,23 @@
    "hypothesis": "Representing agent attributes as parallel NumPy arrays removes the overhead of class instances and method calls, significantly reducing the compressed size of the logic while maintaining the exact same mechanical rules.",
    "ncd_canonical": 0.875,
    "audited": true
+  },
+  {
+   "id": "af314acdce5789e2",
+   "trajectory": 4,
+   "parent": null,
+   "C": 6158,
+   "eq_distance": 0.0,
+   "label": "origin",
+   "delta_C": 0,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 42,
+   "desc": "canonical Sugarscape origin (trajectory 4)",
+   "audited": true
   }
  ],
  "audits": [
@@ -764,12 +781,12 @@
    }
   }
  ],
- "generation": 39,
- "trajectory": 3,
- "trajectory_start_gen": 25,
+ "generation": 42,
+ "trajectory": 4,
+ "trajectory_start_gen": 42,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 36,
- "attempts_since_improvement": 9,
- "trajectory_attempts": 50,
- "trajectory_started_at": "2026-11-16T15:25:43+00:00"
+ "last_best_improvement_gen": 42,
+ "attempts_since_improvement": 0,
+ "trajectory_attempts": 0,
+ "trajectory_started_at": "2026-11-24T17:20:14+00:00"
 }

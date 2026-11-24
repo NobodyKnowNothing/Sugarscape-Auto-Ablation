@@ -1,0 +1,274 @@
+{
+  "description": "Mechanism ledger for the minimal-viable-model search. Each rule of Sugarscape G1MT, its current status in the working model, and the evidence for that status. The research loop updates status/evidence when it accepts a mechanism-level change; certify.py fills in knockout evidence for surviving rules.",
+  "statuses": [
+    "kept",
+    "removed",
+    "replaced",
+    "merged"
+  ],
+  "mechanisms": {
+    "growback": {
+      "rule": "Resources regrow by regrowth_rate per step up to cell capacity",
+      "status": "kept",
+      "canonical_knockout": "ko_no_growback",
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "move_welfare": {
+      "rule": "Move to the empty cell within vision that maximizes Cobb-Douglas welfare",
+      "status": "kept",
+      "canonical_knockout": "ko_random_move",
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "move_tiebreak": {
+      "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
+      "status": "replaced",
+      "canonical_knockout": null,
+      "evidence": [
+        {
+          "trajectory": 3,
+          "generation": 31,
+          "candidate": "f15e9cb14ec72be5",
+          "action": "substitute",
+          "description": "Substitute the multi-step movement selection with a single-pass sorted key.",
+          "hypothesis": "Using a tuple `(-welfare, distance, random_jitter)` as a sort key is mathematically equivalent to finding the maximum welfare, then the minimum distance, then breaking ties randomly.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.9405161328867669
+        },
+        {
+          "trajectory": 3,
+          "generation": 33,
+          "candidate": "066c355a69cc47c4",
+          "action": "substitute",
+          "description": "Substitute Euclidean distance with Manhattan distance for tie-breaking",
+          "hypothesis": "In a grid-based world where vision is defined by Manhattan distance (Von Neumann neighborhood), using Manhattan distance for movement tie-breaking is more consistent and typically produces statistically equivalent spatial clustering.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7430519903758532
+        }
+      ],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "welfare": {
+      "rule": "Cobb-Douglas welfare with exponents from relative metabolism",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [
+        {
+          "trajectory": 3,
+          "generation": 36,
+          "candidate": "eef72f183bf1059e",
+          "action": "refactor",
+          "description": "Simplify welfare and MRS expressions",
+          "hypothesis": "The Cobb-Douglas welfare function is monotonic with respect to the product of resources raised to their metabolism weights. Removing the division by total metabolism doesn't change the relative ordering of cells or the direction of trade.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.797130269571208
+        }
+      ],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "metabolism": {
+      "rule": "Agents consume metabolism_sugar / metabolism_spice each step",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "death": {
+      "rule": "Agents die when sugar or spice reaches zero",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "vision": {
+      "rule": "Heterogeneous vision radius bounds movement and trade neighbourhoods",
+      "status": "kept",
+      "canonical_knockout": "ko_uniform_vision",
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "trade": {
+      "rule": "Bilateral trade with neighbours within vision, repeated while beneficial",
+      "status": "kept",
+      "canonical_knockout": "ko_no_trade",
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "mrs_stop": {
+      "rule": "Trading stops when the post-trade MRSs would cross",
+      "status": "kept",
+      "canonical_knockout": "ko_no_mrs_stop",
+      "evidence": [
+        {
+          "trajectory": 1,
+          "generation": 1,
+          "candidate": "6bcb34abcfe2fdf2",
+          "action": "remove",
+          "description": "Remove the MRS crossing condition from the trade rule.",
+          "hypothesis": "Price discovery (E3) is primarily driven by the welfare improvement and the price rule. The \"MRS crossing\" check is a refinement to reach equilibrium faster, but the \"both better off\" condition should be sufficient to settle on similar price levels.",
+          "judge_hash": "c144304071e9ad4e",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7677745654397886
+        }
+      ],
+      "cross_trajectory_history": {
+        "T1": "removed",
+        "T2": "kept"
+      }
+    },
+    "price_rule": {
+      "rule": "Price is the geometric mean of the two MRSs; integer bundle sizes",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "heterogeneity": {
+      "rule": "Endowments, metabolisms and vision drawn per agent from uniform ranges",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "two_goods": {
+      "rule": "Two complementary goods (sugar and spice) with mirrored landscapes",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "random_activation": {
+      "rule": "Agents act in a freshly shuffled order each phase",
+      "status": "kept",
+      "canonical_knockout": null,
+      "evidence": [],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "kept"
+      }
+    },
+    "mesa_framework": {
+      "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
+      "status": "replaced",
+      "canonical_knockout": null,
+      "evidence": [
+        {
+          "trajectory": 2,
+          "generation": 16,
+          "candidate": "3c6819f2209a7c22",
+          "action": "substitute",
+          "description": "Replace Mesa machinery with a minimal NumPy-based state",
+          "hypothesis": "By replacing Mesa's `Model`, `Agent`, `Grid`, and `PropertyLayer` with a simple Python object and NumPy arrays, we eliminate the vast majority of executed library code while maintaining the exact same mechanical rules.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7605131294806692
+        },
+        {
+          "trajectory": 3,
+          "generation": 33,
+          "candidate": "882aec186b177704",
+          "action": "substitute",
+          "description": "Replace Mesa framework with lightweight NumPy/Object representation",
+          "hypothesis": "The core logic of Sugarscape depends on the rules of movement, metabolism, and trade, not on the specific Mesa `CellAgent` or `OrthogonalVonNeumannGrid` classes. A custom implementation reduces the number of executed library functions and overhead significantly while preserving the exact mechanics.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.8038967595406762
+        },
+        {
+          "trajectory": 3,
+          "generation": 36,
+          "candidate": "ced26fba3b702b5f",
+          "action": "substitute",
+          "description": "Replace Agent objects with NumPy arrays",
+          "hypothesis": "Representing agent attributes as parallel NumPy arrays removes the overhead of class instances and method calls, significantly reducing the compressed size of the logic while maintaining the exact same mechanical rules.",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7188163653339676
+        }
+      ],
+      "cross_trajectory_history": {
+        "T1": "kept",
+        "T2": "replaced"
+      }
+    }
+  }
+}

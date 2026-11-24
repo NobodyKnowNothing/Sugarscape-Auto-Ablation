@@ -14,7 +14,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "move_welfare": {
@@ -24,12 +25,13 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "move_tiebreak": {
       "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
-      "status": "replaced",
+      "status": "kept",
       "canonical_knockout": null,
       "evidence": [
         {
@@ -69,7 +71,8 @@
       ],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "replaced"
       }
     },
     "welfare": {
@@ -97,7 +100,8 @@
       ],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "metabolism": {
@@ -107,7 +111,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "death": {
@@ -117,7 +122,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "vision": {
@@ -127,7 +133,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "trade": {
@@ -137,7 +144,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "mrs_stop": {
@@ -165,7 +173,8 @@
       ],
       "cross_trajectory_history": {
         "T1": "removed",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "price_rule": {
@@ -175,7 +184,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "heterogeneity": {
@@ -185,7 +195,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "two_goods": {
@@ -195,7 +206,8 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "random_activation": {
@@ -205,12 +217,13 @@
       "evidence": [],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "kept"
+        "T2": "kept",
+        "T3": "kept"
       }
     },
     "mesa_framework": {
       "rule": "Mesa Model/AgentSet/Cell/PropertyLayer machinery (counted in complexity via tracing)",
-      "status": "replaced",
+      "status": "kept",
       "canonical_knockout": null,
       "evidence": [
         {
@@ -267,7 +280,8 @@
       ],
       "cross_trajectory_history": {
         "T1": "kept",
-        "T2": "replaced"
+        "T2": "replaced",
+        "T3": "replaced"
       }
     }
   }
