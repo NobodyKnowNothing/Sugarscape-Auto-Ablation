@@ -781,12 +781,12 @@
    }
   }
  ],
- "generation": 42,
+ "generation": 43,
  "trajectory": 4,
  "trajectory_start_gen": 42,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
  "last_best_improvement_gen": 42,
- "attempts_since_improvement": 0,
- "trajectory_attempts": 0,
+ "attempts_since_improvement": 5,
+ "trajectory_attempts": 5,
  "trajectory_started_at": "2026-11-24T17:20:14+00:00"
 }
