@@ -92,15 +92,6 @@ class Trader(CellAgent):
         self.metabolism_spice = metabolism_spice
         self.vision = vision
 
-    def get_trader(self, cell):
-        """
-        helper function used in self.trade_with_neighbors()
-        """
-
-        for agent in cell.agents:
-            if isinstance(agent, Trader):
-                return agent
-
     def calculate_welfare(self, sugar, spice):
         """
         helper function
@@ -116,13 +107,6 @@ class Trader(CellAgent):
         return sugar ** (self.metabolism_sugar / m_total) * spice ** (
             self.metabolism_spice / m_total
         )
-
-    def is_starved(self):
-        """
-        Helper function for self.maybe_die()
-        """
-
-        return (self.sugar <= 0) or (self.spice <= 0)
 
     def calculate_MRS(self, sugar, spice):
         """
@@ -315,11 +299,7 @@ class Trader(CellAgent):
         self.spice -= self.metabolism_spice
 
     def maybe_die(self):
-        """
-        Function to remove Traders who have consumed all their sugar or spice
-        """
-
-        if self.is_starved():
+        if (self.sugar <= 0) or (self.spice <= 0):
             self.remove()
 
     def step(self):
@@ -329,18 +309,9 @@ class Trader(CellAgent):
         self.maybe_die()
 
     def trade_with_neighbors(self):
-        """
-        Function for trader agents to decide who to trade with in three parts
-
-        1- identify neighbors who can trade
-        2- trade (2 sessions)
-        3- collect data
-        """
-        # iterate through traders in neighboring cells and trade
         for a in self.cell.get_neighborhood(radius=self.vision).agents:
-            self.trade(a)
-
-        return
+            if isinstance(a, Trader):
+                self.trade(a)
 
 # ===========================================================================
 # Sugarscape Model (from model.py)

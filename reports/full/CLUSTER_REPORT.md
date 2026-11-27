@@ -1,8 +1,8 @@
 # Sugarscape Auto-Ablation: Behavioral Clustering & Attractor Report (`full`)
 
-- **Updated**: `2026-11-26T16:02:18+00:00`
+- **Updated**: `2026-11-27T16:05:22+00:00`
 - **Active Trajectory**: `Trajectory #4` (`3` plateau resets completed)
-- **Total Attempts Logged**: `149` (`104` with full behavioral vectors)
+- **Total Attempts Logged**: `153` (`106` with full behavioral vectors)
 
 ![Behavioral Attractor Map](./attractor_map.svg)
 
@@ -17,16 +17,16 @@ Each trajectory starts from the canonical flattened Mesa Sugarscape (`canonical_
 | **T1** | ✅ Plateaued & Reset | 10 | 21 | `6158` B | `6142` B (`6bcb34abcfe2fdf2`) | **-16 B** | `0.173` | mrs_stop:removed | diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances |
 | **T2** | ✅ Plateaued & Reset | 15 | 61 | `6158` B | `1175` B (`5869928c303c094b`) | **-4983 B** | `0.858` | mesa_framework:replaced | frontier_stagnation: 6 generations (27 attempts) without C_min improvement (95% upper bound on per-attempt improvement rate p < 0.105) |
 | **T3** | ✅ Plateaued & Reset | 17 | 59 | `6158` B | `1074` B (`ced26fba3b702b5f`) | **-5084 B** | `0.875` | move_tiebreak:replaced, mesa_framework:replaced | diminishing_returns: relative C reduction over last 6 generations is 0.0000% (< 0.20% threshold) with 0 mechanism-level acceptances |
-| **T4** | 🔄 Active | — | — | — | `6158` B (`af314acdce5789e2`) | — | `0.000` | (in progress) | active trajectory |
+| **T4** | 🔄 Active | — | — | — | `6126` B (`619ffc258f450a9d`) | — | `0.287` | (in progress) | active trajectory |
 
 ### Cross-Trajectory Champion Convergence (Pairwise AST Normalized Compression Distance)
 
 | Champion | T1 | T2 | T3 | T4 |
 | :--- | :---: | :---: | :---: | :---: |
-| **T1** | `0.000` | `0.860` | `0.877` | `0.169` |
-| **T2** | `0.867` | `0.000` | `0.785` | `0.867` |
-| **T3** | `0.882` | `0.776` | `0.000` | `0.882` |
-| **T4** | `0.173` | `0.858` | `0.875` | `0.000` |
+| **T1** | `0.000` | `0.860` | `0.877` | `0.287` |
+| **T2** | `0.867` | `0.000` | `0.785` | `0.866` |
+| **T3** | `0.882` | `0.776` | `0.000` | `0.878` |
+| **T4** | `0.273` | `0.858` | `0.873` | `0.000` |
 
 ---
 
@@ -38,7 +38,7 @@ Rejected attempts are clustered in standardized behavioral response space and ma
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
 | **`F1`** | E2+E3 Breakdown (~ko_no_mrs_stop) | `16` | T1, T2, T3 | 🔥 **YES** | `E2, E3, E1, E4, E5` | `pop_traj(l2), loghill_T(slope), plateau_frac(l2)` | `ko_no_mrs_stop` | move_tiebreak (6), mesa_framework (3), two_goods (2) |
 | **`F2`** | E1+E2 Breakdown (~ko_ignore_regrowth) | `2` | T2 | No | `E1, E2, E3, E4, E5` | `plateau_frac(slope), pop_traj(l2), disp_late(slope)` | `ko_ignore_regrowth` | heterogeneity (1), none (1) |
-| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `60` | T1, T2, T3, T4 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (17), none (9), two_goods (8) |
+| **`G0`** | Stage 0 Gate Rejection (Complexity / Guard / Smoke) | `61` | T1, T2, T3, T4 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_0_gate` | mesa_framework (18), none (9), two_goods (8) |
 | **`G1`** | Stage 1 Gate Rejection (Complexity / Guard / Smoke) | `3` | T2, T3 | 🔥 **YES** | `Stage 0/1` | `—` | `stage_1_gate` | mesa_framework (2), none (1) |
 
 ---
@@ -62,4 +62,4 @@ Worst-case feature discrepancy ratio ($\text{ratio} < 1.0$ passes equivalence; $
 | **`heterogeneity`** | load-bearing (candidate) | `4` (`0` / `4`) | — | `2.98` | `9.85` | `4.36` | `4.94` | `14.59` | `G0` |
 | **`two_goods`** | compressible | `11` (`1` / `10`) | — | `1.06` | `1.77` | `1.36` | `1.22` | `1.64` | `G0` |
 | **`random_activation`** | compressible | `7` (`1` / `6`) | — | `1.36` | `0.79` | `0.87` | `0.91` | `1.19` | `G0` |
-| **`mesa_framework`** | compressible | `25` (`3` / `22`) | T2, T3 | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |
+| **`mesa_framework`** | compressible | `26` (`3` / `23`) | T2, T3 | `1.73` | `1.75` | `1.85` | `1.34` | `4.53` | `G0` |

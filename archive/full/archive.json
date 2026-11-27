@@ -573,6 +573,28 @@
    "generation": 42,
    "desc": "canonical Sugarscape origin (trajectory 4)",
    "audited": true
+  },
+  {
+   "id": "619ffc258f450a9d",
+   "trajectory": 4,
+   "parent": "af314acdce5789e2",
+   "C": 6126,
+   "eq_distance": 0.75738059672031,
+   "label": "refactor",
+   "delta_C": 32,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 44,
+   "desc": "Inline `get_trader` and `is_starved` to reduce function call overhead and code size.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "refactor",
+   "hypothesis": "Inlining small, single-use helper functions reduces the total number of lines and method definitions without changing the agent's behavior.",
+   "ncd_canonical": 0.2866,
+   "audited": false
   }
  ],
  "audits": [
@@ -781,12 +803,12 @@
    }
   }
  ],
- "generation": 43,
+ "generation": 44,
  "trajectory": 4,
  "trajectory_start_gen": 42,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 42,
- "attempts_since_improvement": 5,
- "trajectory_attempts": 5,
+ "last_best_improvement_gen": 44,
+ "attempts_since_improvement": 0,
+ "trajectory_attempts": 9,
  "trajectory_started_at": "2026-11-24T17:20:14+00:00"
 }
