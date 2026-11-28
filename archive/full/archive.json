@@ -595,6 +595,50 @@
    "hypothesis": "Inlining small, single-use helper functions reduces the total number of lines and method definitions without changing the agent's behavior.",
    "ncd_canonical": 0.2866,
    "audited": false
+  },
+  {
+   "id": "24112049e6b70bb5",
+   "trajectory": 4,
+   "parent": "619ffc258f450a9d",
+   "C": 6090,
+   "eq_distance": 0.6653633092779714,
+   "label": "refactor",
+   "delta_C": 36,
+   "digests": [
+    "6e61de32fd87a22b",
+    "71dbacda95640fe3",
+    "b1f2aaa5749d37ab"
+   ],
+   "generation": 45,
+   "desc": "Use `math.dist` and simplify the initialization.",
+   "move": "refactor",
+   "mechanism": "none",
+   "action": "refactor",
+   "hypothesis": "Pure refactoring using modern standard library functions like `math.dist` reduces the code size without altering the logic, stochasticity, or emergent features.",
+   "ncd_canonical": 0.4422,
+   "audited": false
+  },
+  {
+   "id": "b4ac967789844c95",
+   "trajectory": 4,
+   "parent": "af314acdce5789e2",
+   "C": 6150,
+   "eq_distance": 0.7741352873463037,
+   "label": "mechanism",
+   "delta_C": 8,
+   "digests": [
+    "8879bbee1d1e839e",
+    "6b1d3fbb30db4014",
+    "1b1b4245d23c00c3"
+   ],
+   "generation": 47,
+   "desc": "Substitute Euclidean distance with Manhattan distance for tie-breaking",
+   "move": "substitute_rule",
+   "mechanism": "move_tiebreak",
+   "action": "substitute",
+   "hypothesis": "Manhattan distance is computationally simpler and, given the grid structure, should produce similar spatial clustering patterns (E4) and trait responses (E5).",
+   "ncd_canonical": 0.3231,
+   "audited": false
   }
  ],
  "audits": [
@@ -803,12 +847,12 @@
    }
   }
  ],
- "generation": 44,
+ "generation": 47,
  "trajectory": 4,
  "trajectory_start_gen": 42,
  " trajectory_started_at": "2026-11-08T20:28:46+00:00",
- "last_best_improvement_gen": 44,
- "attempts_since_improvement": 0,
- "trajectory_attempts": 9,
+ "last_best_improvement_gen": 45,
+ "attempts_since_improvement": 10,
+ "trajectory_attempts": 21,
  "trajectory_started_at": "2026-11-24T17:20:14+00:00"
 }

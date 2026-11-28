@@ -31,7 +31,7 @@
     },
     "move_tiebreak": {
       "rule": "Among best cells prefer the nearest (euclidean, 1% tolerance), then random",
-      "status": "kept",
+      "status": "replaced",
       "canonical_knockout": null,
       "evidence": [
         {
@@ -67,6 +67,23 @@
             "E5": "pass"
           },
           "eq_distance": 0.7430519903758532
+        },
+        {
+          "trajectory": 4,
+          "generation": 47,
+          "candidate": "b4ac967789844c95",
+          "action": "substitute",
+          "description": "Substitute Euclidean distance with Manhattan distance for tie-breaking",
+          "hypothesis": "Manhattan distance is computationally simpler and, given the grid structure, should produce similar spatial clustering patterns (E4) and trait responses (E5).",
+          "judge_hash": "7fb5260dd83ddfd8",
+          "features": {
+            "E1": "pass",
+            "E2": "pass",
+            "E3": "pass",
+            "E4": "pass",
+            "E5": "pass"
+          },
+          "eq_distance": 0.7741352873463037
         }
       ],
       "cross_trajectory_history": {
